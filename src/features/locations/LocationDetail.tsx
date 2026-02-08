@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
-import { MapPin, Edit, Trash2, ArrowLeft, Sparkles, Loader2, X } from 'lucide-react';
+import { MapPin, Edit, Trash2, ArrowLeft, Sparkles, Loader2, X, Upload } from 'lucide-react';
 import { generateImage } from '../../services/ai';
-import { uploadImageFromUrl, deleteImageFromUrl } from '../../services/imageService';
+import { uploadImageFromUrl, deleteImageFromUrl, uploadFile } from '../../services/imageService';
 import { useAuth } from '../../context/AuthContext';
 
 export const LocationDetail: React.FC = () => {
@@ -13,6 +13,8 @@ export const LocationDetail: React.FC = () => {
     const { locations, deleteLocation, addLocation, scenes, settings } = useStore();
     const { user } = useAuth();
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const location = locations.find((l) => l.id === id);
     const associatedScenes = scenes.filter(s => s.locationId === id);
@@ -88,6 +90,37 @@ export const LocationDetail: React.FC = () => {
         }
     };
 
+    const handleImageUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const onFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !user) return;
+
+        setIsUploading(true);
+        try {
+            // 1. Upload to Firebase Storage
+            const permanentUrl = await uploadFile(file, user.uid);
+
+            // 2. Update Firestore with new persistent URL
+            const updatedImages = [...(location.images || []), permanentUrl];
+
+            addLocation({
+                ...location,
+                images: updatedImages,
+                thumbnailUrl: location.thumbnailUrl || permanentUrl
+            });
+        } catch (error) {
+            console.error("Failed to upload image", error);
+            alert("Failed to upload image.");
+        } finally {
+            setIsUploading(false);
+            // Reset input so valid file can be selected again if needed
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
     return (
         <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto">
             <div>
@@ -123,10 +156,23 @@ export const LocationDetail: React.FC = () => {
                     <section>
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Visualizations</h3>
-                            <Button onClick={handleGenerateImage} disabled={isGenerating} size="sm">
-                                {isGenerating ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
-                                {isGenerating ? 'Generating...' : 'Generate Image'}
-                            </Button>
+                            <div className="flex gap-2">
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={onFileSelected}
+                                    className="hidden"
+                                    accept="image/*"
+                                />
+                                <Button onClick={handleImageUploadClick} disabled={isUploading || isGenerating} size="sm" variant="secondary">
+                                    {isUploading ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
+                                    {isUploading ? 'Uploading...' : 'Add Image'}
+                                </Button>
+                                <Button onClick={handleGenerateImage} disabled={isGenerating || isUploading} size="sm">
+                                    {isGenerating ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
+                                    {isGenerating ? 'Generating...' : 'Generate Image'}
+                                </Button>
+                            </div>
                         </div>
 
                         {(location.images && location.images.length > 0) ? (

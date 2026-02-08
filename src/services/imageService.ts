@@ -8,19 +8,30 @@ export const uploadImageFromUrl = async (url: string, userId: string): Promise<s
         if (!response.ok) throw new Error("Failed to fetch image");
         const blob = await response.blob();
 
-        // 2. Generate a unique path
+        return uploadFile(blob, userId);
+    } catch (error) {
+        console.error("Error uploading image from URL:", error);
+        throw error;
+    }
+};
+
+export const uploadFile = async (file: Blob | File, userId: string): Promise<string> => {
+    try {
+        // 1. Generate a unique path
         const timestamp = Date.now();
-        const path = `users/${userId}/images/${timestamp}.jpg`;
+        // Get extension from file type if possible, default to jpg
+        const extension = file.type.split('/')[1] || 'jpg';
+        const path = `users/${userId}/images/${timestamp}.${extension}`;
         const storageRef = ref(storage, path);
 
-        // 3. Upload
-        await uploadBytes(storageRef, blob);
+        // 2. Upload
+        await uploadBytes(storageRef, file);
 
-        // 4. Get Download URL
+        // 3. Get Download URL
         const downloadUrl = await getDownloadURL(storageRef);
         return downloadUrl;
     } catch (error) {
-        console.error("Error uploading image:", error);
+        console.error("Error uploading file:", error);
         throw error;
     }
 };
