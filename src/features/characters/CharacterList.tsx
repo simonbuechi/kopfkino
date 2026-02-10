@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { MapPin, Plus, Upload, Download, Edit, GripVertical, X } from 'lucide-react';
-import type { Location } from '../../types/types';
+import { User, Plus, Upload, Download, X, Edit, GripVertical } from 'lucide-react';
+import type { Character } from '../../types/types';
 import {
     DndContext,
     closestCenter,
@@ -24,12 +24,12 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 // Sortable Item Component
-const SortableLocationCard = ({
-    location,
+const SortableCharacterCard = ({
+    character,
     onClickImage,
     onEdit
 }: {
-    location: Location;
+    character: Character;
     onClickImage: (url: string) => void;
     onEdit: (id: string) => void;
 }) => {
@@ -40,7 +40,7 @@ const SortableLocationCard = ({
         transform,
         transition,
         isDragging
-    } = useSortable({ id: location.id });
+    } = useSortable({ id: character.id });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -61,39 +61,33 @@ const SortableLocationCard = ({
                     <GripVertical size={16} />
                 </div>
 
-                <div className="relative group cursor-pointer" onClick={() => location.thumbnailUrl && onClickImage(location.thumbnailUrl)}>
-                    {location.thumbnailUrl ? (
+                <div className="relative group cursor-pointer" onClick={() => character.imageUrl && onClickImage(character.imageUrl)}>
+                    {character.imageUrl ? (
                         <img
-                            src={location.thumbnailUrl}
-                            alt={location.name}
+                            src={character.imageUrl}
+                            alt={character.name}
                             className="w-full h-48 object-cover bg-zinc-100 dark:bg-zinc-800 hover:opacity-95 transition-opacity"
                         />
                     ) : (
                         <div className="w-full h-48 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-300 dark:text-zinc-700">
-                            <MapPin size={32} />
+                            <User size={32} />
                         </div>
                     )}
                 </div>
 
-                <div className="p-6 flex flex-col gap-2 flex-1">
-                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-white pointer-events-none select-none">{location.name}</h3>
-                    <p className="text-zinc-500 text-sm line-clamp-3 mb-4 pointer-events-none select-none">{location.description}</p>
-                    {location.geolocation && (
-                        <div className="flex items-center gap-2 text-xs text-zinc-400 mt-auto pt-4 border-t border-zinc-100 dark:border-zinc-800 pointer-events-none select-none">
-                            <MapPin size={14} />
-                            <span>{location.geolocation}</span>
-                        </div>
-                    )}
+                <div className="p-4 flex flex-col gap-2 flex-1">
+                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-white pointer-events-none select-none">{character.name}</h3>
+                    <p className="text-zinc-500 text-sm line-clamp-3 mb-4 pointer-events-none select-none">{character.description}</p>
 
-                    <div className="mt-4 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+                    <div className="mt-auto pt-2 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
                         <Button
                             variant="secondary"
                             size="sm"
                             className="w-full"
-                            onClick={() => onEdit(location.id)}
+                            onClick={() => onEdit(character.id)}
                         >
                             <Edit size={14} />
-                            Edit Location
+                            Edit Character
                         </Button>
                     </div>
                 </div>
@@ -102,8 +96,8 @@ const SortableLocationCard = ({
     );
 };
 
-export const LocationList: React.FC = () => {
-    const { locations, replaceLocations, reorderLocations } = useStore();
+export const CharacterList: React.FC = () => {
+    const { characters, replaceCharacters, reorderCharacters } = useStore();
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
@@ -132,7 +126,7 @@ export const LocationList: React.FC = () => {
     }, [fullscreenImage]);
 
     const handleImportClick = () => {
-        if (confirm('WARNING: Importing a CSV file will PERMANENTLY DELETE all existing locations. Do you want to proceed?')) {
+        if (confirm('WARNING: Importing a CSV file will PERMANENTLY DELETE all existing characters. Do you want to proceed?')) {
             fileInputRef.current?.click();
         }
     };
@@ -148,8 +142,9 @@ export const LocationList: React.FC = () => {
 
             try {
                 const lines = text.split('\n');
-                const newLocations: Location[] = [];
+                const newCharacters: Character[] = [];
                 let startIndex = 0;
+                // Simple heuristic to skip header if present
                 if (lines[0].toLowerCase().includes('name')) {
                     startIndex = 1;
                 }
@@ -157,29 +152,36 @@ export const LocationList: React.FC = () => {
                 for (let i = startIndex; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (!line) continue;
+                    // Standard CSV parsing (handling basic cases)
                     const parts = line.split(',');
+                    // Note: This simple split breaks on commas in fields.
+                    // For a robust app, a proper CSV parser is recommended.
+                    // Reusing the logic from LocationList for consistency.
+
                     if (parts.length < 2) continue;
                     const name = parts[0]?.trim();
                     const description = parts[1]?.trim() || '';
-                    const geolocation = parts[2]?.trim();
-                    const comment = parts[3]?.trim();
+                    const comment = parts[2]?.trim();
+                    const imageUrl = parts[3]?.trim();
 
                     if (name) {
-                        newLocations.push({
+                        const newChar: Character = {
                             id: crypto.randomUUID(),
                             name,
                             description,
-                            geolocation: geolocation || undefined,
-                            comment: comment || undefined,
-                        });
+                        };
+                        if (comment) newChar.comment = comment;
+                        if (imageUrl) newChar.imageUrl = imageUrl;
+
+                        newCharacters.push(newChar);
                     }
                 }
 
-                if (newLocations.length > 0) {
-                    replaceLocations(newLocations);
-                    alert(`Successfully imported ${newLocations.length} locations.`);
+                if (newCharacters.length > 0) {
+                    replaceCharacters(newCharacters);
+                    alert(`Successfully imported ${newCharacters.length} characters.`);
                 } else {
-                    alert("No valid locations found in CSV.");
+                    alert("No valid characters found in CSV.");
                 }
             } catch (error) {
                 console.error("Import failed:", error);
@@ -191,20 +193,20 @@ export const LocationList: React.FC = () => {
     };
 
     const handleExportClick = () => {
-        if (locations.length === 0) {
-            alert("No locations to export.");
+        if (characters.length === 0) {
+            alert("No characters to export.");
             return;
         }
 
-        const headers = ["Name", "Description", "Geolocation", "Comment"];
+        const headers = ["Name", "Description", "Comment", "Image URL"];
         const csvContent = [
             headers.join(','),
-            ...locations.map(loc => {
+            ...characters.map(char => {
                 const row = [
-                    loc.name,
-                    loc.description,
-                    loc.geolocation || '',
-                    loc.comment || ''
+                    char.name,
+                    char.description,
+                    char.comment || '',
+                    char.imageUrl || ''
                 ];
                 return row.map(field => {
                     const stringField = String(field);
@@ -220,7 +222,7 @@ export const LocationList: React.FC = () => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `kopfkino_locations_${new Date().toISOString().slice(0, 10)}.csv`);
+        link.setAttribute('download', `kopfkino_characters_${new Date().toISOString().slice(0, 10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -230,18 +232,18 @@ export const LocationList: React.FC = () => {
         const { active, over } = event;
 
         if (active.id !== over?.id) {
-            const oldIndex = locations.findIndex((loc) => loc.id === active.id);
-            const newIndex = locations.findIndex((loc) => loc.id === over?.id);
+            const oldIndex = characters.findIndex((char) => char.id === active.id);
+            const newIndex = characters.findIndex((char) => char.id === over?.id);
 
-            const newOrder = arrayMove(locations, oldIndex, newIndex);
-            reorderLocations(newOrder);
+            const newOrder = arrayMove(characters, oldIndex, newIndex);
+            reorderCharacters(newOrder);
         }
     };
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-3xl font-bold text-zinc-900 dark:text-white">Locations</h2>
+                <h2 className="text-3xl font-bold text-zinc-900 dark:text-white">Characters</h2>
                 <div className="flex flex-wrap gap-2">
                     <input
                         type="file"
@@ -260,7 +262,7 @@ export const LocationList: React.FC = () => {
                     </Button>
                     <Button onClick={() => navigate('new')} size="sm">
                         <Plus size={16} />
-                        New Location
+                        New Character
                     </Button>
                 </div>
             </div>
@@ -270,21 +272,21 @@ export const LocationList: React.FC = () => {
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}
             >
-                {locations.length === 0 ? (
+                {characters.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
-                        <MapPin size={48} className="mb-4 opacity-50" />
-                        <p>No locations yet. Create your first one!</p>
+                        <User size={48} className="mb-4 opacity-50" />
+                        <p>No characters yet. Create your first one!</p>
                     </div>
                 ) : (
                     <SortableContext
-                        items={locations.map(l => l.id)}
+                        items={characters.map(c => c.id)}
                         strategy={rectSortingStrategy}
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {locations.map((location) => (
-                                <SortableLocationCard
-                                    key={location.id}
-                                    location={location}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {characters.map((character) => (
+                                <SortableCharacterCard
+                                    key={character.id}
+                                    character={character}
                                     onClickImage={setFullscreenImage}
                                     onEdit={navigate}
                                 />

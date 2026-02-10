@@ -15,19 +15,94 @@ export const uploadImageFromUrl = async (url: string, userId: string): Promise<s
     }
 };
 
+const compressImage = (file: Blob | File): Promise<Blob> => {
+    return new Promise((resolve) => {
+        // If not an image (or SVG), return original
+        if (file.type && !file.type.startsWith('image/')) {
+            return resolve(file);
+        }
+        if (file.type === 'image/svg+xml') {
+            return resolve(file);
+        }
+
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            // Optimization: Resize if too large (e.g. > 1920px)
+            const MAX_DIMENSION = 1920;
+            if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+                if (width > height) {
+                    height = Math.round((height * MAX_DIMENSION) / width);
+                    width = MAX_DIMENSION;
+                } else {
+                    width = Math.round((width * MAX_DIMENSION) / height);
+                    height = MAX_DIMENSION;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                // Fallback to original if canvas fails
+                console.warn("Canvas context failed, uploading original.");
+                resolve(file);
+                return;
+            }
+
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Compress to WebP
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    // Check if compressed blob is actually smaller. 
+                    // If original was very optimized (e.g. tiny png), webp might be bigger?
+                    // But usually for photos WebP is better. 
+                    // Let's just use the WebP version to ensure uniformity as requested ("use webp format").
+                    resolve(blob);
+                } else {
+                    console.warn("Canvas compression failed, uploading original.");
+                    resolve(file);
+                }
+            }, 'image/webp', 0.6);
+        };
+
+        img.onerror = (error) => {
+            URL.revokeObjectURL(url);
+            console.warn("Image load failed for compression, uploading original.", error);
+            resolve(file);
+        };
+
+        img.src = url;
+    });
+};
+
 export const uploadFile = async (file: Blob | File, userId: string): Promise<string> => {
     try {
-        // 1. Generate a unique path
+        // 1. Compress/Optimize Image
+        const compressedBlob = await compressImage(file);
+
+        // 2. Generate a unique path with .webp extension
         const timestamp = Date.now();
-        // Get extension from file type if possible, default to jpg
-        const extension = file.type.split('/')[1] || 'jpg';
+        // Force .webp extension for consistency as we converted it
+        const extension = 'webp';
         const path = `users/${userId}/images/${timestamp}.${extension}`;
         const storageRef = ref(storage, path);
 
-        // 2. Upload
-        await uploadBytes(storageRef, file);
+        // 3. Upload with metadata
+        const metadata = {
+            contentType: 'image/webp',
+        };
+        await uploadBytes(storageRef, compressedBlob, metadata);
 
-        // 3. Get Download URL
+        // 4. Get Download URL
         const downloadUrl = await getDownloadURL(storageRef);
         return downloadUrl;
     } catch (error) {

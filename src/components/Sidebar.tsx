@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { MapPin, Clapperboard, LayoutDashboard } from 'lucide-react';
+import { MapPin, Clapperboard, LayoutDashboard, User } from 'lucide-react';
 import clsx from 'clsx';
 
 export const Sidebar: React.FC = () => {
@@ -31,6 +31,10 @@ export const Sidebar: React.FC = () => {
                 <NavLink to="/scenes" className={linkClass}>
                     <Clapperboard size={18} />
                     <span>Scenes</span>
+                </NavLink>
+                <NavLink to="/characters" className={linkClass}>
+                    <User size={18} />
+                    <span>Characters</span>
                 </NavLink>
             </nav>
         </aside>

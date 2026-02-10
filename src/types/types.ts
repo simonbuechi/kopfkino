@@ -7,6 +7,7 @@ export interface Location {
     comment?: string;
     thumbnailUrl?: string;
     images?: string[];
+    order?: number;
 }
 
 export interface Scene {
@@ -33,4 +34,13 @@ export interface Settings {
     aspectRatio: AspectRatio;
     useRandomSeed: boolean;
     customSeed?: number;
+}
+
+export interface Character {
+    id: string;
+    name: string;
+    description: string;
+    comment?: string;
+    imageUrl?: string;
+    order?: number;
 }

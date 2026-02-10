@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { LocationsPage } from './features/locations';
 import { ScenesPage } from './features/scenes';
+import { CharactersPage } from './features/characters';
 import { DashboardPage } from './features/dashboard';
 import { AuthPage } from './features/auth/AuthPage.tsx';
 
@@ -40,6 +41,7 @@ function App() {
               <Route index element={<DashboardPage />} />
               <Route path="locations/*" element={<LocationsPage />} />
               <Route path="scenes/*" element={<ScenesPage />} />
+              <Route path="characters/*" element={<CharactersPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

@@ -65,7 +65,8 @@ export const LocationDetail: React.FC = () => {
             addLocation({
                 ...location,
                 images: updatedImages,
-                thumbnailUrl: location.thumbnailUrl || permanentUrl
+                thumbnailUrl: location.thumbnailUrl || permanentUrl,
+                order: location.order
             });
         } catch (error) {
             console.error("Failed to generate or upload image", error);
@@ -82,7 +83,8 @@ export const LocationDetail: React.FC = () => {
             addLocation({
                 ...location,
                 images: updatedImages,
-                thumbnailUrl: location.thumbnailUrl === imageUrl ? (updatedImages[0] || '') : location.thumbnailUrl
+                thumbnailUrl: location.thumbnailUrl === imageUrl ? (updatedImages[0] || '') : location.thumbnailUrl,
+                order: location.order
             });
 
             // 2. Delete from Storage (fire and forget from UI perspective)
@@ -109,7 +111,8 @@ export const LocationDetail: React.FC = () => {
             addLocation({
                 ...location,
                 images: updatedImages,
-                thumbnailUrl: location.thumbnailUrl || permanentUrl
+                thumbnailUrl: location.thumbnailUrl || permanentUrl,
+                order: location.order
             });
         } catch (error) {
             console.error("Failed to upload image", error);

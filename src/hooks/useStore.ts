@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Location, Scene, Shot, Settings } from '../types/types';
+import type { Location, Scene, Shot, Settings, Character } from '../types/types';
 import { storage } from '../services/storage';
 import { useAuth } from '../context/AuthContext';
 
@@ -13,6 +13,7 @@ export const useStore = () => {
     const [locations, setLocations] = useState<Location[]>([]);
     const [scenes, setScenes] = useState<Scene[]>([]);
     const [shots, setShots] = useState<Shot[]>([]);
+    const [characters, setCharacters] = useState<Character[]>([]);
     const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
     useEffect(() => {
@@ -20,6 +21,7 @@ export const useStore = () => {
             setLocations([]);
             setScenes([]);
             setShots([]);
+            setCharacters([]);
             setSettings(DEFAULT_SETTINGS);
             return;
         }
@@ -27,6 +29,7 @@ export const useStore = () => {
         const unsubLocations = storage.subscribeToLocations(user.uid, setLocations);
         const unsubScenes = storage.subscribeToScenes(user.uid, setScenes);
         const unsubShots = storage.subscribeToShots(user.uid, setShots);
+        const unsubCharacters = storage.subscribeToCharacters(user.uid, setCharacters);
         const unsubSettings = storage.subscribeToSettings(user.uid, (data) => {
             if (data) {
                 setSettings(data);
@@ -39,6 +42,7 @@ export const useStore = () => {
             unsubLocations();
             unsubScenes();
             unsubShots();
+            unsubCharacters();
             unsubSettings();
         };
     }, [user]);
@@ -55,6 +59,16 @@ export const useStore = () => {
     const replaceLocations = async (newLocations: Location[]) => {
         if (!user) return;
         await storage.replaceAllLocations(user.uid, newLocations);
+    };
+
+    const reorderLocations = async (newOrder: Location[]) => {
+        if (!user) return;
+        setLocations(newOrder);
+        const locationsWithOrder = newOrder.map((loc, index) => ({
+            ...loc,
+            order: index
+        }));
+        await storage.updateLocationOrders(user.uid, locationsWithOrder);
     };
 
     // Scenes
@@ -89,7 +103,40 @@ export const useStore = () => {
         await storage.replaceAllShots(user.uid, newShots);
     };
 
-    // Settings
+    // Characters
+    const addCharacter = async (character: Character) => {
+        if (!user) return;
+        await storage.saveCharacter(user.uid, character);
+    };
+    const deleteCharacter = async (id: string) => {
+        if (!user) return;
+        await storage.deleteCharacter(user.uid, id);
+    };
+    const updateCharacter = async (character: Character) => {
+        if (!user) return;
+        await storage.saveCharacter(user.uid, character);
+    };
+    const replaceCharacters = async (newCharacters: Character[]) => {
+        if (!user) return;
+        await storage.replaceAllCharacters(user.uid, newCharacters);
+    };
+
+    const reorderCharacters = async (newOrder: Character[]) => {
+        if (!user) return;
+
+        // Optimistic update
+        setCharacters(newOrder);
+
+        // Update orders in storage
+        // We need to ensure the validation of 'order' property
+        const charactersWithOrder = newOrder.map((char, index) => ({
+            ...char,
+            order: index
+        }));
+
+        await storage.updateCharacterOrders(user.uid, charactersWithOrder);
+    };
+
     const updateSettings = async (newSettings: Settings) => {
         if (!user) return;
         await storage.saveSettings(user.uid, newSettings);
@@ -105,10 +152,12 @@ export const useStore = () => {
         locations,
         scenes,
         shots,
+        characters,
         settings,
         addLocation,
         deleteLocation,
         replaceLocations,
+        reorderLocations,
         addScene,
         deleteScene,
         replaceScenes,
@@ -116,6 +165,11 @@ export const useStore = () => {
         deleteShot,
         replaceShots,
         updateShot,
+        addCharacter,
+        deleteCharacter,
+        updateCharacter,
+        replaceCharacters,
+        reorderCharacters,
         updateSettings,
         refresh,
     };

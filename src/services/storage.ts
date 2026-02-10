@@ -4,17 +4,19 @@ import {
     setDoc,
     deleteDoc,
     onSnapshot,
-    query
+    query,
+    writeBatch
 } from 'firebase/firestore';
 import type { Unsubscribe } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Location, Scene, Shot, Settings } from '../types/types';
+import type { Location, Scene, Shot, Settings, Character } from '../types/types';
 
 const COLLECTIONS = {
     USERS: 'users',
     LOCATIONS: 'locations',
     SCENES: 'scenes',
     SHOTS: 'shots',
+    CHARACTERS: 'characters',
     SETTINGS: 'settings', // Subcollection or doc logic
 };
 
@@ -34,8 +36,22 @@ export const storage = {
         const q = query(getUserCollection(userId, COLLECTIONS.LOCATIONS));
         return onSnapshot(q, (snapshot) => {
             const locations = snapshot.docs.map(doc => doc.data() as Location);
+            locations.sort((a, b) => {
+                const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+                const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+                return orderA - orderB;
+            });
             callback(locations);
         });
+    },
+
+    updateLocationOrders: async (userId: string, locations: Location[]) => {
+        const batch = writeBatch(db);
+        locations.forEach((loc) => {
+            const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.LOCATIONS, loc.id);
+            batch.update(docRef, { order: loc.order });
+        });
+        await batch.commit();
     },
 
     saveLocation: async (userId: string, location: Location) => {
@@ -128,6 +144,52 @@ export const storage = {
     replaceAllShots: async (userId: string, shots: Shot[]) => {
         for (const shot of shots) {
             await storage.saveShot(userId, shot);
+        }
+    },
+
+    // Characters
+    subscribeToCharacters: (userId: string, callback: (characters: Character[]) => void): Unsubscribe => {
+        const q = query(getUserCollection(userId, COLLECTIONS.CHARACTERS));
+        return onSnapshot(q, (snapshot) => {
+            const characters = snapshot.docs.map(doc => doc.data() as Character);
+            // Sort by order if available, otherwise fallback to creation time natural order
+            // Since we don't have creation time explicitly yet, maybe name? or just keep random.
+            // Let's sort by order, treating undefined as Infinity (or 0 if we want them at top). 
+            // Typically new items might not have order. We should probably assign them one.
+            // For now:
+            characters.sort((a, b) => {
+                const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+                const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+                return orderA - orderB;
+            });
+            callback(characters);
+        });
+    },
+
+    updateCharacterOrders: async (userId: string, characters: Character[]) => {
+        // We could use a batch here for efficiency
+        const batch = writeBatch(db);
+        characters.forEach((char) => {
+            const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.CHARACTERS, char.id);
+            batch.update(docRef, { order: char.order });
+        });
+        await batch.commit();
+    },
+
+    saveCharacter: async (userId: string, character: Character) => {
+        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.CHARACTERS, character.id);
+        await setDoc(docRef, character);
+    },
+
+    deleteCharacter: async (userId: string, characterId: string) => {
+        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.CHARACTERS, characterId);
+        await deleteDoc(docRef);
+    },
+
+    replaceAllCharacters: async (userId: string, characters: Character[]) => {
+        // Simple loop implementation as per other replace methods
+        for (const char of characters) {
+            await storage.saveCharacter(userId, char);
         }
     }
 };
