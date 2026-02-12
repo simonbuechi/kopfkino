@@ -17,15 +17,18 @@ export interface Scene {
     description: string;
     comment?: string;
     locationId: string;
+    characters?: string[];
+    shots?: Shot[];
+    order?: number;
 }
 
 export interface Shot {
     id: string;
-    sceneId: string;
-    number: string;
+    number?: string;
     name: string;
     description: string;
     visualizationUrl?: string;
+    imageUrl?: string;
 }
 
 export type AspectRatio = '1:1' | '16:9';

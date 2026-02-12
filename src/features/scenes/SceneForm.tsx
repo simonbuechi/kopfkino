@@ -8,7 +8,7 @@ import type { Scene } from '../../types/types';
 export const SceneForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { scenes, addScene, locations } = useStore();
+    const { scenes, addScene, locations, characters } = useStore();
 
     const [formData, setFormData] = useState<Scene>({
         id: crypto.randomUUID(),
@@ -17,6 +17,8 @@ export const SceneForm: React.FC = () => {
         description: '',
         comment: '',
         locationId: '',
+        characters: [],
+        shots: [], // Initialize shots
     });
 
     useEffect(() => {
@@ -31,6 +33,17 @@ export const SceneForm: React.FC = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const toggleCharacter = (characterId: string) => {
+        setFormData(prev => {
+            const current = prev.characters || [];
+            if (current.includes(characterId)) {
+                return { ...prev, characters: current.filter(id => id !== characterId) };
+            } else {
+                return { ...prev, characters: [...current, characterId] };
+            }
+        });
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -83,6 +96,45 @@ export const SceneForm: React.FC = () => {
                             </option>
                         ))}
                     </select>
+                </div>
+
+                <div className="flex flex-col gap-2 w-full">
+                    <label className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Characters</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                        {characters.map(char => {
+                            const isSelected = formData.characters?.includes(char.id);
+                            return (
+                                <div
+                                    key={char.id}
+                                    onClick={() => toggleCharacter(char.id)}
+                                    className={`
+                                        cursor-pointer rounded-lg border p-2 flex items-center gap-3 transition-all
+                                        ${isSelected
+                                            ? 'border-zinc-900 bg-zinc-50 dark:border-white dark:bg-zinc-800'
+                                            : 'border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700'}
+                                    `}
+                                >
+                                    <div className="w-8 h-8 rounded bg-zinc-100 dark:bg-zinc-800 flex-shrink-0 overflow-hidden">
+                                        {char.imageUrl ? (
+                                            <img src={char.imageUrl} alt={char.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-zinc-400">
+                                                <span className="text-xs">?</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-medium truncate text-zinc-900 dark:text-zinc-100">{char.name}</p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {characters.length === 0 && (
+                            <div className="col-span-full text-center py-4 text-zinc-500 text-sm italic">
+                                No characters available. Create some characters first.
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <TextArea

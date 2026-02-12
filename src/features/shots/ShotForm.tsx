@@ -9,44 +9,41 @@ export const ShotForm: React.FC = () => {
     // We expect the URL to be /scenes/:sceneId/shots/new or /scenes/:sceneId/shots/:shotId/edit
     const { id: sceneId, shotId } = useParams<{ id: string, shotId?: string }>();
     const navigate = useNavigate();
-    const { shots, addShot, scenes } = useStore();
+    const { scenes, addShotToScene, updateShotInScene } = useStore();
 
     const scene = scenes.find(s => s.id === sceneId);
 
     const [formData, setFormData] = useState<Shot>({
         id: crypto.randomUUID(),
-        sceneId: sceneId || '',
-        number: '',
+        // number: '', // Removed
         name: '',
         description: '',
         visualizationUrl: '',
     });
 
     useEffect(() => {
-        if (sceneId) {
-            setFormData(prev => ({ ...prev, sceneId }));
-        }
-    }, [sceneId]);
-
-    useEffect(() => {
-        if (shotId) {
-            const existing = shots.find((s) => s.id === shotId);
+        if (shotId && scene && scene.shots) {
+            const existing = scene.shots.find((s) => s.id === shotId);
             if (existing) {
                 setFormData(existing);
             }
         }
-    }, [shotId, shots]);
+    }, [shotId, scene]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!sceneId) return; // Should not happen given routing
+        if (!sceneId) return;
 
-        addShot(formData);
+        if (shotId) {
+            await updateShotInScene(sceneId, formData);
+        } else {
+            await addShotToScene(sceneId, formData);
+        }
         navigate(`/scenes/${sceneId}`);
     };
 
@@ -59,16 +56,6 @@ export const ShotForm: React.FC = () => {
             </h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-6 bg-white dark:bg-zinc-900 p-8 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
                 <div className="flex gap-4">
-                    <div className="w-24 flex-shrink-0">
-                        <Input
-                            name="number"
-                            label="Shot #"
-                            value={formData.number}
-                            onChange={handleChange}
-                            required
-                            placeholder="1"
-                        />
-                    </div>
                     <div className="flex-1">
                         <Input
                             name="name"

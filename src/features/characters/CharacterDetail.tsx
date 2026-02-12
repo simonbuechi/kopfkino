@@ -2,57 +2,166 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
-import { ArrowLeft, Save, Trash2, User, Loader2, Upload, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, User, Loader2, Upload, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { Character } from '../../types/types';
-import { uploadFile, deleteImageFromUrl, uploadImageFromUrl } from '../../services/imageService';
+import { useDebounce } from '../../hooks/useDebounce';
+import { uploadFile, deleteImageFromUrl } from '../../services/imageService';
 
 export const CharacterDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { characters, addCharacter, deleteCharacter, settings } = useStore();
+    const { characters, addCharacter, deleteCharacter } = useStore();
     const { user } = useAuth();
 
     const isNew = id === 'new';
     const existingCharacter = characters.find(c => c.id === id);
+
 
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [comment, setComment] = useState('');
     const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
 
+    // Track if potentially unsaved changes exist to avoid instant save on load
+    const [isDirty, setIsDirty] = useState(false);
+
+    // Debounce values to avoid saving on every keystroke
+    const debouncedName = useDebounce(name, 1000);
+    const debouncedDescription = useDebounce(description, 1000);
+    const debouncedComment = useDebounce(comment, 1000);
+
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
 
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const latestStateRef = React.useRef({ name, description, comment, imageUrl });
 
+    // Update ref whenever state changes
+    useEffect(() => {
+        latestStateRef.current = { name, description, comment, imageUrl };
+    }, [name, description, comment, imageUrl]);
+
+    // Initial load and sync effect
     useEffect(() => {
         if (existingCharacter) {
-            setName(existingCharacter.name);
-            setDescription(existingCharacter.description);
-            setComment(existingCharacter.comment || '');
-            setImageUrl(existingCharacter.imageUrl);
-        }
-    }, [existingCharacter]);
+            // If we are dirty (user has typed), do NOT overwrite unless ID changed (navigation)
+            // or unless current values match remote structure (e.g. after save)
+            // simplified: only sync if not dirty OR if ID changed (navigation)
 
+            const isSameCharacter = existingCharacter.id === id;
+
+            // If navigating to a new ID (that is existing), always sync
+            // If staying on same ID, only sync if not dirty (to avoid overwrite during typing)
+            // BUT: if we just saved, existingCharacter updates. We want to clear isDirty if matches.
+
+            if (!isSameCharacter || !isDirty) {
+                setName(existingCharacter.name);
+                setDescription(existingCharacter.description);
+                setComment(existingCharacter.comment || '');
+                setImageUrl(existingCharacter.imageUrl);
+                setIsDirty(false);
+            } else if (isDirty) {
+                // Check if remote matches local (meaning save was successful and propagated)
+                const matches =
+                    existingCharacter.name === name &&
+                    existingCharacter.description === description &&
+                    (existingCharacter.comment || '') === comment &&
+                    existingCharacter.imageUrl === imageUrl;
+
+                if (matches) {
+                    setIsDirty(false);
+                }
+            }
+        }
+    }, [existingCharacter, id, name, description, comment, imageUrl, isDirty]);
+
+    // Auto-save effect
     useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape' && isFullscreen) {
-                setIsFullscreen(false);
+        // Don't auto-save new characters or if not dirty
+        if (isNew || !existingCharacter || !isDirty) return;
+
+        // Don't save if name is empty
+        if (!debouncedName.trim()) return;
+
+        const save = async () => {
+            // Clear any existing timeout to remove status
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+            setSaveStatus('saving');
+            try {
+                const characterData: Character = {
+                    id: id!,
+                    name: debouncedName,
+                    description: debouncedDescription,
+                    comment: debouncedComment,
+                    imageUrl: imageUrl,
+                    order: existingCharacter.order,
+                };
+
+                await addCharacter(characterData);
+
+                // Only show "Saved" if the current state still matches what we saved.
+                // If user typed 'C' while we were saving 'B', latestState (B+C) != savedData (B).
+                const current = latestStateRef.current;
+                const isStillMatches =
+                    current.name === characterData.name &&
+                    current.description === characterData.description &&
+                    (current.comment || '') === (characterData.comment || '') &&
+                    current.imageUrl === characterData.imageUrl;
+
+                if (isStillMatches) {
+                    setSaveStatus('saved');
+                    // Set timeout to clear saved status
+                    saveTimeoutRef.current = setTimeout(() => {
+                        setSaveStatus(null);
+                    }, 2000);
+                } else {
+                    // If changed, silently finish (the next debounce wil trigger save)
+                    // We might move back to null or keep 'saving'?
+                    // Better to just clear status or let the next save cycle handle it.
+                    // If we leave it 'saving', it might look stuck until next save start.
+                    // If we set null, it just disappears.
+                    // Since next save logic (debounce) is running, it will eventually call save() which sets 'saving'.
+                    // So setting null here is safe.
+                    setSaveStatus(null);
+                }
+            } catch (error) {
+                console.error("Auto-save failed", error);
+                setSaveStatus('error');
             }
         };
 
-        if (isFullscreen) {
-            window.addEventListener('keydown', handleKeyDown);
+        const hasChanged =
+            debouncedName !== existingCharacter.name ||
+            debouncedDescription !== existingCharacter.description ||
+            debouncedComment !== (existingCharacter.comment || '') ||
+            imageUrl !== existingCharacter.imageUrl;
+
+        if (hasChanged) {
+            save();
         }
+    }, [debouncedName, debouncedDescription, debouncedComment, imageUrl, isNew, existingCharacter, addCharacter, id, isDirty]);
 
+    // Handle Image change for auto-save immediately
+    useEffect(() => {
+        if (!isNew && existingCharacter && imageUrl !== existingCharacter.imageUrl) {
+            setIsDirty(true);
+        }
+    }, [imageUrl, isNew, existingCharacter]);
+
+    // Clean up timeout on unmount
+    useEffect(() => {
         return () => {
-            window.removeEventListener('keydown', handleKeyDown);
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         };
-    }, [isFullscreen]);
+    }, []);
 
-    const handleSave = async () => {
+
+    const handleManualSave = async () => {
         if (!name.trim()) return;
         setIsSaving(true);
         try {
@@ -60,8 +169,11 @@ export const CharacterDetail: React.FC = () => {
                 id: isNew ? crypto.randomUUID() : id!,
                 name,
                 description,
-                order: existingCharacter?.order,
             };
+
+            if (existingCharacter?.order !== undefined) {
+                characterData.order = existingCharacter.order;
+            }
 
             if (comment) characterData.comment = comment;
             if (imageUrl) characterData.imageUrl = imageUrl;
@@ -129,16 +241,36 @@ export const CharacterDetail: React.FC = () => {
 
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 pb-6 border-b border-zinc-200 dark:border-zinc-800">
                 <h1 className="text-4xl font-bold text-zinc-900 dark:text-white">{isNew ? 'New Character' : name}</h1>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                     {!isNew && (
-                        <Button variant="danger" onClick={handleDelete} size="sm">
-                            <Trash2 size={16} /> Delete
+                        <>
+                            {saveStatus === 'saving' && (
+                                <span className="text-zinc-500 text-sm flex items-center gap-1">
+                                    <Loader2 className="animate-spin" size={14} /> Saving...
+                                </span>
+                            )}
+                            {saveStatus === 'saved' && (
+                                <span className="text-green-600 dark:text-green-400 text-sm flex items-center gap-1 font-medium transition-opacity duration-500">
+                                    Saved
+                                </span>
+                            )}
+                            {saveStatus === 'error' && (
+                                <span className="text-red-600 text-sm font-medium">
+                                    Error saving
+                                </span>
+                            )}
+                            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-1"></div>
+                            <Button variant="danger" onClick={handleDelete} size="sm">
+                                <Trash2 size={16} /> Delete
+                            </Button>
+                        </>
+                    )}
+                    {isNew && (
+                        <Button onClick={handleManualSave} disabled={isSaving || !name} size="sm">
+                            {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                            Create Character
                         </Button>
                     )}
-                    <Button onClick={handleSave} disabled={isSaving || !name} size="sm">
-                        {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                        Save Character
-                    </Button>
                 </div>
             </div>
 
@@ -169,7 +301,7 @@ export const CharacterDetail: React.FC = () => {
 
                         <div className="flex flex-col gap-2">
                             <input type="file" ref={fileInputRef} onChange={onFileSelected} className="hidden" accept="image/*" />
-                            <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                            <Button size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                                 {isUploading ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
                                 Upload Image
                             </Button>
@@ -182,7 +314,12 @@ export const CharacterDetail: React.FC = () => {
                             <input
                                 type="text"
                                 value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                onChange={(e) => {
+                                    setName(e.target.value);
+                                    setIsDirty(true);
+                                    setSaveStatus(null);
+                                    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                                }}
                                 className="w-full p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
                                 placeholder="Character Name"
                             />
@@ -192,7 +329,12 @@ export const CharacterDetail: React.FC = () => {
                             <label className="text-sm font-medium text-zinc-900 dark:text-zinc-300">Description</label>
                             <textarea
                                 value={description}
-                                onChange={(e) => setDescription(e.target.value)}
+                                onChange={(e) => {
+                                    setDescription(e.target.value);
+                                    setIsDirty(true);
+                                    setSaveStatus(null);
+                                    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                                }}
                                 className="w-full p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[120px]"
                                 placeholder="Physical appearance, personality, role..."
                             />
@@ -202,7 +344,12 @@ export const CharacterDetail: React.FC = () => {
                             <label className="text-sm font-medium text-zinc-900 dark:text-zinc-300">Notes / Comments</label>
                             <textarea
                                 value={comment}
-                                onChange={(e) => setComment(e.target.value)}
+                                onChange={(e) => {
+                                    setComment(e.target.value);
+                                    setIsDirty(true);
+                                    setSaveStatus(null);
+                                    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                                }}
                                 className="w-full p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[80px]"
                                 placeholder="Internal notes, casting ideas..."
                             />

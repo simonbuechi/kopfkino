@@ -4,9 +4,10 @@ import { Card } from '../../components/ui/Card';
 import { MapPin, Clapperboard, Film, Sparkles } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
-    const { locations, scenes, shots } = useStore();
+    const { locations, scenes } = useStore();
 
     // Calculate visualizations
+    const shots = scenes.flatMap(s => s.shots || []);
     const visualisedShots = shots.filter(s => s.visualizationUrl).length;
 
     return (
@@ -56,9 +57,19 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             <div className="mt-12">
-                <h3 className="text-xl font-semibold mb-2 text-zinc-900 dark:text-white">Project Status</h3>
+                <h3 className="text-xl font-semibold mb-2 text-zinc-900 dark:text-white">Welcome</h3>
                 <p className="text-zinc-500 dark:text-zinc-400">
                     Welcome to Kopfkino. Use the sidebar to navigate to Locations or Scenes to start building your film project.
+                </p>
+            </div>
+
+            <div className="mt-12">
+                <h3 className="text-xl font-semibold mb-2 text-zinc-900 dark:text-white">Version</h3>
+                <p className="text-zinc-500 dark:text-zinc-400">
+                    Current version
+                </p>
+                <p className="text-zinc-500 dark:text-zinc-400">
+                    v0.1
                 </p>
             </div>
         </div>

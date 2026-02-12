@@ -87,13 +87,12 @@ const SortableLocationCard = ({
 
                     <div className="mt-4 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
                         <Button
-                            variant="secondary"
                             size="sm"
                             className="w-full"
                             onClick={() => onEdit(location.id)}
                         >
                             <Edit size={14} />
-                            Edit Location
+                            Edit
                         </Button>
                     </div>
                 </div>
@@ -250,11 +249,11 @@ export const LocationList: React.FC = () => {
                         className="hidden"
                         onChange={handleFileChange}
                     />
-                    <Button variant="secondary" onClick={handleImportClick} size="sm">
+                    <Button onClick={handleImportClick} size="sm">
                         <Upload size={16} />
                         Import CSV
                     </Button>
-                    <Button variant="secondary" onClick={handleExportClick} size="sm">
+                    <Button onClick={handleExportClick} size="sm">
                         <Download size={16} />
                         Export CSV
                     </Button>

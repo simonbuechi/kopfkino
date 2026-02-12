@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import type { Unsubscribe } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Location, Scene, Shot, Settings, Character } from '../types/types';
+import type { Location, Scene, Settings, Character } from '../types/types';
 
 const COLLECTIONS = {
     USERS: 'users',
@@ -69,8 +69,22 @@ export const storage = {
         const q = query(getUserCollection(userId, COLLECTIONS.SCENES));
         return onSnapshot(q, (snapshot) => {
             const scenes = snapshot.docs.map(doc => doc.data() as Scene);
+            scenes.sort((a, b) => {
+                const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+                const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+                return orderA - orderB;
+            });
             callback(scenes);
         });
+    },
+
+    updateSceneOrders: async (userId: string, scenes: Scene[]) => {
+        const batch = writeBatch(db);
+        scenes.forEach((scene) => {
+            const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SCENES, scene.id);
+            batch.update(docRef, { order: scene.order });
+        });
+        await batch.commit();
     },
 
     saveScene: async (userId: string, scene: Scene) => {
@@ -83,24 +97,8 @@ export const storage = {
         await deleteDoc(docRef);
     },
 
-    // Shots
-    subscribeToShots: (userId: string, callback: (shots: Shot[]) => void): Unsubscribe => {
-        const q = query(getUserCollection(userId, COLLECTIONS.SHOTS));
-        return onSnapshot(q, (snapshot) => {
-            const shots = snapshot.docs.map(doc => doc.data() as Shot);
-            callback(shots);
-        });
-    },
-
-    saveShot: async (userId: string, shot: Shot) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SHOTS, shot.id);
-        await setDoc(docRef, shot);
-    },
-
-    deleteShot: async (userId: string, shotId: string) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SHOTS, shotId);
-        await deleteDoc(docRef);
-    },
+    // Shots - Embedded in Scenes now, so no separate collection logic needed here.
+    // If we wanted to migrate old shots, we'd need a one-time script, but for now we assume they are gone or handled elsewhere.
 
     // Settings
     subscribeToSettings: (userId: string, callback: (settings: Settings | null) => void): Unsubscribe => {
@@ -119,17 +117,8 @@ export const storage = {
         await setDoc(docRef, settings);
     },
 
-    // Batch replacements (keeping the interface similar, but might be less used with real-time)
-    // For migration or bulk updates, we can implement if needed. 
-    // Implementing simple loop version for now as Firestore batch has limits (500 ops)
-    // and we don't expect huge datasets immediately.
+    // Batch replacements
     replaceAllLocations: async (userId: string, locations: Location[]) => {
-        // Warning: This is destructive and inefficient for large sets. 
-        // In a real app we'd want to be careful. 
-        // For now, we'll just save each one. Deletion of old ones is not handled here!
-        // To strictly "replace", we should delete all first.
-        // Given the prompt simplified requirements, I will assume we just upsert for now or skip implementing logic if not strictly needed.
-        // Actually, let's just implement upsert.
         for (const loc of locations) {
             await storage.saveLocation(userId, loc);
         }
@@ -138,12 +127,6 @@ export const storage = {
     replaceAllScenes: async (userId: string, scenes: Scene[]) => {
         for (const scene of scenes) {
             await storage.saveScene(userId, scene);
-        }
-    },
-
-    replaceAllShots: async (userId: string, shots: Shot[]) => {
-        for (const shot of shots) {
-            await storage.saveShot(userId, shot);
         }
     },
 

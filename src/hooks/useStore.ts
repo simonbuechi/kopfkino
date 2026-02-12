@@ -12,7 +12,6 @@ export const useStore = () => {
     const { user } = useAuth();
     const [locations, setLocations] = useState<Location[]>([]);
     const [scenes, setScenes] = useState<Scene[]>([]);
-    const [shots, setShots] = useState<Shot[]>([]);
     const [characters, setCharacters] = useState<Character[]>([]);
     const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
@@ -20,7 +19,6 @@ export const useStore = () => {
         if (!user) {
             setLocations([]);
             setScenes([]);
-            setShots([]);
             setCharacters([]);
             setSettings(DEFAULT_SETTINGS);
             return;
@@ -28,7 +26,6 @@ export const useStore = () => {
 
         const unsubLocations = storage.subscribeToLocations(user.uid, setLocations);
         const unsubScenes = storage.subscribeToScenes(user.uid, setScenes);
-        const unsubShots = storage.subscribeToShots(user.uid, setShots);
         const unsubCharacters = storage.subscribeToCharacters(user.uid, setCharacters);
         const unsubSettings = storage.subscribeToSettings(user.uid, (data) => {
             if (data) {
@@ -41,7 +38,6 @@ export const useStore = () => {
         return () => {
             unsubLocations();
             unsubScenes();
-            unsubShots();
             unsubCharacters();
             unsubSettings();
         };
@@ -85,22 +81,60 @@ export const useStore = () => {
         await storage.replaceAllScenes(user.uid, newScenes);
     };
 
-    // Shots
-    const addShot = async (shot: Shot) => {
+    const reorderScenes = async (newOrder: Scene[]) => {
         if (!user) return;
-        await storage.saveShot(user.uid, shot);
+        setScenes(newOrder);
+        const scenesWithOrder = newOrder.map((scene, index) => ({
+            ...scene,
+            order: index
+        }));
+        await storage.updateSceneOrders(user.uid, scenesWithOrder);
     };
-    const deleteShot = async (id: string) => {
+
+    // Shots - Managed within Scenes
+    const addShotToScene = async (sceneId: string, shot: Shot) => {
         if (!user) return;
-        await storage.deleteShot(user.uid, id);
+        const scene = scenes.find(s => s.id === sceneId);
+        if (!scene) return;
+
+        const currentShots = scene.shots || [];
+        const updatedScene = { ...scene, shots: [...currentShots, shot] };
+        await storage.saveScene(user.uid, updatedScene);
     };
-    const updateShot = async (shot: Shot) => {
+
+    const deleteShotFromScene = async (sceneId: string, shotId: string) => {
         if (!user) return;
-        await storage.saveShot(user.uid, shot);
+        const scene = scenes.find(s => s.id === sceneId);
+        if (!scene || !scene.shots) return;
+
+        const updatedShots = scene.shots.filter(s => s.id !== shotId);
+        const updatedScene = { ...scene, shots: updatedShots };
+        await storage.saveScene(user.uid, updatedScene);
     };
-    const replaceShots = async (newShots: Shot[]) => {
+
+    const updateShotInScene = async (sceneId: string, shot: Shot) => {
         if (!user) return;
-        await storage.replaceAllShots(user.uid, newShots);
+        const scene = scenes.find(s => s.id === sceneId);
+        if (!scene || !scene.shots) return;
+
+        const updatedShots = scene.shots.map(s => s.id === shot.id ? shot : s);
+        const updatedScene = { ...scene, shots: updatedShots };
+        await storage.saveScene(user.uid, updatedScene);
+    };
+
+    const reorderShotsInScene = async (sceneId: string, newShots: Shot[]) => {
+        if (!user) return;
+        const scene = scenes.find(s => s.id === sceneId);
+        if (!scene) return;
+
+        const updatedScene = { ...scene, shots: newShots };
+
+        // Optimistic update if we want, but local state in UI handles drag visually. 
+        // We might want to update store state too for consistency if we don't refetch immediately.
+        // Actually since we subscribe to scenes, we should wait for Firestore or update optimistic.
+        // For simplicity and speed in UI, we often rely on local state during drag, and commit on end.
+
+        await storage.saveScene(user.uid, updatedScene);
     };
 
     // Characters
@@ -151,7 +185,6 @@ export const useStore = () => {
     return {
         locations,
         scenes,
-        shots,
         characters,
         settings,
         addLocation,
@@ -161,10 +194,11 @@ export const useStore = () => {
         addScene,
         deleteScene,
         replaceScenes,
-        addShot,
-        deleteShot,
-        replaceShots,
-        updateShot,
+        reorderScenes,
+        addShotToScene,
+        deleteShotFromScene,
+        updateShotInScene,
+        reorderShotsInScene,
         addCharacter,
         deleteCharacter,
         updateCharacter,

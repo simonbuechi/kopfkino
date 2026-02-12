@@ -1,23 +1,169 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
-import { MapPin, Edit, Trash2, ArrowLeft, Sparkles, Loader2, X, Upload } from 'lucide-react';
+import { MapPin, Trash2, ArrowLeft, Sparkles, Loader2, X, Upload } from 'lucide-react';
 import { generateImage } from '../../services/ai';
 import { uploadImageFromUrl, deleteImageFromUrl, uploadFile } from '../../services/imageService';
 import { useAuth } from '../../context/AuthContext';
+import { useDebounce } from '../../hooks/useDebounce';
+import type { Location } from '../../types/types';
 
 export const LocationDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { locations, deleteLocation, addLocation, scenes, settings } = useStore();
     const { user } = useAuth();
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+    // Derived state
     const location = locations.find((l) => l.id === id);
     const associatedScenes = scenes.filter(s => s.locationId === id);
+
+    // Local state for editing
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [geolocation, setGeolocation] = useState('');
+    const [comment, setComment] = useState('');
+    const [images, setImages] = useState<string[]>([]);
+    const [thumbnailUrl, setThumbnailUrl] = useState<string>('');
+
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+
+    // Auto-save state
+    const [isDirty, setIsDirty] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
+
+    const debouncedName = useDebounce(name, 1000);
+    const debouncedDescription = useDebounce(description, 1000);
+    const debouncedGeolocation = useDebounce(geolocation, 1000);
+    const debouncedComment = useDebounce(comment, 1000);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const latestStateRef = useRef({ name, description, geolocation, comment, images, thumbnailUrl });
+
+    // Update ref whenever state changes
+    useEffect(() => {
+        latestStateRef.current = { name, description, geolocation, comment, images, thumbnailUrl };
+    }, [name, description, geolocation, comment, images, thumbnailUrl]);
+
+    // Initial load and sync effect
+    useEffect(() => {
+        if (location) {
+            const isSameLocation = location.id === id;
+
+            if (!isSameLocation || !isDirty) {
+                // Only update if value actually changed to prevent loops
+                if (location.name !== name) setName(location.name);
+                if (location.description !== description) setDescription(location.description);
+                if ((location.geolocation || '') !== geolocation) setGeolocation(location.geolocation || '');
+                if ((location.comment || '') !== comment) setComment(location.comment || '');
+
+                // Deep check for arrays
+                if (JSON.stringify(location.images || []) !== JSON.stringify(images)) {
+                    setImages(location.images || []);
+                }
+
+                if ((location.thumbnailUrl || '') !== thumbnailUrl) setThumbnailUrl(location.thumbnailUrl || '');
+
+                if (isDirty) setIsDirty(false); // Only set if needed
+            } else if (isDirty) {
+                // Check if remote matches local
+                const matches =
+                    location.name === name &&
+                    location.description === description &&
+                    (location.geolocation || '') === geolocation &&
+                    (location.comment || '') === comment &&
+                    JSON.stringify(location.images || []) === JSON.stringify(images) &&
+                    (location.thumbnailUrl || '') === thumbnailUrl;
+
+                if (matches) {
+                    setIsDirty(false);
+                }
+            }
+        }
+    }, [location, id, name, description, geolocation, comment, images, thumbnailUrl, isDirty]);
+
+    // Auto-save effect
+    useEffect(() => {
+        if (!location || !isDirty) return;
+        if (!debouncedName.trim()) return;
+
+        const save = async () => {
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+            setSaveStatus('saving');
+
+            try {
+                const locationData: Location = {
+                    ...location,
+                    name: debouncedName,
+                    description: debouncedDescription,
+                    geolocation: debouncedGeolocation,
+                    comment: debouncedComment,
+                    images: images,
+                    thumbnailUrl: thumbnailUrl,
+                };
+
+                await addLocation(locationData);
+
+                // Check staleness
+                const current = latestStateRef.current;
+                const isStillMatches =
+                    current.name === locationData.name &&
+                    current.description === locationData.description &&
+                    current.geolocation === (locationData.geolocation || '') &&
+                    current.comment === (locationData.comment || '') &&
+                    JSON.stringify(current.images) === JSON.stringify(locationData.images) &&
+                    current.thumbnailUrl === (locationData.thumbnailUrl || '');
+
+                if (isStillMatches) {
+                    setSaveStatus('saved');
+                    saveTimeoutRef.current = setTimeout(() => {
+                        setSaveStatus(null);
+                    }, 2000);
+                } else {
+                    setSaveStatus(null);
+                }
+
+            } catch (error) {
+                console.error("Auto-save failed", error);
+                setSaveStatus('error');
+            }
+        };
+
+        const hasChanged =
+            debouncedName !== location.name ||
+            debouncedDescription !== location.description ||
+            debouncedGeolocation !== (location.geolocation || '') ||
+            debouncedComment !== (location.comment || '') ||
+            JSON.stringify(images) !== JSON.stringify(location.images || []) ||
+            thumbnailUrl !== (location.thumbnailUrl || '');
+
+        if (hasChanged) {
+            save();
+        }
+
+    }, [debouncedName, debouncedDescription, debouncedGeolocation, debouncedComment, images, thumbnailUrl, location, addLocation, isDirty]);
+
+    // Cleanup timeout
+    useEffect(() => {
+        return () => {
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        };
+    }, []);
+
+    // Effect to mark dirty on image changes (immediate)
+    useEffect(() => {
+        if (location) {
+            const imagesChanged = JSON.stringify(images) !== JSON.stringify(location.images || []);
+            const thumbChanged = thumbnailUrl !== (location.thumbnailUrl || '');
+            if (imagesChanged || thumbChanged) {
+                setIsDirty(true);
+            }
+        }
+    }, [images, thumbnailUrl, location]);
+
 
     if (!location) {
         return <div className="p-8">Location not found</div>;
@@ -33,9 +179,9 @@ export const LocationDetail: React.FC = () => {
     const handleGenerateImage = async () => {
         if (!user) return;
         setIsGenerating(true);
-        const prompt = `Cinematic location concept art: ${location.name}. 
-        Description: ${location.description}. 
-        Geolocation/Context: ${location.geolocation}. 
+        const prompt = `Cinematic location concept art: ${name}. 
+        Description: ${description}. 
+        Geolocation/Context: ${geolocation}. 
         Mood: Atmospheric, high detail, photorealistic, 8k.`;
 
         // Determine dimensions based on aspect ratio setting
@@ -59,15 +205,12 @@ export const LocationDetail: React.FC = () => {
             // 2. Upload to Firebase Storage
             const permanentUrl = await uploadImageFromUrl(tempUrl, user.uid);
 
-            // 3. Update Firestore with new persistent URL
-            const updatedImages = [...(location.images || []), permanentUrl];
+            // 3. Update Local State (Effect will trigger save)
+            const updatedImages = [...images, permanentUrl];
+            setImages(updatedImages);
+            if (!thumbnailUrl) setThumbnailUrl(permanentUrl);
+            setIsDirty(true); // Ensure dirty to prevent sync revert
 
-            addLocation({
-                ...location,
-                images: updatedImages,
-                thumbnailUrl: location.thumbnailUrl || permanentUrl,
-                order: location.order
-            });
         } catch (error) {
             console.error("Failed to generate or upload image", error);
             alert("Failed to generate image. Ensure popups are allowed if Auth is pending, or check console.");
@@ -78,16 +221,15 @@ export const LocationDetail: React.FC = () => {
 
     const handleDeleteImage = async (imageUrl: string) => {
         if (confirm('Delete this image?')) {
-            // 1. Remove from local state/Firestore immediately for UI responsiveness
-            const updatedImages = (location.images || []).filter(img => img !== imageUrl);
-            addLocation({
-                ...location,
-                images: updatedImages,
-                thumbnailUrl: location.thumbnailUrl === imageUrl ? (updatedImages[0] || '') : location.thumbnailUrl,
-                order: location.order
-            });
+            // 1. Update Local State (Effect will trigger save)
+            const updatedImages = images.filter(img => img !== imageUrl);
+            setImages(updatedImages);
+            if (thumbnailUrl === imageUrl) {
+                setThumbnailUrl(updatedImages[0] || '');
+            }
+            setIsDirty(true); // Ensure dirty to prevent sync revert
 
-            // 2. Delete from Storage (fire and forget from UI perspective)
+            // 2. Delete from Storage (fire and forget)
             await deleteImageFromUrl(imageUrl);
         }
     };
@@ -105,15 +247,12 @@ export const LocationDetail: React.FC = () => {
             // 1. Upload to Firebase Storage
             const permanentUrl = await uploadFile(file, user.uid);
 
-            // 2. Update Firestore with new persistent URL
-            const updatedImages = [...(location.images || []), permanentUrl];
+            // 2. Update Local State (Effect will trigger save)
+            const updatedImages = [...images, permanentUrl];
+            setImages(updatedImages);
+            if (!thumbnailUrl) setThumbnailUrl(permanentUrl);
+            setIsDirty(true); // Ensure dirty to prevent sync revert
 
-            addLocation({
-                ...location,
-                images: updatedImages,
-                thumbnailUrl: location.thumbnailUrl || permanentUrl,
-                order: location.order
-            });
         } catch (error) {
             console.error("Failed to upload image", error);
             alert("Failed to upload image.");
@@ -127,27 +266,61 @@ export const LocationDetail: React.FC = () => {
     return (
         <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto">
             <div>
-                <Button variant="ghost" onClick={() => navigate('/locations')} size="sm" className="-ml-3 text-zinc-500">
+                <Link
+                    to="/locations"
+                    className="inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 h-8 px-3 text-sm -ml-3 gap-2"
+                >
                     <ArrowLeft size={16} /> Back to Locations
-                </Button>
+                </Link>
             </div>
 
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 pb-6 border-b border-zinc-200 dark:border-zinc-800">
-                <div>
-                    <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-2">{location.name}</h1>
-                    <div className="flex gap-4 text-zinc-500">
-                        {location.geolocation && (
-                            <div className="flex items-center gap-1.5 text-sm">
-                                <MapPin size={16} />
-                                {location.geolocation}
-                            </div>
-                        )}
+                <div className="flex-1 w-full">
+                    <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => {
+                            setName(e.target.value);
+                            setIsDirty(true);
+                            setSaveStatus(null);
+                            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                        }}
+                        className="text-4xl font-bold text-zinc-900 dark:text-white mb-2 bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full placeholder-zinc-300 dark:placeholder-zinc-700"
+                        placeholder="Location Name"
+                    />
+                    <div className="flex gap-4 text-zinc-500 items-center">
+                        <MapPin size={16} />
+                        <input
+                            type="text"
+                            value={geolocation}
+                            onChange={(e) => {
+                                setGeolocation(e.target.value);
+                                setIsDirty(true);
+                                setSaveStatus(null);
+                                if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                            }}
+                            className="bg-transparent border-none focus:outline-none focus:ring-0 p-0 text-sm w-full placeholder-zinc-400"
+                            placeholder="Add geolocation..."
+                        />
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="secondary" onClick={() => navigate('edit')} size="sm">
-                        <Edit size={16} /> Edit
-                    </Button>
+                <div className="flex gap-2 items-center">
+                    {saveStatus === 'saving' && (
+                        <span className="text-zinc-500 text-sm flex items-center gap-1">
+                            <Loader2 className="animate-spin" size={14} /> Saving...
+                        </span>
+                    )}
+                    {saveStatus === 'saved' && (
+                        <span className="text-green-600 dark:text-green-400 text-sm flex items-center gap-1 font-medium transition-opacity duration-500">
+                            Saved
+                        </span>
+                    )}
+                    {saveStatus === 'error' && (
+                        <span className="text-red-600 text-sm font-medium">
+                            Error saving
+                        </span>
+                    )}
+                    <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-1"></div>
                     <Button variant="danger" onClick={handleDelete} size="sm">
                         <Trash2 size={16} /> Delete
                     </Button>
@@ -169,7 +342,7 @@ export const LocationDetail: React.FC = () => {
                                 />
                                 <Button onClick={handleImageUploadClick} disabled={isUploading || isGenerating} size="sm" variant="secondary">
                                     {isUploading ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
-                                    {isUploading ? 'Uploading...' : 'Add Image'}
+                                    {isUploading ? 'Uploading...' : 'Upload Image'}
                                 </Button>
                                 <Button onClick={handleGenerateImage} disabled={isGenerating || isUploading} size="sm">
                                     {isGenerating ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
@@ -178,9 +351,9 @@ export const LocationDetail: React.FC = () => {
                             </div>
                         </div>
 
-                        {(location.images && location.images.length > 0) ? (
+                        {(images && images.length > 0) ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {location.images.map((img, idx) => (
+                                {images.map((img, idx) => (
                                     <div key={idx} className="relative rounded-xl overflow-hidden group aspect-video bg-zinc-100 dark:bg-zinc-800">
                                         <img src={img} alt={`Location viz ${idx}`} className="w-full h-full object-cover" />
                                         <button
@@ -193,11 +366,11 @@ export const LocationDetail: React.FC = () => {
                                 ))}
                             </div>
                         ) : (
-                            location.thumbnailUrl ? (
+                            thumbnailUrl ? (
                                 <div className="rounded-xl overflow-hidden aspect-video bg-zinc-100 dark:bg-zinc-800 max-h-[400px]">
                                     <img
-                                        src={location.thumbnailUrl}
-                                        alt={location.name}
+                                        src={thumbnailUrl}
+                                        alt={name}
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
@@ -212,14 +385,34 @@ export const LocationDetail: React.FC = () => {
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
-                    <section>
-                        <h3 className="font-semibold text-zinc-900 dark:text-white mb-2">Description</h3>
-                        <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed whitespace-pre-line">{location.description || 'No description provided.'}</p>
+                    <section className="flex flex-col gap-2">
+                        <h3 className="font-semibold text-zinc-900 dark:text-white">Description</h3>
+                        <textarea
+                            value={description}
+                            onChange={(e) => {
+                                setDescription(e.target.value);
+                                setIsDirty(true);
+                                setSaveStatus(null);
+                                if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                            }}
+                            className="w-full p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[120px] resize-y"
+                            placeholder="Detailed description of the location..."
+                        />
                     </section>
 
-                    <section>
-                        <h3 className="font-semibold text-zinc-900 dark:text-white mb-2">Comments</h3>
-                        <p className="text-zinc-600 dark:text-zinc-300 whitespace-pre-line">{location.comment || 'No comments.'}</p>
+                    <section className="flex flex-col gap-2">
+                        <h3 className="font-semibold text-zinc-900 dark:text-white">Comments</h3>
+                        <textarea
+                            value={comment}
+                            onChange={(e) => {
+                                setComment(e.target.value);
+                                setIsDirty(true);
+                                setSaveStatus(null);
+                                if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                            }}
+                            className="w-full p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[120px] resize-y"
+                            placeholder="Notes about lighting, access, etc."
+                        />
                     </section>
                 </div>
 
