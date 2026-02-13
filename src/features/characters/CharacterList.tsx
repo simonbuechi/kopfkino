@@ -4,6 +4,7 @@ import { useStore } from '../../hooks/useStore';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { User, Plus, Upload, Download, X, Edit, GripVertical, LayoutGrid, List } from 'lucide-react';
+import { downloadImage } from '../../services/imageService';
 import type { Character } from '../../types/types';
 import {
     DndContext,
@@ -302,8 +303,8 @@ export const CharacterList: React.FC = () => {
                         <button
                             onClick={() => setViewMode('expanded')}
                             className={`p-1.5 rounded-md transition-all ${viewMode === 'expanded'
-                                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                                 }`}
                             title="Expanded View"
                         >
@@ -312,8 +313,8 @@ export const CharacterList: React.FC = () => {
                         <button
                             onClick={() => setViewMode('slim')}
                             className={`p-1.5 rounded-md transition-all ${viewMode === 'slim'
-                                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                                 }`}
                             title="Slim View"
                         >
@@ -389,12 +390,24 @@ export const CharacterList: React.FC = () => {
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
                     onClick={() => setFullscreenImage(null)}
                 >
-                    <button
-                        className="absolute top-4 right-4 text-white hover:text-zinc-300 transition-colors bg-black/50 rounded-full p-2"
-                        onClick={() => setFullscreenImage(null)}
-                    >
-                        <X size={24} />
-                    </button>
+                    <div className="absolute top-4 right-4 flex gap-2">
+                        <button
+                            className="text-white hover:text-zinc-300 transition-colors bg-black/50 rounded-full p-2"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                downloadImage(fullscreenImage, `character-${new Date().getTime()}.png`);
+                            }}
+                            title="Download Image"
+                        >
+                            <Download size={24} />
+                        </button>
+                        <button
+                            className="text-white hover:text-zinc-300 transition-colors bg-black/50 rounded-full p-2"
+                            onClick={() => setFullscreenImage(null)}
+                        >
+                            <X size={24} />
+                        </button>
+                    </div>
                     <img
                         src={fullscreenImage}
                         alt="Fullscreen"

@@ -1,5 +1,16 @@
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from "firebase/storage";
 import { storage } from "./firebase";
+
+export const getImageCount = async (userId: string): Promise<number> => {
+    try {
+        const imagesRef = ref(storage, `users/${userId}/images`);
+        const result = await listAll(imagesRef);
+        return result.items.length;
+    } catch (error) {
+        console.error("Error getting image count:", error);
+        return 0;
+    }
+};
 
 export const uploadImageFromUrl = async (url: string, userId: string): Promise<string> => {
     try {
@@ -118,5 +129,27 @@ export const deleteImageFromUrl = async (downloadUrl: string) => {
     } catch (error) {
         console.error("Error deleting image:", error);
         // Don't throw, just log. 
+    }
+};
+
+export const downloadImage = async (url: string, filename: string) => {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+        console.error("Error downloading image:", error);
+        // Fallback to opening in new tab
+        window.open(url, '_blank');
     }
 };

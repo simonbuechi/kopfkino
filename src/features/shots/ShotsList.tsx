@@ -4,8 +4,9 @@ import { useStore } from '../../hooks/useStore';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { Edit, Trash2, Plus, Image as ImageIcon, Loader2, GripVertical, Upload, List, Grid } from 'lucide-react';
-import { uploadFile } from '../../services/imageService';
+import { Edit, Trash2, Plus, Image as ImageIcon, Loader2, GripVertical, Upload, List, Grid, Download } from 'lucide-react';
+
+import { uploadFile, downloadImage } from '../../services/imageService';
 import type { Shot } from '../../types/types';
 import {
     DndContext,
@@ -334,12 +335,24 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                     className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm"
                     onClick={() => setImageModal(null)}
                 >
-                    <button
-                        className="absolute top-4 right-4 text-white hover:text-zinc-300 p-2"
-                        onClick={() => setImageModal(null)}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                    </button>
+                    <div className="absolute top-4 right-4 flex gap-2">
+                        <button
+                            className="text-white hover:text-zinc-300 p-2 bg-black/50 rounded-full transition-colors"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                downloadImage(imageModal.url, `shot-${new Date().getTime()}.png`);
+                            }}
+                            title="Download Image"
+                        >
+                            <Download size={24} />
+                        </button>
+                        <button
+                            className="text-white hover:text-zinc-300 p-2 bg-black/50 rounded-full transition-colors"
+                            onClick={() => setImageModal(null)}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                        </button>
+                    </div>
                     <img
                         src={imageModal.url}
                         alt={imageModal.alt}
@@ -348,6 +361,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                     />
                 </div>
             )}
+
         </div >
     );
 };
