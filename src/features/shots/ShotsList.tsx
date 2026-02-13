@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { Edit, Trash2, Plus, Image as ImageIcon, Loader2, GripVertical, Upload } from 'lucide-react';
+import { Edit, Trash2, Plus, Image as ImageIcon, Loader2, GripVertical, Upload, List, Grid } from 'lucide-react';
 import { uploadFile } from '../../services/imageService';
 import type { Shot } from '../../types/types';
 import {
@@ -36,13 +35,17 @@ const SortableShotItem = ({
     onUpload,
     onDelete,
     onEdit,
-    isUploading
+    isUploading,
+    viewMode,
+    onImageClick
 }: {
     shot: Shot;
     onUpload: (shot: Shot, file: File) => void;
     onDelete: (id: string) => void;
     onEdit: (id: string) => void;
     isUploading: boolean;
+    viewMode: 'expanded' | 'slim';
+    onImageClick: (url: string, alt: string) => void;
 }) => {
     const {
         attributes,
@@ -72,65 +75,131 @@ const SortableShotItem = ({
     // Prioritize imageUrl over visualizationUrl
     const displayImage = shot.imageUrl || shot.visualizationUrl;
 
+    if (viewMode === 'slim') {
+        return (
+            <div ref={setNodeRef} style={style} className="flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg group overflow-hidden">
+                <div className="flex items-center gap-3 p-3">
+                    {/* Drag Handle */}
+                    <div
+                        {...attributes}
+                        {...listeners}
+                        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-grab active:cursor-grabbing p-1"
+                    >
+                        <GripVertical size={16} />
+                    </div>
+
+                    <div className="font-medium text-zinc-900 dark:text-zinc-100 flex-1 truncate select-none">
+                        {shot.name}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-1">
+                        <button
+                            type="button"
+                            onClick={() => displayImage && onImageClick(displayImage, shot.name)}
+                            disabled={!displayImage}
+                            className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 disabled:opacity-30 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
+                            title={displayImage ? "View Full Image" : "No Image"}
+                        >
+                            <ImageIcon size={14} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => onEdit(shot.id)}
+                            className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
+                            title="Edit Shot"
+                        >
+                            <Edit size={14} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => onDelete(shot.id)}
+                            className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:text-zinc-500 dark:hover:text-red-400 dark:hover:bg-red-900/20"
+                            title="Delete Shot"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div ref={setNodeRef} style={style}>
-            <Card className="flex flex-col p-0 overflow-hidden group/card relative min-h-[160px]">
-                {/* Background Image / Visualization */}
-                <div className="absolute inset-0 z-0 bg-zinc-100 dark:bg-zinc-800">
+            <Card className="flex flex-col !p-0 overflow-hidden group/card bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                {/* Image Section */}
+                <div
+                    className="relative w-full aspect-video bg-zinc-100 dark:bg-zinc-800 cursor-pointer overflow-hidden group/image"
+                    onClick={() => displayImage && onImageClick(displayImage, shot.name)}
+                    title="View Full Image"
+                >
                     {displayImage ? (
-                        <img src={displayImage} alt={shot.description} className="w-full h-full object-cover opacity-100 group-hover/card:scale-105 transition-transform duration-500" />
+                        <img
+                            src={displayImage}
+                            alt={shot.description}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover/image:scale-105"
+                        />
                     ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-zinc-400 gap-2 opacity-50">
+                        <div className="w-full h-full flex items-center justify-center text-zinc-300 dark:text-zinc-700">
                             <ImageIcon size={32} />
                         </div>
                     )}
-                    {/* Gradient Overlay for Text Readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
+
+                    {/* Drag Handle - Overlay on top left of image */}
+                    <div
+                        {...attributes}
+                        {...listeners}
+                        className="absolute top-2 left-2 z-10 text-white bg-black/50 hover:bg-black/70 p-1 rounded cursor-grab active:cursor-grabbing transition-colors"
+                    >
+                        <GripVertical size={16} />
+                    </div>
                 </div>
 
-                {/* Drag Handle */}
-                <div
-                    {...attributes}
-                    {...listeners}
-                    className="absolute top-3 left-3 z-20 text-white/70 hover:text-white cursor-grab active:cursor-grabbing p-1 bg-black/20 hover:bg-black/40 rounded backdrop-blur-sm transition-all"
-                >
-                    <GripVertical size={20} />
-                </div>
-
-                {/* Content Overlay */}
-                <div className="relative z-10 p-5 flex flex-col h-full justify-end text-white">
-                    <div className="flex justify-between items-end gap-4">
-                        <div className="flex-1 space-y-1">
-                            <h3 className="text-xl font-bold leading-tight shadow-black drop-shadow-md">{shot.name}</h3>
-                            <p className="text-sm text-zinc-200 line-clamp-2 shadow-black drop-shadow-sm opacity-90">{shot.description}</p>
+                {/* Content Section */}
+                <div className="p-3 flex flex-col gap-1">
+                    <div className="flex justify-between items-start gap-2">
+                        <div className="min-w-0 flex-1">
+                            <h3 className="font-bold text-zinc-900 dark:text-white leading-tight truncate" title={shot.name}>{shot.name}</h3>
                         </div>
 
                         {/* Actions */}
-                        <div className="flex flex-col gap-2 shrink-0">
-                            <div className="flex gap-2">
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={handleFileChange}
-                                />
-                                <Button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="backdrop-blur-md bg-white/20 hover:bg-white/30 text-white border-none shadow-lg"
-                                    disabled={isUploading}
-                                >
-                                    {isUploading ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
-                                </Button>
-                                <Button onClick={() => onEdit(shot.id)} className="backdrop-blur-md bg-white/20 hover:bg-white/30 text-white border-none shadow-lg">
-                                    <Edit size={16} />
-                                </Button>
-                                <Button variant="danger" className="backdrop-blur-md bg-red-500/20 hover:bg-red-600/40 text-red-200 border-none shadow-lg" onClick={() => onDelete(shot.id)}>
-                                    <Trash2 size={16} />
-                                </Button>
-                            </div>
+                        <div className="flex gap-1 shrink-0">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className="flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50"
+                                title="Upload Image"
+                            >
+                                {isUploading ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onEdit(shot.id)}
+                                className="flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
+                                title="Edit Shot"
+                            >
+                                <Edit size={14} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onDelete(shot.id)}
+                                className="flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:text-zinc-400 dark:hover:text-red-400 dark:hover:bg-red-900/20"
+                                title="Delete Shot"
+                            >
+                                <Trash2 size={14} />
+                            </button>
                         </div>
                     </div>
+                    <p className="text-xs text-zinc-500 line-clamp-2">{shot.description}</p>
                 </div>
             </Card>
         </div>
@@ -142,10 +211,9 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [uploadingId, setUploadingId] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
 
-    // const scene = scenes.find(s => s.id === sceneId);
-    // Location and Scene are not needed for upload, but maybe for drag/drop context? 
-    // Actually sceneId is passed. 
+    const [imageModal, setImageModal] = useState<{ url: string; alt: string } | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -153,6 +221,17 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
+
+    // Close modal on ESC key
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setImageModal(null);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     const handleDelete = (id: string) => {
         if (confirm('Delete this shot?')) {
@@ -187,9 +266,33 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 relative">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Shots List</h3>
+                <div className="flex items-center gap-4">
+                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Shots List</h3>
+                    <div className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg flex gap-1">
+                        <button
+                            onClick={() => setViewMode('expanded')}
+                            className={`p-1.5 rounded-md transition-all ${viewMode === 'expanded'
+                                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                                }`}
+                            title="Expanded View"
+                        >
+                            <Grid size={14} />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('slim')}
+                            className={`p-1.5 rounded-md transition-all ${viewMode === 'slim'
+                                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                                }`}
+                            title="Slim View"
+                        >
+                            <List size={14} />
+                        </button>
+                    </div>
+                </div>
                 <Button size="sm" onClick={() => navigate(`shots/new`)}>
                     <Plus size={16} /> Add Shot
                 </Button>
@@ -200,7 +303,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}
             >
-                <div className="flex flex-col gap-6">
+                <div className={`flex flex-col gap-${viewMode === 'expanded' ? '6' : '3'}`}>
                     {shots.length === 0 ? (
                         <p className="text-zinc-500 italic">No shots yet.</p>
                     ) : (
@@ -216,12 +319,35 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                                     onDelete={handleDelete}
                                     onEdit={(id) => navigate(`shots/${id}/edit`)}
                                     isUploading={uploadingId === shot.id}
+                                    viewMode={viewMode}
+                                    onImageClick={(url, alt) => setImageModal({ url, alt })}
                                 />
                             ))}
                         </SortableContext >
                     )}
                 </div >
             </DndContext >
+
+            {/* Full Screen Image Modal */}
+            {imageModal && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm"
+                    onClick={() => setImageModal(null)}
+                >
+                    <button
+                        className="absolute top-4 right-4 text-white hover:text-zinc-300 p-2"
+                        onClick={() => setImageModal(null)}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                    </button>
+                    <img
+                        src={imageModal.url}
+                        alt={imageModal.alt}
+                        className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl pointer-events-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            )}
         </div >
     );
 };

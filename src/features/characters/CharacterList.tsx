@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { User, Plus, Upload, Download, X, Edit, GripVertical } from 'lucide-react';
+import { User, Plus, Upload, Download, X, Edit, GripVertical, LayoutGrid, List } from 'lucide-react';
 import type { Character } from '../../types/types';
 import {
     DndContext,
@@ -95,11 +95,65 @@ const SortableCharacterCard = ({
     );
 };
 
+// Sortable List Item Component
+const SortableCharacterListItem = ({
+    character,
+    onEdit
+}: {
+    character: Character;
+    onEdit: (id: string) => void;
+}) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: character.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 10 : 1,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} className="w-full">
+            <Card className="!p-3 flex items-center gap-4 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 relative group/item">
+                {/* Drag Handle */}
+                <div
+                    {...attributes}
+                    {...listeners}
+                    className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-grab active:cursor-grabbing"
+                >
+                    <GripVertical size={16} />
+                </div>
+
+                <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onEdit(character.id)}
+                    className="shrink-0 h-8 w-8 p-0 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                >
+                    <Edit size={18} />
+                </Button>
+
+                <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-zinc-900 dark:text-white truncate select-none">{character.name}</h3>
+                </div>
+            </Card>
+        </div>
+    );
+};
+
 export const CharacterList: React.FC = () => {
     const { characters, replaceCharacters, reorderCharacters } = useStore();
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -244,6 +298,28 @@ export const CharacterList: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 className="text-3xl font-bold text-zinc-900 dark:text-white">Characters</h2>
                 <div className="flex flex-wrap gap-2">
+                    <div className="flex bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1 mr-2">
+                        <button
+                            onClick={() => setViewMode('expanded')}
+                            className={`p-1.5 rounded-md transition-all ${viewMode === 'expanded'
+                                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                                }`}
+                            title="Expanded View"
+                        >
+                            <LayoutGrid size={16} />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('slim')}
+                            className={`p-1.5 rounded-md transition-all ${viewMode === 'slim'
+                                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                                }`}
+                            title="Slim View"
+                        >
+                            <List size={16} />
+                        </button>
+                    </div>
                     <input
                         type="file"
                         accept=".csv"
@@ -281,14 +357,26 @@ export const CharacterList: React.FC = () => {
                         items={characters.map(c => c.id)}
                         strategy={rectSortingStrategy}
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className={
+                            viewMode === 'expanded'
+                                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                                : "flex flex-col gap-2"
+                        }>
                             {characters.map((character) => (
-                                <SortableCharacterCard
-                                    key={character.id}
-                                    character={character}
-                                    onClickImage={setFullscreenImage}
-                                    onEdit={navigate}
-                                />
+                                viewMode === 'expanded' ? (
+                                    <SortableCharacterCard
+                                        key={character.id}
+                                        character={character}
+                                        onClickImage={setFullscreenImage}
+                                        onEdit={navigate}
+                                    />
+                                ) : (
+                                    <SortableCharacterListItem
+                                        key={character.id}
+                                        character={character}
+                                        onEdit={navigate}
+                                    />
+                                )
                             ))}
                         </div>
                     </SortableContext>
