@@ -324,7 +324,7 @@ export const LocationList: React.FC = () => {
                         className="hidden"
                         onChange={handleFileChange}
                     />
-                    <Button onClick={handleImportClick} size="sm">
+                    <Button onClick={handleImportClick} size="sm" disabled title="Import disabled">
                         <Upload size={16} />
                         Import CSV
                     </Button>

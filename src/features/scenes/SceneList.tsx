@@ -242,7 +242,7 @@ export const SceneList: React.FC = () => {
 
                         <input type="file" accept=".csv" ref={sceneFileInputRef} className="hidden" onChange={handleSceneFileChange} />
 
-                        <Button size="sm" onClick={handleImportScenesClick}>
+                        <Button size="sm" onClick={handleImportScenesClick} disabled title="Import disabled">
                             <Upload size={14} /> Import
                         </Button>
                         <Button size="sm" onClick={handleExportScenes}>

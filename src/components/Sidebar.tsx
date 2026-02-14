@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { MapPin, Clapperboard, LayoutDashboard, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import icon from '../assets/icon.png';
 import clsx from 'clsx';
 
 export const Sidebar: React.FC = () => {
@@ -29,8 +30,8 @@ export const Sidebar: React.FC = () => {
             )}
         >
             <div className={clsx("flex items-center mb-6 transition-all duration-300", isCollapsed ? "justify-center px-0 py-4" : "px-3 py-4 gap-2")}>
-                <div className="w-6 h-6 rounded bg-zinc-900 dark:bg-white flex items-center justify-center shrink-0">
-                    <span className="text-white dark:text-zinc-900 font-bold text-xs">K</span>
+                <div className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-zinc-950 flex items-center justify-center shrink-0 p-1.5 shadow-sm">
+                    <img src={icon} alt="Kopfkino Logo" className="w-full h-full object-contain" />
                 </div>
                 {!isCollapsed && (
                     <span className="font-semibold text-zinc-900 dark:text-white tracking-tight overflow-hidden whitespace-nowrap animate-in fade-in duration-300">

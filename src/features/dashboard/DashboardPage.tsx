@@ -29,7 +29,7 @@ export const DashboardPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <Card className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 bg-blue-500/10 text-blue-500">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 bg-zinc-500/10 text-zinc-500">
                         <MapPin size={32} />
                     </div>
                     <div>
@@ -39,7 +39,7 @@ export const DashboardPage: React.FC = () => {
                 </Card>
 
                 <Card className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 bg-yellow-500/10 text-yellow-500">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 bg-zinc-500/10 text-zinc-500">
                         <Users size={32} />
                     </div>
                     <div>
@@ -49,7 +49,7 @@ export const DashboardPage: React.FC = () => {
                 </Card>
 
                 <Card className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 bg-green-500/10 text-green-500">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 bg-zinc-500/10 text-zinc-500">
                         <Clapperboard size={32} />
                     </div>
                     <div>
@@ -59,7 +59,7 @@ export const DashboardPage: React.FC = () => {
                 </Card>
 
                 <Card className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 bg-purple-500/10 text-purple-500">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 bg-zinc-500/10 text-zinc-500">
                         <Film size={32} />
                     </div>
                     <div>
@@ -69,7 +69,7 @@ export const DashboardPage: React.FC = () => {
                 </Card>
 
                 <Card className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 bg-orange-500/10 text-orange-500">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 bg-zinc-500/10 text-zinc-500">
                         <ImageIcon size={32} />
                     </div>
                     <div>
