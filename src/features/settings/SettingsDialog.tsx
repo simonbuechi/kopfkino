@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save } from 'lucide-react';
+import { X, Save, Key } from 'lucide-react';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
 import { Dialog } from '@headlessui/react';
@@ -55,6 +55,21 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                     </div>
 
                     <div className="space-y-6">
+                        {/* API Key */}
+                        <div>
+                            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                <span className="flex items-center gap-1.5"><Key size={14} /> API Key</span>
+                            </label>
+                            <input
+                                type="password"
+                                value={localSettings.aiApiKey || ''}
+                                onChange={(e) => setLocalSettings(prev => ({ ...prev, aiApiKey: e.target.value }))}
+                                className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-zinc-800 dark:text-white dark:ring-zinc-700 sm:text-sm sm:leading-6 px-3"
+                                placeholder="Enter your AI API key"
+                            />
+                            <p className="mt-1 text-xs text-zinc-500">Required for AI image generation.</p>
+                        </div>
+
                         {/* Aspect Ratio */}
                         <div>
                             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">AspectRatio</label>
@@ -62,8 +77,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                                 <button
                                     onClick={() => handleAspectRatioChange('16:9')}
                                     className={`flex-1 py-2 px-3 rounded-md text-sm font-medium border transition-colors ${localSettings.aspectRatio === '16:9'
-                                            ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-400'
-                                            : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-400'
+                                        : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                                         }`}
                                 >
                                     16:9 (Landscape)
@@ -71,8 +86,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                                 <button
                                     onClick={() => handleAspectRatioChange('1:1')}
                                     className={`flex-1 py-2 px-3 rounded-md text-sm font-medium border transition-colors ${localSettings.aspectRatio === '1:1'
-                                            ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-400'
-                                            : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-400'
+                                        : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                                         }`}
                                 >
                                     1:1 (Square)

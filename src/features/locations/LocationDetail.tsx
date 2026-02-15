@@ -178,6 +178,10 @@ export const LocationDetail: React.FC = () => {
 
     const handleGenerateImage = async () => {
         if (!user) return;
+        if (!settings.aiApiKey) {
+            alert('Please set your API Key in Settings before generating images.');
+            return;
+        }
         setIsGenerating(true);
         const prompt = `Cinematic location concept art: ${name}. 
         Description: ${description}. 
@@ -200,7 +204,7 @@ export const LocationDetail: React.FC = () => {
 
         try {
             // 1. Generate (External URL)
-            const tempUrl = await generateImage(prompt, "AIzaSyAmN_b7G1HI1YvtFEMRk6y9neHpYuH2DA8", options);
+            const tempUrl = await generateImage(prompt, settings.aiApiKey, options);
 
             // 2. Upload to Firebase Storage
             const permanentUrl = await uploadImageFromUrl(tempUrl, user.uid);

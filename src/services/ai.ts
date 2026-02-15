@@ -1,6 +1,4 @@
 
-// In a real app, use import.meta.env
-// The user provided key: AIzaSyAmN_b7G1HI1YvtFEMRk6y9neHpYuH2DA8
 
 // NOTE: The Gemini API for Image Generation (Imagen) via AI Studio might require specific endpoints.
 // For this MVP we will try to use the `generativelanguage` API if available for images,

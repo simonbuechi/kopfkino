@@ -37,6 +37,7 @@ export interface Settings {
     aspectRatio: AspectRatio;
     useRandomSeed: boolean;
     customSeed?: number;
+    aiApiKey?: string;
 }
 
 export interface Character {
