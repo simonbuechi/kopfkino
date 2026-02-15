@@ -134,7 +134,18 @@ export const deleteImageFromUrl = async (downloadUrl: string) => {
 
 export const downloadImage = async (url: string, filename: string) => {
     try {
-        const response = await fetch(url);
+        // Use proxy for download to avoid CORS
+        // The proxy is configured in vite.config.ts to forward /firebase-storage to https://firebasestorage.googleapis.com
+        let fetchUrl = url;
+        // Check if we are in development mode.
+        // Vite exposes import.meta.env.DEV
+        if (import.meta.env.DEV && url.includes('firebasestorage.googleapis.com')) {
+            fetchUrl = url.replace('https://firebasestorage.googleapis.com', '/firebase-storage');
+        }
+
+        const response = await fetch(fetchUrl);
+        if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
+
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
 
