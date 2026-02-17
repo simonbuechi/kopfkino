@@ -5,7 +5,7 @@ import { getImageCount } from '../../services/imageService';
 import { Card } from '../../components/ui/Card';
 import { MapPin, Clapperboard, Film, Image as ImageIcon, Users } from 'lucide-react';
 
-export const DashboardPage: React.FC = () => {
+export const StartPage: React.FC = () => {
     const { locations, scenes, characters } = useStore();
     const { user } = useAuth();
     const [imageCount, setImageCount] = useState<number | null>(null);
@@ -25,7 +25,7 @@ export const DashboardPage: React.FC = () => {
 
     return (
         <div>
-            <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white">Dashboard</h2>
+            <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white">Start</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <Card className="flex items-center gap-6">

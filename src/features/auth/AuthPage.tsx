@@ -1,7 +1,7 @@
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 
-import icon from '../../assets/icon.png';
+import icon from '../../assets/icon.webp';
 
 export const AuthPage = () => {
     const { user, signInWithGoogle, loading } = useAuth();

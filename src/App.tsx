@@ -6,7 +6,7 @@ import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { LocationsPage } from './features/locations';
 import { ScenesPage } from './features/scenes';
 import { CharactersPage } from './features/characters';
-import { DashboardPage } from './features/dashboard';
+import { StartPage } from './features/start';
 import { AuthPage } from './features/auth/AuthPage.tsx';
 
 // Protected Route Wrapper
@@ -38,7 +38,7 @@ function App() {
                 <Layout />
               </RequireAuth>
             }>
-              <Route index element={<DashboardPage />} />
+              <Route index element={<StartPage />} />
               <Route path="locations/*" element={<LocationsPage />} />
               <Route path="scenes/*" element={<ScenesPage />} />
               <Route path="characters/*" element={<CharactersPage />} />
