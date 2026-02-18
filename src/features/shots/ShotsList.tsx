@@ -4,7 +4,7 @@ import { useStore } from '../../hooks/useStore';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { Edit, Trash2, Plus, Image as ImageIcon, Loader2, GripVertical, Upload, List, Grid, Download } from 'lucide-react';
+import { Edit, Trash2, Plus, Image as ImageIcon, Loader2, GripVertical, Upload, List, Grid, Download, Timer, Film, Volume2 } from 'lucide-react';
 
 import { uploadFile, downloadImage } from '../../services/imageService';
 import type { Shot } from '../../types/types';
@@ -89,8 +89,12 @@ const SortableShotItem = ({
                         <GripVertical size={16} />
                     </div>
 
-                    <div className="font-medium text-zinc-900 dark:text-zinc-100 flex-1 truncate select-none">
+                    <div className="font-medium text-zinc-900 dark:text-zinc-100 flex-1 truncate select-none flex items-center gap-2">
                         {shot.name}
+                        {(shot.length && shot.length > 0) ? (
+                            <span className="text-xs text-zinc-400 font-normal">({shot.length}s)</span>
+                        ) : null}
+                        {shot.audio && <Volume2 size={12} className="text-zinc-400" />}
                     </div>
 
                     {/* Actions */}
@@ -160,8 +164,20 @@ const SortableShotItem = ({
                 {/* Content Section */}
                 <div className="p-3 flex flex-col gap-1">
                     <div className="flex justify-between items-start gap-2">
-                        <div className="min-w-0 flex-1">
-                            <h3 className="font-bold text-zinc-900 dark:text-white leading-tight truncate" title={shot.name}>{shot.name}</h3>
+                        <div className="min-w-0 flex-1 flex flex-col">
+                            <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-zinc-900 dark:text-white leading-tight truncate" title={shot.name}>{shot.name}</h3>
+                                {(shot.length && shot.length > 0) ? (
+                                    <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 font-medium">
+                                        {shot.length}s
+                                    </span>
+                                ) : null}
+                                {shot.audio && (
+                                    <span className="text-zinc-400" title="Has Audio">
+                                        <Volume2 size={14} />
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
                         {/* Actions */}
@@ -270,7 +286,27 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
         <div className="space-y-6 relative">
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
-                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Shots List</h3>
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Shots List</h3>
+                        <div className="flex items-center gap-2">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-300 border border-amber-100 dark:border-amber-800">
+                                <Film size={12} />
+                                {shots.length}
+                            </div>
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">
+                                <Timer size={12} />
+                                {(() => {
+                                    const totalSeconds = shots.reduce((acc, shot) => acc + (shot.length || 0), 0);
+                                    const minutes = Math.floor(totalSeconds / 60);
+                                    const seconds = totalSeconds % 60;
+                                    if (minutes > 0) {
+                                        return `${minutes}m ${seconds}s`;
+                                    }
+                                    return `${seconds}s`;
+                                })()}
+                            </div>
+                        </div>
+                    </div>
                     <div className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg flex gap-1">
                         <button
                             onClick={() => setViewMode('expanded')}

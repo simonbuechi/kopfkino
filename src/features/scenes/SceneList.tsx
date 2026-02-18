@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Clapperboard, Plus, MapPin, Upload, Download, LayoutList, GripVertical, AlignJustify, Users } from 'lucide-react';
+import { Clapperboard, Plus, MapPin, Upload, Download, LayoutList, GripVertical, AlignJustify, Users, Timer, Film } from 'lucide-react';
 import type { Scene } from '../../types/types';
 import {
     DndContext,
@@ -93,6 +93,22 @@ const SortableSceneItem = ({ scene, viewMode, getLocationName, getCharacterNames
                                         {characterNames.join(', ')}
                                     </div>
                                 )}
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-300 border border-amber-100 dark:border-amber-800">
+                                    <Film size={12} />
+                                    {scene.shots?.length || 0} Shots
+                                </div>
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">
+                                    <Timer size={12} />
+                                    {(() => {
+                                        const totalSeconds = scene.shots?.reduce((acc, shot) => acc + (shot.length || 0), 0) || 0;
+                                        const minutes = Math.floor(totalSeconds / 60);
+                                        const seconds = totalSeconds % 60;
+                                        if (minutes > 0) {
+                                            return `${minutes}m ${seconds}s`;
+                                        }
+                                        return `${seconds}s`;
+                                    })()}
+                                </div>
                             </div>
                             <p className="text-zinc-500 dark:text-zinc-400 text-sm line-clamp-2">
                                 {scene.description}

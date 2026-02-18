@@ -29,6 +29,8 @@ export interface Shot {
     description: string;
     visualizationUrl?: string;
     imageUrl?: string;
+    length?: number;
+    audio?: boolean;
 }
 
 export type AspectRatio = '1:1' | '16:9';

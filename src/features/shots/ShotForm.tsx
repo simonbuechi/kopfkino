@@ -17,8 +17,14 @@ export const ShotForm: React.FC = () => {
         id: crypto.randomUUID(),
         // number: '', // Removed
         name: '',
-        description: '',
+        description: `Size: (full, medium, close-up)
+Angle: (eye, shoulder, hip, dutch)
+Framing: (single, two, three, over-the-shoulder, point-of-view)
+Movement: (static, tracking, dolly, pan, tilt, zoom)
+Focus: (shallow, deep)`,
         visualizationUrl: '',
+        length: 0,
+        audio: true,
     });
 
     useEffect(() => {
@@ -68,12 +74,37 @@ export const ShotForm: React.FC = () => {
                     </div>
                 </div>
 
+                <div className="w-32">
+                    <Input
+                        name="length"
+                        label="Length (s)"
+                        type="number"
+                        value={formData.length || ''}
+                        onChange={handleChange}
+                        placeholder="Seconds"
+                    />
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        id="audio"
+                        name="audio"
+                        checked={formData.audio ?? true}
+                        onChange={(e) => setFormData(prev => ({ ...prev, audio: e.target.checked }))}
+                        className="w-4 h-4 text-zinc-900 bg-gray-100 border-gray-300 rounded focus:ring-zinc-900 dark:focus:ring-zinc-600 dark:ring-offset-zinc-800 focus:ring-2 dark:bg-zinc-700 dark:border-zinc-600"
+                    />
+                    <label htmlFor="audio" className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        Has Audio
+                    </label>
+                </div>
+
                 <TextArea
                     name="description"
                     label="Description"
                     value={formData.description}
                     onChange={handleChange}
-                    rows={4}
+                    rows={7}
                     placeholder="Visual description of the shot..."
                 />
 
