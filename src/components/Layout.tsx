@@ -1,22 +1,65 @@
-import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { Sun, Moon, Settings as SettingsIcon, LogOut } from 'lucide-react';
+import { useProjects } from '../context/ProjectContext';
+import { Sun, Moon, Settings as SettingsIcon, LogOut, Clapperboard, ArrowRightLeft } from 'lucide-react';
 import { SettingsDialog } from '../features/settings/SettingsDialog';
 
 export const Layout: React.FC = () => {
     const { theme, toggleTheme } = useTheme();
     const { signOut } = useAuth();
+    const { activeProject, selectProject, activeProjectId } = useProjects();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    // Route synchronization
+    const { projectId } = useParams();
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    // Sync URL -> Context
+    useEffect(() => {
+        if (projectId && projectId !== activeProjectId) {
+            selectProject(projectId);
+        } else if (!projectId && activeProjectId && location.pathname === '/') {
+            // If explicit root visit and context has project, decide if we clear it.
+            // Actually, if we are at root "/", we generally want to see the project list (StartPage).
+            // But StartPage handles "if (!activeProjectId)".
+            // If we have activeProjectId, StartPage might auto-redirect? 
+            // Let's decide: URL is source of truth.
+            selectProject(null);
+        }
+    }, [projectId, location.pathname]);
+
+    // Handle Switch Project
+    const handleSwitchProject = () => {
+        selectProject(null);
+        navigate('/');
+    };
 
     return (
         <div className="flex h-screen w-full bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 overflow-hidden">
             <Sidebar />
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 <header className="h-14 px-6 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm shrink-0">
-                    <div className="flex-1" /> {/* Spacer to push items to right if needed, or just use justify-end on header */}
+                    <div className="flex-1 flex items-center">
+                        {activeProject && (
+                            <div className="flex items-center gap-2 group">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                    <Clapperboard size={18} className="text-zinc-900 dark:text-zinc-100" />
+                                    <span>{activeProject.name}</span>
+                                </div>
+                                <button
+                                    onClick={handleSwitchProject}
+                                    className="ml-2 p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all opacity-0 group-hover:opacity-100"
+                                    title="Switch Project"
+                                >
+                                    <ArrowRightLeft size={14} />
+                                </button>
+                            </div>
+                        )}
+                    </div>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={signOut}

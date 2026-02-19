@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
+import { useProjects } from '../../context/ProjectContext';
 import { Input, TextArea } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import type { Location } from '../../types/types';
@@ -9,9 +10,11 @@ export const LocationForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { locations, addLocation } = useStore();
+    const { activeProjectId } = useProjects();
 
     const [formData, setFormData] = useState<Location>({
         id: crypto.randomUUID(),
+        projectId: activeProjectId || '',
         name: '',
         description: '',
         geolocation: '',
@@ -36,7 +39,7 @@ export const LocationForm: React.FC = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         addLocation(formData);
-        navigate('/locations');
+        navigate('..');
     };
 
     return (
@@ -84,7 +87,7 @@ export const LocationForm: React.FC = () => {
                 />
 
                 <div className="flex justify-end gap-3 mt-4">
-                    <Button type="button" variant="ghost" onClick={() => navigate('/locations')}>
+                    <Button type="button" variant="ghost" onClick={() => navigate('..')}>
                         Cancel
                     </Button>
                     <Button type="submit">

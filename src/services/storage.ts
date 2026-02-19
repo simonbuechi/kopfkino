@@ -5,11 +5,13 @@ import {
     deleteDoc,
     onSnapshot,
     query,
-    writeBatch
+    writeBatch,
+    where,
+    getDocs
 } from 'firebase/firestore';
 import type { Unsubscribe } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Location, Scene, Settings, Character } from '../types/types';
+import type { Location, Scene, Settings, Character, Project } from '../types/types';
 
 const COLLECTIONS = {
     USERS: 'users',
@@ -18,6 +20,7 @@ const COLLECTIONS = {
     SHOTS: 'shots',
     CHARACTERS: 'characters',
     SETTINGS: 'settings', // Subcollection or doc logic
+    PROJECTS: 'projects',
 };
 
 // Helper for single document settings
@@ -32,8 +35,11 @@ const getUserCollection = (userId: string, collectionName: string) => {
 
 export const storage = {
     // Locations
-    subscribeToLocations: (userId: string, callback: (locations: Location[]) => void): Unsubscribe => {
-        const q = query(getUserCollection(userId, COLLECTIONS.LOCATIONS));
+    subscribeToLocations: (userId: string, projectId: string, callback: (locations: Location[]) => void): Unsubscribe => {
+        const q = query(
+            getUserCollection(userId, COLLECTIONS.LOCATIONS),
+            where('projectId', '==', projectId)
+        );
         return onSnapshot(q, (snapshot) => {
             const locations = snapshot.docs.map(doc => doc.data() as Location);
             locations.sort((a, b) => {
@@ -65,8 +71,11 @@ export const storage = {
     },
 
     // Scenes
-    subscribeToScenes: (userId: string, callback: (scenes: Scene[]) => void): Unsubscribe => {
-        const q = query(getUserCollection(userId, COLLECTIONS.SCENES));
+    subscribeToScenes: (userId: string, projectId: string, callback: (scenes: Scene[]) => void): Unsubscribe => {
+        const q = query(
+            getUserCollection(userId, COLLECTIONS.SCENES),
+            where('projectId', '==', projectId)
+        );
         return onSnapshot(q, (snapshot) => {
             const scenes = snapshot.docs.map(doc => doc.data() as Scene);
             scenes.sort((a, b) => {
@@ -96,9 +105,6 @@ export const storage = {
         const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SCENES, sceneId);
         await deleteDoc(docRef);
     },
-
-    // Shots - Embedded in Scenes now, so no separate collection logic needed here.
-    // If we wanted to migrate old shots, we'd need a one-time script, but for now we assume they are gone or handled elsewhere.
 
     // Settings
     subscribeToSettings: (userId: string, callback: (settings: Settings | null) => void): Unsubscribe => {
@@ -131,15 +137,13 @@ export const storage = {
     },
 
     // Characters
-    subscribeToCharacters: (userId: string, callback: (characters: Character[]) => void): Unsubscribe => {
-        const q = query(getUserCollection(userId, COLLECTIONS.CHARACTERS));
+    subscribeToCharacters: (userId: string, projectId: string, callback: (characters: Character[]) => void): Unsubscribe => {
+        const q = query(
+            getUserCollection(userId, COLLECTIONS.CHARACTERS),
+            where('projectId', '==', projectId)
+        );
         return onSnapshot(q, (snapshot) => {
             const characters = snapshot.docs.map(doc => doc.data() as Character);
-            // Sort by order if available, otherwise fallback to creation time natural order
-            // Since we don't have creation time explicitly yet, maybe name? or just keep random.
-            // Let's sort by order, treating undefined as Infinity (or 0 if we want them at top). 
-            // Typically new items might not have order. We should probably assign them one.
-            // For now:
             characters.sort((a, b) => {
                 const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
                 const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
@@ -150,7 +154,6 @@ export const storage = {
     },
 
     updateCharacterOrders: async (userId: string, characters: Character[]) => {
-        // We could use a batch here for efficiency
         const batch = writeBatch(db);
         characters.forEach((char) => {
             const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.CHARACTERS, char.id);
@@ -170,9 +173,103 @@ export const storage = {
     },
 
     replaceAllCharacters: async (userId: string, characters: Character[]) => {
-        // Simple loop implementation as per other replace methods
         for (const char of characters) {
             await storage.saveCharacter(userId, char);
         }
+    },
+
+    // Projects
+    subscribeToProjects: (userId: string, callback: (projects: Project[]) => void): Unsubscribe => {
+        const q = query(getUserCollection(userId, COLLECTIONS.PROJECTS));
+        return onSnapshot(q, (snapshot) => {
+            const projects = snapshot.docs.map(doc => doc.data() as Project);
+            // Sort by createdAt desc
+            projects.sort((a, b) => b.createdAt - a.createdAt);
+            callback(projects);
+        });
+    },
+
+    saveProject: async (userId: string, project: Project) => {
+        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.PROJECTS, project.id);
+        await setDoc(docRef, project);
+    },
+
+    deleteProject: async (userId: string, projectId: string) => {
+        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.PROJECTS, projectId);
+        await deleteDoc(docRef);
+    },
+
+    // Migration
+    migrateLegacyData: async (userId: string, targetProjectId: string) => {
+        const batch = writeBatch(db);
+
+        // Locations
+        const locsSnapshot = await getDocs(getUserCollection(userId, COLLECTIONS.LOCATIONS));
+        locsSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            if (!data.projectId) {
+                batch.update(doc.ref, { projectId: targetProjectId });
+            }
+        });
+
+        // Scenes
+        const scenesSnapshot = await getDocs(getUserCollection(userId, COLLECTIONS.SCENES));
+        scenesSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            if (!data.projectId) {
+                batch.update(doc.ref, { projectId: targetProjectId });
+            }
+        });
+
+        // Characters
+        const charsSnapshot = await getDocs(getUserCollection(userId, COLLECTIONS.CHARACTERS));
+        charsSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            if (!data.projectId) {
+                batch.update(doc.ref, { projectId: targetProjectId });
+            }
+        });
+
+        await batch.commit();
+    },
+    // Stats
+    getAllProjectStats: async (userId: string) => {
+        const stats: Record<string, { locations: number; scenes: number; shots: number; characters: number; length: number }> = {};
+
+        const locsSnapshot = await getDocs(getUserCollection(userId, COLLECTIONS.LOCATIONS));
+        locsSnapshot.docs.forEach(doc => {
+            const data = doc.data() as Location;
+            if (data.projectId) {
+                if (!stats[data.projectId]) stats[data.projectId] = { locations: 0, scenes: 0, shots: 0, characters: 0, length: 0 };
+                stats[data.projectId].locations++;
+            }
+        });
+
+        const charsSnapshot = await getDocs(getUserCollection(userId, COLLECTIONS.CHARACTERS));
+        charsSnapshot.docs.forEach(doc => {
+            const data = doc.data() as Character;
+            if (data.projectId) {
+                if (!stats[data.projectId]) stats[data.projectId] = { locations: 0, scenes: 0, shots: 0, characters: 0, length: 0 };
+                stats[data.projectId].characters++;
+            }
+        });
+
+        const scenesSnapshot = await getDocs(getUserCollection(userId, COLLECTIONS.SCENES));
+        scenesSnapshot.docs.forEach(doc => {
+            const data = doc.data() as Scene;
+            if (data.projectId) {
+                if (!stats[data.projectId]) stats[data.projectId] = { locations: 0, scenes: 0, shots: 0, characters: 0, length: 0 };
+                stats[data.projectId].scenes++;
+
+                if (data.shots) {
+                    stats[data.projectId].shots += data.shots.length;
+                    // Calculate length
+                    const sceneLength = data.shots.reduce((acc, shot) => acc + (shot.length || 0), 0);
+                    stats[data.projectId].length += sceneLength;
+                }
+            }
+        });
+
+        return stats;
     }
 };

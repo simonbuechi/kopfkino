@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useProjects } from '../context/ProjectContext';
 import { MapPin, Clapperboard, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import icon from '../assets/icon.webp';
 import clsx from 'clsx';
 
 export const Sidebar: React.FC = () => {
+    const { activeProjectId } = useProjects();
     const [isCollapsed, setIsCollapsed] = useState(() => {
         const saved = localStorage.getItem('sidebar-collapsed');
         return saved === 'true';
@@ -43,18 +45,22 @@ export const Sidebar: React.FC = () => {
             </div>
 
             <nav className="flex flex-col gap-1 flex-1">
-                <NavLink to="/locations" className={linkClass} title={isCollapsed ? "Locations" : undefined}>
-                    <MapPin size={20} className="shrink-0" />
-                    {!isCollapsed && <span>Locations</span>}
-                </NavLink>
-                <NavLink to="/scenes" className={linkClass} title={isCollapsed ? "Scenes" : undefined}>
-                    <Clapperboard size={20} className="shrink-0" />
-                    {!isCollapsed && <span>Scenes</span>}
-                </NavLink>
-                <NavLink to="/characters" className={linkClass} title={isCollapsed ? "Characters" : undefined}>
-                    <User size={20} className="shrink-0" />
-                    {!isCollapsed && <span>Characters</span>}
-                </NavLink>
+                {activeProjectId && (
+                    <>
+                        <NavLink to={`/project/${activeProjectId}/locations`} className={linkClass} title={isCollapsed ? "Locations" : undefined}>
+                            <MapPin size={20} className="shrink-0" />
+                            {!isCollapsed && <span>Locations</span>}
+                        </NavLink>
+                        <NavLink to={`/project/${activeProjectId}/scenes`} className={linkClass} title={isCollapsed ? "Scenes" : undefined}>
+                            <Clapperboard size={20} className="shrink-0" />
+                            {!isCollapsed && <span>Scenes</span>}
+                        </NavLink>
+                        <NavLink to={`/project/${activeProjectId}/characters`} className={linkClass} title={isCollapsed ? "Characters" : undefined}>
+                            <User size={20} className="shrink-0" />
+                            {!isCollapsed && <span>Characters</span>}
+                        </NavLink>
+                    </>
+                )}
             </nav>
 
             <div className="p-2 border-t border-zinc-200 dark:border-zinc-800 mt-auto">

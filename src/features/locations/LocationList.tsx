@@ -1,10 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
+import { useProjects } from '../../context/ProjectContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { MapPin, Plus, Upload, Download, Edit, GripVertical, X, LayoutGrid, List } from 'lucide-react';
-import { downloadImage } from '../../services/imageService';
+import { downloadImage } from '../../services/storageService';
 import type { Location } from '../../types/types';
 import {
     DndContext,
@@ -155,6 +156,7 @@ const SortableLocationListItem = ({
 
 export const LocationList: React.FC = () => {
     const { locations, replaceLocations, reorderLocations } = useStore();
+    const { activeProjectId } = useProjects();
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
@@ -219,6 +221,7 @@ export const LocationList: React.FC = () => {
                     if (name) {
                         newLocations.push({
                             id: crypto.randomUUID(),
+                            projectId: activeProjectId || '',
                             name,
                             description,
                             geolocation: geolocation || undefined,

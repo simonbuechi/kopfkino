@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
+import { useProjects } from '../../context/ProjectContext';
 import { Button } from '../../components/ui/Button';
 import { ArrowLeft, Save, Trash2, User, Loader2, Upload, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { Character } from '../../types/types';
 import { useDebounce } from '../../hooks/useDebounce';
-import { uploadFile, deleteImageFromUrl } from '../../services/imageService';
+import { uploadFile, deleteImageFromUrl } from '../../services/storageService';
 
 export const CharacterDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { characters, addCharacter, deleteCharacter } = useStore();
     const { user } = useAuth();
+    const { activeProjectId } = useProjects();
 
     const isNew = id === 'new';
     const existingCharacter = characters.find(c => c.id === id);
@@ -95,6 +97,7 @@ export const CharacterDetail: React.FC = () => {
             try {
                 const characterData: Character = {
                     id: id!,
+                    projectId: existingCharacter?.projectId || activeProjectId || '',
                     name: debouncedName,
                     description: debouncedDescription,
                     comment: debouncedComment,
@@ -167,6 +170,7 @@ export const CharacterDetail: React.FC = () => {
         try {
             const characterData: Character = {
                 id: isNew ? crypto.randomUUID() : id!,
+                projectId: existingCharacter?.projectId || activeProjectId || '',
                 name,
                 description,
             };
@@ -179,7 +183,7 @@ export const CharacterDetail: React.FC = () => {
             if (imageUrl) characterData.imageUrl = imageUrl;
 
             await addCharacter(characterData);
-            navigate('/characters');
+            navigate('..');
         } catch (error) {
             console.error("Failed to save character", error);
             alert("Failed to save character.");
@@ -191,7 +195,7 @@ export const CharacterDetail: React.FC = () => {
     const handleDelete = async () => {
         if (confirm('Are you sure you want to delete this character?')) {
             await deleteCharacter(id!);
-            navigate('/characters');
+            navigate('..');
         }
     };
 
@@ -234,7 +238,7 @@ export const CharacterDetail: React.FC = () => {
     return (
         <div className="flex flex-col gap-8 w-full max-w-3xl mx-auto">
             <div>
-                <Button variant="ghost" onClick={() => navigate('/characters')} size="sm" className="-ml-3 text-zinc-500">
+                <Button variant="ghost" onClick={() => navigate('..')} size="sm" className="-ml-3 text-zinc-500">
                     <ArrowLeft size={16} /> Back to Characters
                 </Button>
             </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { Location, Scene, Shot, Settings, Character } from '../types/types';
 import { storage } from '../services/storage';
 import { useAuth } from '../context/AuthContext';
+import { useProjects } from '../context/ProjectContext';
 
 const DEFAULT_SETTINGS: Settings = {
     aspectRatio: '16:9',
@@ -10,13 +11,14 @@ const DEFAULT_SETTINGS: Settings = {
 
 export const useStore = () => {
     const { user } = useAuth();
+    const { activeProjectId } = useProjects();
     const [locations, setLocations] = useState<Location[]>([]);
     const [scenes, setScenes] = useState<Scene[]>([]);
     const [characters, setCharacters] = useState<Character[]>([]);
     const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
     useEffect(() => {
-        if (!user) {
+        if (!user || !activeProjectId) {
             setLocations([]);
             setScenes([]);
             setCharacters([]);
@@ -24,9 +26,9 @@ export const useStore = () => {
             return;
         }
 
-        const unsubLocations = storage.subscribeToLocations(user.uid, setLocations);
-        const unsubScenes = storage.subscribeToScenes(user.uid, setScenes);
-        const unsubCharacters = storage.subscribeToCharacters(user.uid, setCharacters);
+        const unsubLocations = storage.subscribeToLocations(user.uid, activeProjectId, setLocations);
+        const unsubScenes = storage.subscribeToScenes(user.uid, activeProjectId, setScenes);
+        const unsubCharacters = storage.subscribeToCharacters(user.uid, activeProjectId, setCharacters);
         const unsubSettings = storage.subscribeToSettings(user.uid, (data) => {
             if (data) {
                 setSettings(data);
@@ -41,7 +43,7 @@ export const useStore = () => {
             unsubCharacters();
             unsubSettings();
         };
-    }, [user]);
+    }, [user, activeProjectId]);
 
     // Locations
     const addLocation = async (loc: Location) => {

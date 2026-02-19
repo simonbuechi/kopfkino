@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Layout } from './components/Layout';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
+import { ProjectProvider } from './context/ProjectContext';
 import { LocationsPage } from './features/locations';
 import { ScenesPage } from './features/scenes';
 import { CharactersPage } from './features/characters';
@@ -29,23 +30,28 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter basename={import.meta.env.BASE_URL}>
-          <Routes>
-            <Route path="/login" element={<AuthPage />} />
+        <ProjectProvider>
+          <BrowserRouter basename={import.meta.env.BASE_URL}>
+            <Routes>
+              <Route path="/login" element={<AuthPage />} />
 
-            <Route path="/" element={
-              <RequireAuth>
-                <Layout />
-              </RequireAuth>
-            }>
-              <Route index element={<StartPage />} />
-              <Route path="locations/*" element={<LocationsPage />} />
-              <Route path="scenes/*" element={<ScenesPage />} />
-              <Route path="characters/*" element={<CharactersPage />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
+              <Route path="/" element={
+                <RequireAuth>
+                  <Layout />
+                </RequireAuth>
+              }>
+                <Route index element={<StartPage />} />
+                <Route path="project/:projectId">
+                  <Route index element={<Navigate to="locations" replace />} />
+                  <Route path="locations/*" element={<LocationsPage />} />
+                  <Route path="scenes/*" element={<ScenesPage />} />
+                  <Route path="characters/*" element={<CharactersPage />} />
+                </Route>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </ProjectProvider>
       </AuthProvider>
     </ThemeProvider>
   );

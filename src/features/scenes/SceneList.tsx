@@ -1,6 +1,7 @@
 import React, { useRef, type ChangeEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
+import { useProjects } from '../../context/ProjectContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Clapperboard, Plus, MapPin, Upload, Download, LayoutList, GripVertical, AlignJustify, Users, Timer, Film } from 'lucide-react';
@@ -123,6 +124,7 @@ const SortableSceneItem = ({ scene, viewMode, getLocationName, getCharacterNames
 
 export const SceneList: React.FC = () => {
     const { scenes, locations, characters, replaceScenes, reorderScenes } = useStore();
+    const { activeProjectId } = useProjects();
     const navigate = useNavigate();
     const sceneFileInputRef = useRef<HTMLInputElement>(null);
     const [viewMode, setViewMode] = useState<'slim' | 'expanded'>('expanded');
@@ -183,6 +185,7 @@ export const SceneList: React.FC = () => {
 
                     newScenes.push({
                         id: crypto.randomUUID(),
+                        projectId: activeProjectId || '',
                         number: parts[0]?.trim() || '',
                         name: parts[1]?.trim() || 'Untitled',
                         description: parts[2]?.trim() || '',

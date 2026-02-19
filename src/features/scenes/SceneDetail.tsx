@@ -37,10 +37,7 @@ export const SceneDetail: React.FC = () => {
     }
 
     const handleDelete = () => {
-        if (confirm('Are you sure you want to delete this scene?')) {
-            deleteScene(scene.id);
-            navigate('/scenes');
-        }
+        navigate('..');
     };
 
     const handleSave = (field: keyof typeof scene, value: string) => {
@@ -58,7 +55,7 @@ export const SceneDetail: React.FC = () => {
     return (
         <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
             <div>
-                <Button variant="ghost" onClick={() => navigate('/scenes')} size="sm" className="-ml-3 text-zinc-500">
+                <Button variant="ghost" onClick={() => navigate('..')} size="sm" className="-ml-3 text-zinc-500">
                     <ArrowLeft size={16} /> Back to Scenes
                 </Button>
             </div>

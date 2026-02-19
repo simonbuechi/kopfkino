@@ -1,10 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
+import { useProjects } from '../../context/ProjectContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { User, Plus, Upload, Download, X, Edit, GripVertical, LayoutGrid, List } from 'lucide-react';
-import { downloadImage } from '../../services/imageService';
+import { downloadImage } from '../../services/storageService';
 import type { Character } from '../../types/types';
 import {
     DndContext,
@@ -151,6 +152,7 @@ const SortableCharacterListItem = ({
 
 export const CharacterList: React.FC = () => {
     const { characters, replaceCharacters, reorderCharacters } = useStore();
+    const { activeProjectId } = useProjects();
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
@@ -221,6 +223,7 @@ export const CharacterList: React.FC = () => {
                     if (name) {
                         const newChar: Character = {
                             id: crypto.randomUUID(),
+                            projectId: activeProjectId || '',
                             name,
                             description,
                         };

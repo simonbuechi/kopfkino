@@ -4,9 +4,9 @@ import { useStore } from '../../hooks/useStore';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { Edit, Trash2, Plus, Image as ImageIcon, Loader2, GripVertical, Upload, List, Grid, Download, Timer, Film, Volume2 } from 'lucide-react';
+import { Edit, Trash2, Plus, Image as ImageIcon, Loader2, GripVertical, List, Grid, Download, Timer, Film, Volume2 } from 'lucide-react';
 
-import { uploadFile, downloadImage } from '../../services/imageService';
+import { uploadFile, uploadVideo, downloadImage, deleteFileFromUrl } from '../../services/storageService';
 import type { Shot } from '../../types/types';
 import {
     DndContext,
@@ -33,16 +33,20 @@ interface ShotsListProps {
 
 const SortableShotItem = ({
     shot,
-    onUpload,
+    onUploadImage,
+    onUploadVideo,
     onDelete,
+    onRemoveVideo,
     onEdit,
     isUploading,
     viewMode,
     onImageClick
 }: {
     shot: Shot;
-    onUpload: (shot: Shot, file: File) => void;
+    onUploadImage: (shot: Shot, file: File) => void;
+    onUploadVideo: (shot: Shot, file: File) => void;
     onDelete: (id: string) => void;
+    onRemoveVideo: (shot: Shot) => void;
     onEdit: (id: string) => void;
     isUploading: boolean;
     viewMode: 'expanded' | 'slim';
@@ -57,6 +61,7 @@ const SortableShotItem = ({
         isDragging
     } = useSortable({ id: shot.id });
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const videoInputRef = React.useRef<HTMLInputElement>(null);
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -69,7 +74,19 @@ const SortableShotItem = ({
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            onUpload(shot, file);
+            onUploadImage(shot, file);
+        }
+    };
+
+    const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Check file size (10MB limit)
+            if (file.size > 10 * 1024 * 1024) {
+                alert("Video file size must be less than 10MB.");
+                return;
+            }
+            onUploadVideo(shot, file);
         }
     };
 
@@ -137,9 +154,16 @@ const SortableShotItem = ({
                 <div
                     className="relative w-full aspect-video bg-zinc-100 dark:bg-zinc-800 cursor-pointer overflow-hidden group/image"
                     onClick={() => displayImage && onImageClick(displayImage, shot.name)}
-                    title="View Full Image"
+                    title={shot.videoUrl ? "Contains Video" : "View Full Image"}
                 >
-                    {displayImage ? (
+                    {shot.videoUrl ? (
+                        <video
+                            src={shot.videoUrl}
+                            className="w-full h-full object-cover"
+                            controls
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    ) : displayImage ? (
                         <img
                             src={displayImage}
                             alt={shot.description}
@@ -191,12 +215,38 @@ const SortableShotItem = ({
                             />
                             <button
                                 type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={isUploading}
                                 className="flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50"
                                 title="Upload Image"
                             >
-                                {isUploading ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
+                                {isUploading ? <Loader2 className="animate-spin" size={14} /> : <ImageIcon size={14} />}
+                            </button>
+
+                            <input
+                                type="file"
+                                ref={videoInputRef}
+                                className="hidden"
+                                accept="video/mp4,video/webm"
+                                onChange={handleVideoChange}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (shot.videoUrl) {
+                                        if (confirm("Delete video?")) {
+                                            onRemoveVideo(shot);
+                                        }
+                                    } else {
+                                        videoInputRef.current?.click();
+                                    }
+                                }}
+                                disabled={isUploading}
+                                className={`flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 ${shot.videoUrl
+                                    ? 'text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300'
+                                    : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
+                                    }`}
+                                title={shot.videoUrl ? "Delete Video" : "Upload Video"}
+                            >
+                                {isUploading ? <Loader2 className="animate-spin" size={14} /> : (shot.videoUrl ? <Trash2 size={14} /> : <Film size={14} />)}
                             </button>
                             <button
                                 type="button"
@@ -218,8 +268,8 @@ const SortableShotItem = ({
                     </div>
                     <p className="text-xs text-zinc-500 line-clamp-2">{shot.description}</p>
                 </div>
-            </Card>
-        </div>
+            </Card >
+        </div >
     );
 };
 
@@ -256,7 +306,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
         }
     };
 
-    const handleUpload = async (shot: Shot, file: File) => {
+    const handleUploadImage = async (shot: Shot, file: File) => {
         if (!user) return;
         setUploadingId(shot.id);
         try {
@@ -267,6 +317,33 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
             alert("Failed to upload image.");
         } finally {
             setUploadingId(null);
+        }
+    };
+
+    const handleUploadVideo = async (shot: Shot, file: File) => {
+        if (!user) return;
+        setUploadingId(shot.id);
+        try {
+            const url = await uploadVideo(file, user.uid);
+            await updateShotInScene(sceneId, { ...shot, videoUrl: url });
+        } catch (error) {
+            console.error("Video upload failed", error);
+            alert("Failed to upload video.");
+        } finally {
+            setUploadingId(null);
+        }
+    };
+
+    const handleRemoveVideo = async (shot: Shot) => {
+        if (!shot.videoUrl) return;
+
+        // Optimistic update: remove from UI first (or wait? let's wait to be safe)
+        try {
+            await deleteFileFromUrl(shot.videoUrl);
+            await updateShotInScene(sceneId, { ...shot, videoUrl: undefined });
+        } catch (error) {
+            console.error("Failed to delete video", error);
+            alert("Failed to delete video.");
         }
     };
 
@@ -352,8 +429,10 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                                 <SortableShotItem
                                     key={shot.id}
                                     shot={shot}
-                                    onUpload={handleUpload}
+                                    onUploadImage={handleUploadImage}
+                                    onUploadVideo={handleUploadVideo}
                                     onDelete={handleDelete}
+                                    onRemoveVideo={handleRemoveVideo}
                                     onEdit={(id) => navigate(`shots/${id}/edit`)}
                                     isUploading={uploadingId === shot.id}
                                     viewMode={viewMode}

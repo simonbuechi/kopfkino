@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
+import { useProjects } from '../../context/ProjectContext';
 import { Input, TextArea } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import type { Scene } from '../../types/types';
@@ -9,9 +10,11 @@ export const SceneForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { scenes, addScene, locations, characters } = useStore();
+    const { activeProjectId } = useProjects();
 
     const [formData, setFormData] = useState<Scene>({
         id: crypto.randomUUID(),
+        projectId: activeProjectId || '',
         number: '',
         name: '',
         description: '',
@@ -49,7 +52,7 @@ export const SceneForm: React.FC = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         addScene(formData);
-        navigate('/scenes');
+        navigate('..');
     };
 
     return (
@@ -156,7 +159,7 @@ export const SceneForm: React.FC = () => {
                 />
 
                 <div className="flex justify-end gap-3 mt-4">
-                    <Button type="button" variant="ghost" onClick={() => navigate('/scenes')}>
+                    <Button type="button" variant="ghost" onClick={() => navigate('..')}>
                         Cancel
                     </Button>
                     <Button type="submit">

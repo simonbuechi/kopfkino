@@ -19,7 +19,7 @@ export const uploadImageFromUrl = async (url: string, userId: string): Promise<s
         if (!response.ok) throw new Error("Failed to fetch image");
         const blob = await response.blob();
 
-        return uploadFile(blob, userId);
+        return uploadImage(blob, userId);
     } catch (error) {
         console.error("Error uploading image from URL:", error);
         throw error;
@@ -95,7 +95,7 @@ const compressImage = (file: Blob | File): Promise<Blob> => {
     });
 };
 
-export const uploadFile = async (file: Blob | File, userId: string): Promise<string> => {
+export const uploadImage = async (file: Blob | File, userId: string): Promise<string> => {
     try {
         // 1. Compress/Optimize Image
         const compressedBlob = await compressImage(file);
@@ -122,17 +122,44 @@ export const uploadFile = async (file: Blob | File, userId: string): Promise<str
     }
 };
 
-export const deleteImageFromUrl = async (downloadUrl: string) => {
+export const uploadVideo = async (file: File, userId: string): Promise<string> => {
+    try {
+        const timestamp = Date.now();
+        const extension = file.name.split('.').pop() || 'mp4';
+        const path = `users/${userId}/videos/${timestamp}.${extension}`;
+        const storageRef = ref(storage, path);
+
+        const metadata = {
+            contentType: file.type,
+        };
+        await uploadBytes(storageRef, file, metadata);
+
+        const downloadUrl = await getDownloadURL(storageRef);
+        return downloadUrl;
+    } catch (error) {
+        console.error("Error uploading video:", error);
+        throw error;
+    }
+};
+
+// Renamed from uploadFile to keep backward compatibility if needed, 
+// but preferred to use uploadImage or uploadVideo explicitly.
+export const uploadFile = uploadImage;
+
+export const deleteFileFromUrl = async (downloadUrl: string) => {
     try {
         const storageRef = ref(storage, downloadUrl);
         await deleteObject(storageRef);
     } catch (error) {
-        console.error("Error deleting image:", error);
+        console.error("Error deleting file:", error);
         // Don't throw, just log. 
     }
 };
 
-export const downloadImage = async (url: string, filename: string) => {
+// Alias for backward compatibility
+export const deleteImageFromUrl = deleteFileFromUrl;
+
+export const downloadFile = async (url: string, filename: string) => {
     try {
         // Use proxy for download to avoid CORS
         // The proxy is configured in vite.config.ts to forward /firebase-storage to https://firebasestorage.googleapis.com
@@ -144,7 +171,7 @@ export const downloadImage = async (url: string, filename: string) => {
         }
 
         const response = await fetch(fetchUrl);
-        if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
+        if (!response.ok) throw new Error(`Failed to fetch file: ${response.statusText}`);
 
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
@@ -159,8 +186,11 @@ export const downloadImage = async (url: string, filename: string) => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
-        console.error("Error downloading image:", error);
+        console.error("Error downloading file:", error);
         // Fallback to opening in new tab
         window.open(url, '_blank');
     }
 };
+
+// Alias for backward compatibility
+export const downloadImage = downloadFile;

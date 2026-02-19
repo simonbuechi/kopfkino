@@ -1,6 +1,7 @@
 
 export interface Location {
     id: string;
+    projectId: string;
     name: string;
     description: string;
     geolocation?: string;
@@ -12,6 +13,7 @@ export interface Location {
 
 export interface Scene {
     id: string;
+    projectId: string;
     number: string;
     name: string;
     description: string;
@@ -24,11 +26,13 @@ export interface Scene {
 
 export interface Shot {
     id: string;
+    projectId?: string; // Optional for compatibility with embedded shots
     number?: string;
     name: string;
     description: string;
     visualizationUrl?: string;
     imageUrl?: string;
+    videoUrl?: string;
     length?: number;
     audio?: boolean;
 }
@@ -44,9 +48,19 @@ export interface Settings {
 
 export interface Character {
     id: string;
+    projectId: string;
     name: string;
     description: string;
     comment?: string;
     imageUrl?: string;
     order?: number;
 }
+
+export interface Project {
+    id: string;
+    name: string;
+    description: string;
+    createdAt: number;
+    updatedAt: number;
+}
+

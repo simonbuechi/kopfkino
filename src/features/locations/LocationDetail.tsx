@@ -4,7 +4,7 @@ import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
 import { MapPin, Trash2, ArrowLeft, Sparkles, Loader2, X, Upload } from 'lucide-react';
 import { generateImage } from '../../services/ai';
-import { uploadImageFromUrl, deleteImageFromUrl, uploadFile } from '../../services/imageService';
+import { uploadImageFromUrl, deleteImageFromUrl, uploadFile } from '../../services/storageService';
 import { useAuth } from '../../context/AuthContext';
 import { useDebounce } from '../../hooks/useDebounce';
 import type { Location } from '../../types/types';
@@ -172,7 +172,7 @@ export const LocationDetail: React.FC = () => {
     const handleDelete = () => {
         if (confirm('Are you sure you want to delete this location?')) {
             deleteLocation(location.id);
-            navigate('/locations');
+            navigate('..');
         }
     };
 
@@ -271,7 +271,7 @@ export const LocationDetail: React.FC = () => {
         <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto">
             <div>
                 <Link
-                    to="/locations"
+                    to=".."
                     className="inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 h-8 px-3 text-sm -ml-3 gap-2"
                 >
                     <ArrowLeft size={16} /> Back to Locations
@@ -425,7 +425,7 @@ export const LocationDetail: React.FC = () => {
                     {associatedScenes.length > 0 ? (
                         <div className="grid gap-3">
                             {associatedScenes.map(scene => (
-                                <div key={scene.id} onClick={() => navigate(`/scenes/${scene.id}`)} className="flex items-center gap-4 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer transition-colors bg-white dark:bg-zinc-950/50">
+                                <div key={scene.id} onClick={() => navigate(`../../scenes/${scene.id}`)} className="flex items-center gap-4 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer transition-colors bg-white dark:bg-zinc-950/50">
                                     <span className="font-mono font-bold text-zinc-400 w-8">{scene.number}</span>
                                     <span className="font-medium text-zinc-900 dark:text-white">{scene.name}</span>
                                 </div>
