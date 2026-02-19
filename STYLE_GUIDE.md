@@ -52,9 +52,10 @@ The application uses the Tailwind CSS `zinc` color scale.
 
 ### Buttons
 Buttons should use the `Button` component:
--   **Primary:** `bg-zinc-100 text-zinc-900 hover:bg-zinc-200`
--   **Secondary:** `bg-zinc-800 text-zinc-100 border border-zinc-700 hover:bg-zinc-700`
--   **Ghost:** `hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100`
+-   **Primary:** `bg-zinc-200 text-zinc-900 hover:bg-zinc-300 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200` (Strong emphasis)
+-   **Secondary:** `bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-700`
+-   **Ghost:** `hover:bg-zinc-100 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100` (Low emphasis)
+-   **Danger:** `text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30` (Destructive)
 
 ### Inputs
 Inputs use a consistent style with a subtle border that darkens on hover/focus.
