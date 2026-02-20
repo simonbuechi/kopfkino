@@ -267,6 +267,7 @@ const SortableShotItem = ({
                         </div>
                     </div>
                     <p className="text-xs text-zinc-500 line-clamp-2">{shot.description}</p>
+                    {shot.notes && <p className="text-xs text-zinc-400 mt-1 italic line-clamp-2">{shot.notes}</p>}
                 </div>
             </Card >
         </div >

@@ -36,8 +36,13 @@ export const SceneDetail: React.FC = () => {
         return <div className="p-8">Scene not found</div>;
     }
 
-    const handleDelete = () => {
-        navigate('..');
+    const handleDelete = async () => {
+        if (window.confirm('Are you sure you want to delete this scene?')) {
+            if (scene) {
+                await deleteScene(scene.id);
+                navigate('..');
+            }
+        }
     };
 
     const handleSave = (field: keyof typeof scene, value: string) => {

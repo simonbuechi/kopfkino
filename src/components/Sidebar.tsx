@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useProjects } from '../context/ProjectContext';
-import { MapPin, Clapperboard, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Clapperboard, User, ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react';
 import icon from '../assets/icon.webp';
 import clsx from 'clsx';
+import { version } from '../../package.json';
 
 export const Sidebar: React.FC = () => {
     const { activeProjectId } = useProjects();
@@ -47,6 +48,10 @@ export const Sidebar: React.FC = () => {
             <nav className="flex flex-col gap-1 flex-1">
                 {activeProjectId && (
                     <>
+                        <NavLink to={`/project/${activeProjectId}`} end className={linkClass} title={isCollapsed ? "Dashboard" : undefined}>
+                            <LayoutDashboard size={20} className="shrink-0" />
+                            {!isCollapsed && <span>Dashboard</span>}
+                        </NavLink>
                         <NavLink to={`/project/${activeProjectId}/locations`} className={linkClass} title={isCollapsed ? "Locations" : undefined}>
                             <MapPin size={20} className="shrink-0" />
                             {!isCollapsed && <span>Locations</span>}
@@ -64,12 +69,17 @@ export const Sidebar: React.FC = () => {
             </nav>
 
             <div className="p-2 border-t border-zinc-200 dark:border-zinc-800 mt-auto">
+                {!isCollapsed && (
+                    <div className="px-3 py-2 mb-2 text-xs text-zinc-400">
+                        Version {version}
+                    </div>
+                )}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
                     className={clsx(
                         "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 w-full",
                         "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100",
-                        isCollapsed && "justify-center px-2"
+                        isCollapsed ? "justify-center px-2" : ""
                     )}
                     title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                 >

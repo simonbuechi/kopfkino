@@ -7,6 +7,7 @@ import { ProjectProvider } from './context/ProjectContext';
 import { LocationsPage } from './features/locations';
 import { ScenesPage } from './features/scenes';
 import { CharactersPage } from './features/characters';
+import { ProjectDashboard } from './features/dashboard';
 import { StartPage } from './features/start';
 import { AuthPage } from './features/auth/AuthPage.tsx';
 
@@ -42,7 +43,7 @@ function App() {
               }>
                 <Route index element={<StartPage />} />
                 <Route path="project/:projectId">
-                  <Route index element={<Navigate to="locations" replace />} />
+                  <Route index element={<ProjectDashboard />} />
                   <Route path="locations/*" element={<LocationsPage />} />
                   <Route path="scenes/*" element={<ScenesPage />} />
                   <Route path="characters/*" element={<CharactersPage />} />

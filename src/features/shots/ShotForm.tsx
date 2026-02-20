@@ -65,11 +65,11 @@ Focus: (shallow, deep)`,
                     <div className="flex-1">
                         <Input
                             name="name"
-                            label="Shot Type / Name"
+                            label="Name"
                             value={formData.name}
                             onChange={handleChange}
                             required
-                            placeholder="Close Up"
+                            placeholder="e.g. close-up protagonist"
                         />
                     </div>
                 </div>
@@ -106,6 +106,15 @@ Focus: (shallow, deep)`,
                     onChange={handleChange}
                     rows={7}
                     placeholder="Visual description of the shot..."
+                />
+
+                <TextArea
+                    name="notes"
+                    label="Notes"
+                    value={formData.notes || ''}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Additional notes..."
                 />
 
                 <div className="flex justify-end gap-3 mt-4">

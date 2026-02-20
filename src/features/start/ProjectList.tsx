@@ -207,7 +207,7 @@ export const ProjectList: React.FC = () => {
 
                             <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-zinc-700 flex justify-end">
                                 <Button
-                                    onClick={() => navigate(`/project/${project.id}/locations`)}
+                                    onClick={() => navigate(`/project/${project.id}`)}
                                     className="flex items-center gap-2"
                                 >
                                     <Play size={16} className="fill-current" />

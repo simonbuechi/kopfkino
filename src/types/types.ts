@@ -35,6 +35,7 @@ export interface Shot {
     videoUrl?: string;
     length?: number;
     audio?: boolean;
+    notes?: string;
 }
 
 export type AspectRatio = '1:1' | '16:9';
