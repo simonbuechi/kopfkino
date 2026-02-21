@@ -5,7 +5,7 @@ import { useProjects } from '../../context/ProjectContext';
 import { Button } from '../../components/ui/Button';
 import { ArrowLeft, Save, Trash2, User, Loader2, Upload, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import type { Character } from '../../types/types';
+import type { Character, CharacterType } from '../../types/types';
 import { useDebounce } from '../../hooks/useDebounce';
 import { uploadFile, deleteImageFromUrl } from '../../services/storageService';
 
@@ -24,6 +24,7 @@ export const CharacterDetail: React.FC = () => {
     const [description, setDescription] = useState('');
     const [comment, setComment] = useState('');
     const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
+    const [type, setType] = useState<CharacterType | undefined>(undefined);
 
     // Track if potentially unsaved changes exist to avoid instant save on load
     const [isDirty, setIsDirty] = useState(false);
@@ -40,12 +41,12 @@ export const CharacterDetail: React.FC = () => {
 
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-    const latestStateRef = React.useRef({ name, description, comment, imageUrl });
+    const latestStateRef = React.useRef({ name, description, comment, imageUrl, type });
 
     // Update ref whenever state changes
     useEffect(() => {
-        latestStateRef.current = { name, description, comment, imageUrl };
-    }, [name, description, comment, imageUrl]);
+        latestStateRef.current = { name, description, comment, imageUrl, type };
+    }, [name, description, comment, imageUrl, type]);
 
     // Initial load and sync effect
     useEffect(() => {
@@ -65,6 +66,7 @@ export const CharacterDetail: React.FC = () => {
                 setDescription(existingCharacter.description);
                 setComment(existingCharacter.comment || '');
                 setImageUrl(existingCharacter.imageUrl);
+                setType(existingCharacter.type);
                 setIsDirty(false);
             } else if (isDirty) {
                 // Check if remote matches local (meaning save was successful and propagated)
@@ -72,14 +74,15 @@ export const CharacterDetail: React.FC = () => {
                     existingCharacter.name === name &&
                     existingCharacter.description === description &&
                     (existingCharacter.comment || '') === comment &&
-                    existingCharacter.imageUrl === imageUrl;
+                    existingCharacter.imageUrl === imageUrl &&
+                    existingCharacter.type === type;
 
                 if (matches) {
                     setIsDirty(false);
                 }
             }
         }
-    }, [existingCharacter, id, name, description, comment, imageUrl, isDirty]);
+    }, [existingCharacter, id, name, description, comment, imageUrl, type, isDirty]);
 
     // Auto-save effect
     useEffect(() => {
@@ -102,6 +105,7 @@ export const CharacterDetail: React.FC = () => {
                     description: debouncedDescription,
                     comment: debouncedComment,
                     imageUrl: imageUrl,
+                    type: type,
                     order: existingCharacter.order,
                 };
 
@@ -114,7 +118,8 @@ export const CharacterDetail: React.FC = () => {
                     current.name === characterData.name &&
                     current.description === characterData.description &&
                     (current.comment || '') === (characterData.comment || '') &&
-                    current.imageUrl === characterData.imageUrl;
+                    current.imageUrl === characterData.imageUrl &&
+                    current.type === characterData.type;
 
                 if (isStillMatches) {
                     setSaveStatus('saved');
@@ -142,12 +147,13 @@ export const CharacterDetail: React.FC = () => {
             debouncedName !== existingCharacter.name ||
             debouncedDescription !== existingCharacter.description ||
             debouncedComment !== (existingCharacter.comment || '') ||
-            imageUrl !== existingCharacter.imageUrl;
+            imageUrl !== existingCharacter.imageUrl ||
+            type !== existingCharacter.type;
 
         if (hasChanged) {
             save();
         }
-    }, [debouncedName, debouncedDescription, debouncedComment, imageUrl, isNew, existingCharacter, addCharacter, id, isDirty]);
+    }, [debouncedName, debouncedDescription, debouncedComment, imageUrl, type, isNew, existingCharacter, addCharacter, id, isDirty]);
 
     // Handle Image change for auto-save immediately
     useEffect(() => {
@@ -173,6 +179,7 @@ export const CharacterDetail: React.FC = () => {
                 projectId: existingCharacter?.projectId || activeProjectId || '',
                 name,
                 description,
+                type,
             };
 
             if (existingCharacter?.order !== undefined) {
@@ -327,6 +334,26 @@ export const CharacterDetail: React.FC = () => {
                                 className="w-full p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
                                 placeholder="Character Name"
                             />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-zinc-900 dark:text-zinc-300">Type</label>
+                            <select
+                                value={type || ''}
+                                onChange={(e) => {
+                                    setType((e.target.value as CharacterType) || undefined);
+                                    setIsDirty(true);
+                                    setSaveStatus(null);
+                                    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                                }}
+                                className="w-full p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium appearance-none"
+                            >
+                                <option value="">Select a type...</option>
+                                <option value="main">Main Character</option>
+                                <option value="supporting">Supporting</option>
+                                <option value="background">Background / Extra</option>
+                                <option value="special">Special</option>
+                            </select>
                         </div>
 
                         <div className="flex flex-col gap-2">

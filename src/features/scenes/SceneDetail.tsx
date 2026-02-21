@@ -19,6 +19,9 @@ export const SceneDetail: React.FC = () => {
     const [comment, setComment] = React.useState('');
     const [locationId, setLocationId] = React.useState('');
 
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = React.useState(false);
+    const [isNotesExpanded, setIsNotesExpanded] = React.useState(false);
+
     // Sync local state with store when scene loads or changes externally
     React.useEffect(() => {
         if (scene) {
@@ -59,29 +62,21 @@ export const SceneDetail: React.FC = () => {
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
-            <div>
-                <Button variant="ghost" onClick={() => navigate('..')} size="sm" className="-ml-3 text-zinc-500">
-                    <ArrowLeft size={16} /> Back to Scenes
-                </Button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-                {/* Left Column: Scene Details */}
-                <div className="flex flex-col gap-8 order-1">
+            <div className="flex flex-col gap-12">
+                {/* Top Section: Scene Details */}
+                <div className="flex flex-col gap-8">
                     <div className="flex flex-col gap-4 pb-6 border-b border-zinc-200 dark:border-zinc-800">
-                        <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                                <div className="flex items-baseline gap-2 mb-2">
-                                    <span className="text-sm font-bold text-zinc-500 tracking-wider">SCENE</span>
-                                    <input
-                                        type="text"
-                                        value={number}
-                                        onChange={(e) => setNumber(e.target.value)}
-                                        onBlur={(e) => handleSave('number', e.target.value)}
-                                        className="text-sm font-bold text-zinc-900 dark:text-zinc-100 bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-zinc-900 dark:focus:border-white focus:outline-none w-16 px-1 transition-colors"
-                                        aria-label="Scene Number"
-                                    />
-                                </div>
+                        <div className="flex items-start">
+                            <div className="flex-1 flex gap-2 items-center">
+                                <input
+                                    type="text"
+                                    value={number}
+                                    onChange={(e) => setNumber(e.target.value)}
+                                    onBlur={(e) => handleSave('number', e.target.value)}
+                                    className="text-4xl font-bold text-zinc-900 dark:text-white bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-zinc-900 dark:focus:border-white focus:outline-none w-16 px-1 transition-colors"
+                                    aria-label="Scene Number"
+                                    placeholder="#"
+                                />
                                 <input
                                     type="text"
                                     value={name}
@@ -90,58 +85,79 @@ export const SceneDetail: React.FC = () => {
                                     className="text-4xl font-bold text-zinc-900 dark:text-white bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-zinc-900 dark:focus:border-white focus:outline-none w-full mb-2 px-1 -ml-1 transition-colors"
                                     placeholder="Scene Name"
                                 />
-                                <div className="flex gap-4 text-zinc-500">
-                                    <div className="flex items-center gap-1.5 text-sm w-full max-w-xs">
-                                        <MapPin size={16} className="flex-shrink-0" />
-                                        <select
-                                            value={locationId}
-                                            onChange={(e) => {
-                                                setLocationId(e.target.value);
-                                                handleSave('locationId', e.target.value);
-                                            }}
-                                            className="bg-transparent border-none text-zinc-600 dark:text-zinc-300 focus:ring-0 cursor-pointer w-full py-0 pl-0 hover:text-zinc-900 dark:hover:text-white transition-colors truncate"
-                                        >
-                                            <option value="" disabled>Select Location</option>
-                                            {locations.map(loc => (
-                                                <option key={loc.id} value={loc.id} className="text-zinc-900">
-                                                    {loc.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button variant="danger" onClick={handleDelete} size="sm">
-                                    <Trash2 size={16} />
-                                </Button>
                             </div>
                         </div>
                     </div>
 
-                    <div className="grid gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                         <section>
-                            <h3 className="font-semibold text-zinc-900 dark:text-white mb-2">Description</h3>
+                            <div className="flex justify-between items-center mb-2">
+                                <h3 className="font-semibold text-zinc-900 dark:text-white">Description</h3>
+                                {description.length > 50 && (
+                                    <button
+                                        onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                                        className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                                    >
+                                        {isDescriptionExpanded ? 'Collapse' : 'Expand'}
+                                    </button>
+                                )}
+                            </div>
                             <textarea
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 onBlur={(e) => handleSave('description', e.target.value)}
-                                className="w-full bg-transparent border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 focus:border-zinc-300 dark:focus:border-zinc-700 rounded-lg p-3 -ml-3 text-zinc-600 dark:text-zinc-300 leading-relaxed resize-y focus:outline-none transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-700"
+                                className="w-full bg-transparent border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 focus:border-zinc-300 dark:focus:border-zinc-700 rounded-lg p-3 -ml-3 text-zinc-600 dark:text-zinc-300 leading-relaxed resize-none focus:outline-none transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-700"
                                 placeholder="Describe the scene..."
-                                rows={6}
+                                rows={isDescriptionExpanded || (document.activeElement === document.getElementById('desc-textarea')) ? 6 : 1}
+                                id="desc-textarea"
                             />
                         </section>
 
                         <section>
-                            <h3 className="font-semibold text-zinc-900 dark:text-white mb-2">Production Notes</h3>
+                            <div className="flex justify-between items-center mb-2">
+                                <h3 className="font-semibold text-zinc-900 dark:text-white">Production Notes</h3>
+                                {comment.length > 50 && (
+                                    <button
+                                        onClick={() => setIsNotesExpanded(!isNotesExpanded)}
+                                        className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                                    >
+                                        {isNotesExpanded ? 'Collapse' : 'Expand'}
+                                    </button>
+                                )}
+                            </div>
                             <textarea
                                 value={comment}
                                 onChange={(e) => setComment(e.target.value)}
                                 onBlur={(e) => handleSave('comment', e.target.value)}
-                                className="w-full bg-transparent border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 focus:border-zinc-300 dark:focus:border-zinc-700 rounded-lg p-3 -ml-3 text-zinc-600 dark:text-zinc-300 leading-relaxed resize-y focus:outline-none transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-700"
+                                className="w-full bg-transparent border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 focus:border-zinc-300 dark:focus:border-zinc-700 rounded-lg p-3 -ml-3 text-zinc-600 dark:text-zinc-300 leading-relaxed resize-none focus:outline-none transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-700"
                                 placeholder="Add notes here..."
-                                rows={4}
+                                rows={isNotesExpanded || (document.activeElement === document.getElementById('notes-textarea')) ? 4 : 1}
+                                id="notes-textarea"
                             />
+                        </section>
+
+                        <section>
+                            <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">Location</h3>
+                            <div className="flex gap-4 text-zinc-500">
+                                <div className="flex items-center gap-1.5 text-sm w-full max-w-xs">
+                                    <MapPin size={16} className="flex-shrink-0" />
+                                    <select
+                                        value={locationId}
+                                        onChange={(e) => {
+                                            setLocationId(e.target.value);
+                                            handleSave('locationId', e.target.value);
+                                        }}
+                                        className="bg-transparent border border-zinc-200 dark:border-zinc-800 rounded-md text-zinc-600 dark:text-zinc-300 focus:ring-0 cursor-pointer w-full p-2 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors truncate"
+                                    >
+                                        <option value="" disabled>Select Location</option>
+                                        {locations.map(loc => (
+                                            <option key={loc.id} value={loc.id} className="text-zinc-900">
+                                                {loc.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
                         </section>
 
                         <section>
@@ -197,9 +213,19 @@ export const SceneDetail: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Right Column: Shots List */}
-                <div className="order-2">
+                {/* Bottom Section: Shots List */}
+                <div className="w-full">
                     <ShotsList sceneId={scene.id} shots={scene.shots || []} />
+                </div>
+
+                {/* Actions Bottom */}
+                <div className="flex justify-between items-center py-8 border-t border-zinc-200 dark:border-zinc-800 mt-8">
+                    <Button variant="ghost" onClick={() => navigate('..')} className="text-zinc-500">
+                        <ArrowLeft size={16} className="mr-2" /> Back to Scenes
+                    </Button>
+                    <Button variant="danger" onClick={handleDelete}>
+                        <Trash2 size={16} className="mr-2" /> Delete Scene
+                    </Button>
                 </div>
             </div>
         </div>

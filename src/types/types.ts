@@ -47,6 +47,8 @@ export interface Settings {
     aiApiKey?: string;
 }
 
+export type CharacterType = 'main' | 'supporting' | 'background' | 'special';
+
 export interface Character {
     id: string;
     projectId: string;
@@ -54,6 +56,7 @@ export interface Character {
     description: string;
     comment?: string;
     imageUrl?: string;
+    type?: CharacterType;
     order?: number;
 }
 
@@ -63,5 +66,6 @@ export interface Project {
     description: string;
     createdAt: number;
     updatedAt: number;
+    url?: string;
 }
 

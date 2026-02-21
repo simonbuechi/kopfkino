@@ -7,7 +7,7 @@ interface ProjectContextType {
     projects: Project[];
     activeProject: Project | null;
     activeProjectId: string | null;
-    createProject: (name: string, description: string) => Promise<void>;
+    createProject: (name: string, description: string, url?: string) => Promise<void>;
     selectProject: (projectId: string | null) => void;
     deleteProject: (projectId: string) => Promise<void>;
     loading: boolean;
@@ -88,14 +88,15 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return () => unsubscribe();
     }, [user]);
 
-    const createProject = async (name: string, description: string) => {
+    const createProject = async (name: string, description: string, url?: string) => {
         if (!user) return;
         const newProject: Project = {
             id: crypto.randomUUID(),
             name,
             description,
             createdAt: Date.now(),
-            updatedAt: Date.now()
+            updatedAt: Date.now(),
+            url
         };
         await storage.saveProject(user.uid, newProject);
         setActiveProjectId(newProject.id);

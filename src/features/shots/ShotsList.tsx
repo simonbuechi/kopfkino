@@ -49,7 +49,7 @@ const SortableShotItem = ({
     onRemoveVideo: (shot: Shot) => void;
     onEdit: (id: string) => void;
     isUploading: boolean;
-    viewMode: 'expanded' | 'slim';
+    viewMode: 'preview' | 'slim' | 'detailed';
     onImageClick: (url: string, alt: string) => void;
 }) => {
     const {
@@ -141,6 +141,142 @@ const SortableShotItem = ({
                         >
                             <Trash2 size={14} />
                         </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (viewMode === 'detailed') {
+        return (
+            <div ref={setNodeRef} style={style} className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg group overflow-hidden items-stretch">
+                {/* Drag Handle */}
+                <div
+                    {...attributes}
+                    {...listeners}
+                    className="flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-800/50 border-r border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-grab active:cursor-grabbing px-2"
+                >
+                    <GripVertical size={16} />
+                </div>
+
+                {/* Small Image Section */}
+                <div
+                    className="relative w-32 shrink-0 bg-zinc-100 dark:bg-zinc-800 cursor-pointer overflow-hidden group/image border-r border-zinc-200 dark:border-zinc-800"
+                    onClick={() => displayImage && onImageClick(displayImage, shot.name)}
+                    title={shot.videoUrl ? "Contains Video" : "View Full Image"}
+                >
+                    {shot.videoUrl ? (
+                        <video
+                            src={shot.videoUrl}
+                            className="w-full h-full object-cover"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    ) : displayImage ? (
+                        <img
+                            src={displayImage}
+                            alt={shot.description}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover/image:scale-105"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-zinc-300 dark:text-zinc-700">
+                            <ImageIcon size={24} />
+                        </div>
+                    )}
+                </div>
+
+                {/* Content Section */}
+                <div className="flex-1 p-4 flex flex-col gap-2 min-w-0">
+                    <div className="flex justify-between items-start gap-4">
+                        <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-zinc-900 dark:text-white leading-tight truncate" title={shot.name}>{shot.name}</h3>
+                            {(shot.length && shot.length > 0) ? (
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 font-medium">
+                                    {shot.length}s
+                                </span>
+                            ) : null}
+                            {shot.audio && (
+                                <span className="text-zinc-400" title="Has Audio">
+                                    <Volume2 size={14} />
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-1 shrink-0">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                            />
+                            <button
+                                type="button"
+                                className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50"
+                                title="Upload Image"
+                            >
+                                {isUploading ? <Loader2 className="animate-spin" size={14} /> : <ImageIcon size={14} />}
+                            </button>
+
+                            <input
+                                type="file"
+                                ref={videoInputRef}
+                                className="hidden"
+                                accept="video/mp4,video/webm"
+                                onChange={handleVideoChange}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (shot.videoUrl) {
+                                        if (confirm("Delete video?")) {
+                                            onRemoveVideo(shot);
+                                        }
+                                    } else {
+                                        videoInputRef.current?.click();
+                                    }
+                                }}
+                                disabled={isUploading}
+                                className={`flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 ${shot.videoUrl
+                                    ? 'text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300'
+                                    : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
+                                    }`}
+                                title={shot.videoUrl ? "Delete Video" : "Upload Video"}
+                            >
+                                {isUploading ? <Loader2 className="animate-spin" size={14} /> : (shot.videoUrl ? <Trash2 size={14} /> : <Film size={14} />)}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onEdit(shot.id)}
+                                className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
+                                title="Edit Shot"
+                            >
+                                <Edit size={14} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onDelete(shot.id)}
+                                className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:text-zinc-400 dark:hover:text-red-400 dark:hover:bg-red-900/20"
+                                title="Delete Shot"
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mt-2">
+                        {shot.description && (
+                            <div>
+                                <h4 className="text-xs font-semibold text-zinc-900 dark:text-white mb-1 uppercase tracking-wider">Description</h4>
+                                <p className="text-sm text-zinc-600 dark:text-zinc-300">{shot.description}</p>
+                            </div>
+                        )}
+                        {shot.notes && (
+                            <div>
+                                <h4 className="text-xs font-semibold text-zinc-900 dark:text-white mb-1 uppercase tracking-wider">Notes</h4>
+                                <p className="text-sm text-zinc-500 dark:text-zinc-400 italic">{shot.notes}</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -279,7 +415,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [uploadingId, setUploadingId] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
+    const [viewMode, setViewMode] = useState<'preview' | 'slim' | 'detailed'>('detailed');
 
     const [imageModal, setImageModal] = useState<{ url: string; alt: string } | null>(null);
 
@@ -387,14 +523,24 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                     </div>
                     <div className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg flex gap-1">
                         <button
-                            onClick={() => setViewMode('expanded')}
-                            className={`p-1.5 rounded-md transition-all ${viewMode === 'expanded'
+                            onClick={() => setViewMode('preview')}
+                            className={`p-1.5 rounded-md transition-all ${viewMode === 'preview'
                                 ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
                                 : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                                 }`}
-                            title="Expanded View"
+                            title="Preview View"
                         >
                             <Grid size={14} />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('detailed')}
+                            className={`p-1.5 rounded-md transition-all ${viewMode === 'detailed'
+                                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                                }`}
+                            title="Detailed View"
+                        >
+                            <Film size={14} />
                         </button>
                         <button
                             onClick={() => setViewMode('slim')}
@@ -418,7 +564,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}
             >
-                <div className={`flex flex-col gap-${viewMode === 'expanded' ? '6' : '3'}`}>
+                <div className={`flex flex-col gap-${viewMode === 'preview' ? '6' : '3'}`}>
                     {shots.length === 0 ? (
                         <p className="text-zinc-500 italic">No shots yet.</p>
                     ) : (

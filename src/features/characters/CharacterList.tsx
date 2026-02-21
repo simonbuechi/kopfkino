@@ -4,7 +4,7 @@ import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../context/ProjectContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { User, Plus, Upload, Download, X, Edit, GripVertical, LayoutGrid, List } from 'lucide-react';
+import { User, Plus, Upload, Download, X, Edit, GripVertical, LayoutGrid, List, Trash2 } from 'lucide-react';
 import { downloadImage } from '../../services/storageService';
 import type { Character } from '../../types/types';
 import {
@@ -79,6 +79,11 @@ const SortableCharacterCard = ({
 
                 <div className="p-4 flex flex-col gap-2 flex-1">
                     <h3 className="text-lg font-semibold text-zinc-900 dark:text-white pointer-events-none select-none">{character.name}</h3>
+                    {character.type && (
+                        <span className="w-fit px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 capitalize pointer-events-none select-none">
+                            {character.type}
+                        </span>
+                    )}
                     <p className="text-zinc-500 text-sm line-clamp-3 mb-4 pointer-events-none select-none">{character.description}</p>
 
                     <div className="mt-auto pt-2 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
@@ -100,10 +105,14 @@ const SortableCharacterCard = ({
 // Sortable List Item Component
 const SortableCharacterListItem = ({
     character,
-    onEdit
+    onEdit,
+    onDelete,
+    onClickImage
 }: {
     character: Character;
     onEdit: (id: string) => void;
+    onDelete: (id: string) => void;
+    onClickImage: (url: string) => void;
 }) => {
     const {
         attributes,
@@ -133,17 +142,46 @@ const SortableCharacterListItem = ({
                     <GripVertical size={16} />
                 </div>
 
-                <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onEdit(character.id)}
-                    className="shrink-0 h-8 w-8 p-0 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                >
-                    <Edit size={18} />
-                </Button>
+                <div className="flex-1 min-w-0 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => character.imageUrl && onClickImage(character.imageUrl)}
+                            disabled={!character.imageUrl}
+                            className="h-8 w-8 p-0 shrink-0 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                            title={character.imageUrl ? "View Image" : "No Image Available"}
+                        >
+                            <User size={16} />
+                        </Button>
+                        <h3 className="font-medium text-zinc-900 dark:text-white truncate select-none">{character.name}</h3>
+                        {character.type && (
+                            <span className="shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 capitalize pointer-events-none select-none">
+                                {character.type}
+                            </span>
+                        )}
+                    </div>
 
-                <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-zinc-900 dark:text-white truncate select-none">{character.name}</h3>
+                    <div className="flex items-center gap-1">
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => onEdit(character.id)}
+                            className="h-8 w-8 p-0 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                            title="Edit Character"
+                        >
+                            <Edit size={16} />
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => onDelete(character.id)}
+                            className="h-8 w-8 p-0 text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Delete Character"
+                        >
+                            <Trash2 size={16} />
+                        </Button>
+                    </div>
                 </div>
             </Card>
         </div>
@@ -151,7 +189,7 @@ const SortableCharacterListItem = ({
 };
 
 export const CharacterList: React.FC = () => {
-    const { characters, replaceCharacters, reorderCharacters } = useStore();
+    const { characters, replaceCharacters, reorderCharacters, deleteCharacter } = useStore();
     const { activeProjectId } = useProjects();
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -285,6 +323,12 @@ export const CharacterList: React.FC = () => {
         document.body.removeChild(link);
     };
 
+    const handleDelete = async (id: string) => {
+        if (confirm('Are you sure you want to delete this character?')) {
+            await deleteCharacter(id);
+        }
+    };
+
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
 
@@ -379,6 +423,8 @@ export const CharacterList: React.FC = () => {
                                         key={character.id}
                                         character={character}
                                         onEdit={navigate}
+                                        onDelete={handleDelete}
+                                        onClickImage={setFullscreenImage}
                                     />
                                 )
                             ))}
