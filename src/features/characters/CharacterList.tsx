@@ -149,7 +149,7 @@ const SortableCharacterListItem = ({
                             variant="ghost"
                             onClick={() => character.imageUrl && onClickImage(character.imageUrl)}
                             disabled={!character.imageUrl}
-                            className="h-8 w-8 p-0 shrink-0 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                            className="h-8 w-8 !p-0 shrink-0 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 disabled:opacity-30 disabled:hover:bg-transparent"
                             title={character.imageUrl ? "View Image" : "No Image Available"}
                         >
                             <User size={16} />
@@ -167,16 +167,16 @@ const SortableCharacterListItem = ({
                             size="sm"
                             variant="ghost"
                             onClick={() => onEdit(character.id)}
-                            className="h-8 w-8 p-0 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                            className="h-8 w-8 !p-0 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                             title="Edit Character"
                         >
                             <Edit size={16} />
                         </Button>
                         <Button
                             size="sm"
-                            variant="ghost"
+                            variant="danger"
                             onClick={() => onDelete(character.id)}
-                            className="h-8 w-8 p-0 text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            className="h-8 w-8 !p-0 transition-colors"
                             title="Delete Character"
                         >
                             <Trash2 size={16} />

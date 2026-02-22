@@ -7,7 +7,7 @@ import { generateImage } from '../../services/ai';
 import { uploadImageFromUrl, deleteImageFromUrl, uploadFile } from '../../services/storageService';
 import { useAuth } from '../../context/AuthContext';
 import { useDebounce } from '../../hooks/useDebounce';
-import type { Location } from '../../types/types';
+import type { Location, LocationType } from '../../types/types';
 
 export const LocationDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -26,6 +26,7 @@ export const LocationDetail: React.FC = () => {
     const [comment, setComment] = useState('');
     const [images, setImages] = useState<string[]>([]);
     const [thumbnailUrl, setThumbnailUrl] = useState<string>('');
+    const [type, setType] = useState<LocationType | undefined>(undefined);
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -41,12 +42,12 @@ export const LocationDetail: React.FC = () => {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const latestStateRef = useRef({ name, description, geolocation, comment, images, thumbnailUrl });
+    const latestStateRef = useRef({ name, description, geolocation, comment, images, thumbnailUrl, type });
 
     // Update ref whenever state changes
     useEffect(() => {
-        latestStateRef.current = { name, description, geolocation, comment, images, thumbnailUrl };
-    }, [name, description, geolocation, comment, images, thumbnailUrl]);
+        latestStateRef.current = { name, description, geolocation, comment, images, thumbnailUrl, type };
+    }, [name, description, geolocation, comment, images, thumbnailUrl, type]);
 
     // Initial load and sync effect
     useEffect(() => {
@@ -66,6 +67,7 @@ export const LocationDetail: React.FC = () => {
                 }
 
                 if ((location.thumbnailUrl || '') !== thumbnailUrl) setThumbnailUrl(location.thumbnailUrl || '');
+                if (location.type !== type) setType(location.type);
 
                 if (isDirty) setIsDirty(false); // Only set if needed
             } else if (isDirty) {
@@ -76,14 +78,15 @@ export const LocationDetail: React.FC = () => {
                     (location.geolocation || '') === geolocation &&
                     (location.comment || '') === comment &&
                     JSON.stringify(location.images || []) === JSON.stringify(images) &&
-                    (location.thumbnailUrl || '') === thumbnailUrl;
+                    (location.thumbnailUrl || '') === thumbnailUrl &&
+                    location.type === type;
 
                 if (matches) {
                     setIsDirty(false);
                 }
             }
         }
-    }, [location, id, name, description, geolocation, comment, images, thumbnailUrl, isDirty]);
+    }, [location, id, name, description, geolocation, comment, images, thumbnailUrl, type, isDirty]);
 
     // Auto-save effect
     useEffect(() => {
@@ -103,6 +106,7 @@ export const LocationDetail: React.FC = () => {
                     comment: debouncedComment,
                     images: images,
                     thumbnailUrl: thumbnailUrl,
+                    type: type,
                 };
 
                 await addLocation(locationData);
@@ -115,7 +119,8 @@ export const LocationDetail: React.FC = () => {
                     current.geolocation === (locationData.geolocation || '') &&
                     current.comment === (locationData.comment || '') &&
                     JSON.stringify(current.images) === JSON.stringify(locationData.images) &&
-                    current.thumbnailUrl === (locationData.thumbnailUrl || '');
+                    current.thumbnailUrl === (locationData.thumbnailUrl || '') &&
+                    current.type === locationData.type;
 
                 if (isStillMatches) {
                     setSaveStatus('saved');
@@ -138,7 +143,8 @@ export const LocationDetail: React.FC = () => {
             debouncedGeolocation !== (location.geolocation || '') ||
             debouncedComment !== (location.comment || '') ||
             JSON.stringify(images) !== JSON.stringify(location.images || []) ||
-            thumbnailUrl !== (location.thumbnailUrl || '');
+            thumbnailUrl !== (location.thumbnailUrl || '') ||
+            type !== location.type;
 
         if (hasChanged) {
             save();
@@ -289,26 +295,11 @@ export const LocationDetail: React.FC = () => {
                             setSaveStatus(null);
                             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
                         }}
-                        className="text-4xl font-bold text-zinc-900 dark:text-white mb-2 bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full placeholder-zinc-300 dark:placeholder-zinc-700"
+                        className="text-4xl font-bold text-zinc-900 dark:text-white mb-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-zinc-300 dark:placeholder-zinc-700 transition-colors hover:border-zinc-300 dark:hover:border-zinc-600 shadow-sm"
                         placeholder="Location Name"
                     />
-                    <div className="flex gap-4 text-zinc-500 items-center">
-                        <MapPin size={16} />
-                        <input
-                            type="text"
-                            value={geolocation}
-                            onChange={(e) => {
-                                setGeolocation(e.target.value);
-                                setIsDirty(true);
-                                setSaveStatus(null);
-                                if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-                            }}
-                            className="bg-transparent border-none focus:outline-none focus:ring-0 p-0 text-sm w-full placeholder-zinc-400"
-                            placeholder="Add geolocation..."
-                        />
-                    </div>
                 </div>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center flex-wrap justify-end">
                     {saveStatus === 'saving' && (
                         <span className="text-zinc-500 text-sm flex items-center gap-1">
                             <Loader2 className="animate-spin" size={14} /> Saving...
@@ -325,38 +316,38 @@ export const LocationDetail: React.FC = () => {
                         </span>
                     )}
                     <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-1"></div>
+                    <Button onClick={handleImageUploadClick} disabled={isUploading || isGenerating} size="sm" variant="secondary">
+                        {isUploading ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
+                        {isUploading ? 'Uploading...' : 'Upload Image'}
+                    </Button>
+                    <Button onClick={handleGenerateImage} disabled={true} size="sm">
+                        <Sparkles size={16} />
+                        Generate Image
+                    </Button>
+                    <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-1"></div>
                     <Button variant="danger" onClick={handleDelete} size="sm">
                         <Trash2 size={16} /> Delete
                     </Button>
                 </div>
             </div>
 
-            <div className="grid gap-12">
+            <div className="grid md:grid-cols-2 gap-8">
+                {/* Left Side: Images */}
                 <div className="space-y-6">
                     <section>
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Visualizations</h3>
-                            <div className="flex gap-2">
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    onChange={onFileSelected}
-                                    className="hidden"
-                                    accept="image/*"
-                                />
-                                <Button onClick={handleImageUploadClick} disabled={isUploading || isGenerating} size="sm" variant="secondary">
-                                    {isUploading ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
-                                    {isUploading ? 'Uploading...' : 'Upload Image'}
-                                </Button>
-                                <Button onClick={handleGenerateImage} disabled={isGenerating || isUploading} size="sm">
-                                    {isGenerating ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
-                                    {isGenerating ? 'Generating...' : 'Generate Image'}
-                                </Button>
-                            </div>
+                            <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Image</h3>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={onFileSelected}
+                                className="hidden"
+                                accept="image/*"
+                            />
                         </div>
 
                         {(images && images.length > 0) ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 gap-4">
                                 {images.map((img, idx) => (
                                     <div key={idx} className="relative rounded-xl overflow-hidden group aspect-video bg-zinc-100 dark:bg-zinc-800">
                                         <img src={img} alt={`Location viz ${idx}`} className="w-full h-full object-cover" />
@@ -388,8 +379,43 @@ export const LocationDetail: React.FC = () => {
                     </section>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
+                {/* Right Side: Details */}
+                <div className="flex flex-col gap-6">
                     <section className="flex flex-col gap-2">
+                        <h3 className="font-semibold text-zinc-900 dark:text-white">Location Details</h3>
+                        <div className="flex gap-4 text-zinc-500 items-center">
+                            <MapPin size={16} className="shrink-0" />
+                            <input
+                                type="text"
+                                value={geolocation}
+                                onChange={(e) => {
+                                    setGeolocation(e.target.value);
+                                    setIsDirty(true);
+                                    setSaveStatus(null);
+                                    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                                }}
+                                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-zinc-400 transition-colors hover:border-zinc-300 dark:hover:border-zinc-600 shadow-sm"
+                                placeholder="Add geolocation..."
+                            />
+                            <select
+                                value={type || ''}
+                                onChange={(e) => {
+                                    setType((e.target.value as LocationType) || undefined);
+                                    setIsDirty(true);
+                                    setSaveStatus(null);
+                                    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                                }}
+                                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors hover:border-zinc-300 dark:hover-zinc-600 shadow-sm appearance-none font-medium text-zinc-700 dark:text-zinc-300"
+                            >
+                                <option value="">Select Type...</option>
+                                <option value="INT.">INT.</option>
+                                <option value="EXT.">EXT.</option>
+                                <option value="INT./EXT.">INT./EXT.</option>
+                            </select>
+                        </div>
+                    </section>
+
+                    <section className="flex flex-col gap-2 flex-grow">
                         <h3 className="font-semibold text-zinc-900 dark:text-white">Description</h3>
                         <textarea
                             value={description}
@@ -399,13 +425,13 @@ export const LocationDetail: React.FC = () => {
                                 setSaveStatus(null);
                                 if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
                             }}
-                            className="w-full p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[120px] resize-y"
+                            className="w-full p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all min-h-[120px] resize-y shadow-sm flex-grow"
                             placeholder="Detailed description of the location..."
                         />
                     </section>
 
                     <section className="flex flex-col gap-2">
-                        <h3 className="font-semibold text-zinc-900 dark:text-white">Comments</h3>
+                        <h3 className="font-semibold text-zinc-900 dark:text-white">Notes</h3>
                         <textarea
                             value={comment}
                             onChange={(e) => {
@@ -414,28 +440,28 @@ export const LocationDetail: React.FC = () => {
                                 setSaveStatus(null);
                                 if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
                             }}
-                            className="w-full p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[120px] resize-y"
+                            className="w-full p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all min-h-[120px] resize-y shadow-sm"
                             placeholder="Notes about lighting, access, etc."
                         />
                     </section>
                 </div>
-
-                <section>
-                    <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">Scenes ({associatedScenes.length})</h3>
-                    {associatedScenes.length > 0 ? (
-                        <div className="grid gap-3">
-                            {associatedScenes.map(scene => (
-                                <div key={scene.id} onClick={() => navigate(`../../scenes/${scene.id}`)} className="flex items-center gap-4 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer transition-colors bg-white dark:bg-zinc-950/50">
-                                    <span className="font-mono font-bold text-zinc-400 w-8">{scene.number}</span>
-                                    <span className="font-medium text-zinc-900 dark:text-white">{scene.name}</span>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-zinc-500 italic">No scenes linked to this location.</p>
-                    )}
-                </section>
             </div>
+
+            <section>
+                <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">Scenes ({associatedScenes.length})</h3>
+                {associatedScenes.length > 0 ? (
+                    <div className="grid gap-3">
+                        {associatedScenes.map(scene => (
+                            <div key={scene.id} onClick={() => navigate(`../../scenes/${scene.id}`)} className="flex items-center gap-4 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer transition-colors bg-white dark:bg-zinc-950/50">
+                                <span className="font-mono font-bold text-zinc-400 w-8">{scene.number}</span>
+                                <span className="font-medium text-zinc-900 dark:text-white">{scene.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-zinc-500 italic">No scenes linked to this location.</p>
+                )}
+            </section>
         </div>
     );
 };

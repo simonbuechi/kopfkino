@@ -1,4 +1,6 @@
 
+export type LocationType = 'INT.' | 'EXT.' | 'INT./EXT.';
+
 export interface Location {
     id: string;
     projectId: string;
@@ -8,6 +10,7 @@ export interface Location {
     comment?: string;
     thumbnailUrl?: string;
     images?: string[];
+    type?: LocationType;
     order?: number;
 }
 

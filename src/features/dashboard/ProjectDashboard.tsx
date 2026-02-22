@@ -1,13 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
-import { MapPin, Users, Clapperboard, Video, Clock, ExternalLink, Plus } from 'lucide-react';
+import { MapPin, Users, Clapperboard, Video, ExternalLink, Plus } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 
 const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.round(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    if (minutes > 0) {
+        return `${minutes}m ${remainingSeconds}s`;
+    }
+    return `${remainingSeconds}s`;
 };
 
 export const ProjectDashboard: React.FC = () => {
@@ -50,16 +53,10 @@ export const ProjectDashboard: React.FC = () => {
         {
             label: 'Shots',
             count: totalShots,
+            subCount: `totalling to ${formatTime(totalLength)}`,
             icon: Video,
             color: 'text-orange-500 bg-orange-500/10'
-        },
-        {
-            label: 'Total Length',
-            count: formatTime(totalLength),
-            icon: Clock,
-            color: 'text-red-500 bg-red-500/10',
-            isTime: true
-        },
+        }
     ];
 
     return (
@@ -92,9 +89,16 @@ export const ProjectDashboard: React.FC = () => {
                                 <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">
                                     {stat.label}
                                 </p>
-                                <p className="text-2xl font-bold text-zinc-900 dark:text-white">
-                                    {stat.count}
-                                </p>
+                                <div>
+                                    <p className="text-2xl font-bold text-zinc-900 dark:text-white leading-none">
+                                        {stat.count}
+                                    </p>
+                                    {stat.subCount && (
+                                        <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">
+                                            {stat.subCount}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                             <div className={`p-3 rounded-lg ${stat.color}`}>
                                 <stat.icon size={20} />
