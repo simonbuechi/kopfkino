@@ -57,10 +57,10 @@ Focus: (shallow, deep)`,
 
     return (
         <div className="max-w-2xl mx-auto w-full pt-8">
-            <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white">
-                {shotId ? 'Edit Shot' : 'New Shot'} <span className="text-zinc-400 font-normal text-lg ml-2">for Scene {scene.number}</span>
+            <h2 className="text-2xl font-bold mb-6 text-primary-900 dark:text-white">
+                {shotId ? 'Edit Shot' : 'New Shot'} <span className="text-primary-400 font-normal text-lg ml-2">for Scene {scene.number}</span>
             </h2>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6 bg-white dark:bg-zinc-900 p-8 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6 bg-white dark:bg-primary-900 p-8 rounded-xl border border-primary-200 dark:border-primary-800 shadow-sm">
                 <div className="flex gap-4">
                     <div className="flex-1">
                         <Input
@@ -92,9 +92,9 @@ Focus: (shallow, deep)`,
                         name="audio"
                         checked={formData.audio ?? true}
                         onChange={(e) => setFormData(prev => ({ ...prev, audio: e.target.checked }))}
-                        className="w-4 h-4 text-zinc-900 bg-gray-100 border-gray-300 rounded focus:ring-zinc-900 dark:focus:ring-zinc-600 dark:ring-offset-zinc-800 focus:ring-2 dark:bg-zinc-700 dark:border-zinc-600"
+                        className="w-4 h-4 text-primary-900 bg-gray-100 border-gray-300 rounded focus:ring-primary-900 dark:focus:ring-primary-600 dark:ring-offset-primary-800 focus:ring-2 dark:bg-primary-700 dark:border-primary-600"
                     />
-                    <label htmlFor="audio" className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    <label htmlFor="audio" className="text-sm font-medium text-primary-900 dark:text-primary-100">
                         Has Audio
                     </label>
                 </div>

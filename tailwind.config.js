@@ -1,3 +1,5 @@
+import colors from 'tailwindcss/colors';
+
 /** @type {import('tailwindcss').Config} */
 export default {
     content: [
@@ -10,6 +12,14 @@ export default {
             fontFamily: {
                 sans: ['Inter', 'sans-serif'],
             },
+            colors: {
+                primary: colors.slate,
+                accent: {
+                    DEFAULT: colors.fuchsia[500],
+                    hover: colors.fuchsia[600],
+                },
+                danger: colors.red,
+            }
         },
     },
     plugins: [],

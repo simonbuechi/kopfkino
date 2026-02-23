@@ -63,7 +63,7 @@ const SortableSceneItem = ({ scene, viewMode, getLocationName, getCharacterNames
                 <div
                     {...attributes}
                     {...listeners}
-                    className="cursor-grab active:cursor-grabbing p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                    className="cursor-grab active:cursor-grabbing p-1 text-primary-400 hover:text-primary-600 dark:hover:text-primary-200"
                     onClick={(e) => e.stopPropagation()}
                 >
                     <GripVertical size={20} />
@@ -72,19 +72,19 @@ const SortableSceneItem = ({ scene, viewMode, getLocationName, getCharacterNames
                 {viewMode === 'slim' ? (
                     // Slim Mode
                     <div className="flex-1 flex items-center gap-4">
-                        <div className="font-mono font-bold text-xl min-w-[40px] text-center text-zinc-500">{scene.number}</div>
-                        <div className="font-semibold text-lg text-zinc-900 dark:text-white truncate">{scene.name}</div>
+                        <div className="font-mono font-bold text-xl min-w-[40px] text-center text-primary-500">{scene.number}</div>
+                        <div className="font-semibold text-lg text-primary-900 dark:text-white truncate">{scene.name}</div>
                     </div>
                 ) : (
                     // Expanded Mode
                     <>
-                        <div className="text-2xl font-bold text-zinc-900 dark:text-white min-w-[60px] text-center font-mono">
+                        <div className="text-2xl font-bold text-primary-900 dark:text-white min-w-[60px] text-center font-mono">
                             {scene.number}
                         </div>
                         <div className="flex-1 space-y-2 w-full">
-                            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{scene.name}</h3>
+                            <h3 className="text-lg font-bold text-primary-900 dark:text-white">{scene.name}</h3>
                             <div className="flex flex-wrap gap-2">
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-700">
                                     <MapPin size={12} />
                                     {getLocationName(scene.locationId)}
                                 </div>
@@ -111,7 +111,7 @@ const SortableSceneItem = ({ scene, viewMode, getLocationName, getCharacterNames
                                     })()}
                                 </div>
                             </div>
-                            <p className="text-zinc-500 dark:text-zinc-400 text-sm line-clamp-2">
+                            <p className="text-primary-500 dark:text-primary-400 text-sm line-clamp-2">
                                 {scene.description}
                             </p>
                         </div>
@@ -238,21 +238,21 @@ export const SceneList: React.FC = () => {
     return (
         <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h2 className="text-3xl font-bold text-zinc-900 dark:text-white">Scenes</h2>
+                <h2 className="text-3xl font-bold text-primary-900 dark:text-white">Scenes</h2>
                 <div className="flex flex-col gap-3 items-end">
                     <div className="flex flex-wrap gap-2 justify-end items-center">
                         {/* View Mode Toggle */}
-                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg mr-2">
+                        <div className="flex items-center gap-1 bg-primary-100 dark:bg-primary-800 p-1 rounded-lg mr-2">
                             <button
                                 onClick={() => setViewMode('slim')}
-                                className={`p-1.5 rounded-md transition-all ${viewMode === 'slim' ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-white' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                                className={`p-1.5 rounded-md transition-all ${viewMode === 'slim' ? 'bg-white dark:bg-primary-700 shadow-sm text-primary-900 dark:text-white' : 'text-primary-500 hover:text-primary-700 dark:hover:text-primary-300'}`}
                                 title="Slim View"
                             >
                                 <AlignJustify size={16} />
                             </button>
                             <button
                                 onClick={() => setViewMode('expanded')}
-                                className={`p-1.5 rounded-md transition-all ${viewMode === 'expanded' ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-white' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                                className={`p-1.5 rounded-md transition-all ${viewMode === 'expanded' ? 'bg-white dark:bg-primary-700 shadow-sm text-primary-900 dark:text-white' : 'text-primary-500 hover:text-primary-700 dark:hover:text-primary-300'}`}
                                 title="Expanded View"
                             >
                                 <LayoutList size={16} />
@@ -275,7 +275,7 @@ export const SceneList: React.FC = () => {
             </div>
 
             {scenes.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
+                <div className="flex flex-col items-center justify-center py-16 text-primary-500 border-2 border-dashed border-primary-200 dark:border-primary-800 rounded-xl">
                     <Clapperboard size={48} className="mb-4 opacity-50" />
                     <p>No scenes yet. Create your first one!</p>
                 </div>

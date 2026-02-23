@@ -44,12 +44,12 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
             <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
 
             <div className="fixed inset-0 flex items-center justify-center p-4">
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 p-6 shadow-xl transition-all">
                     <div className="flex justify-between items-center mb-6">
-                        <Dialog.Title className="text-xl font-semibold text-zinc-900 dark:text-white">
+                        <Dialog.Title className="text-xl font-semibold text-primary-900 dark:text-white">
                             Image Generation Settings
                         </Dialog.Title>
-                        <button onClick={onClose} className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">
+                        <button onClick={onClose} className="text-primary-500 hover:text-primary-700 dark:hover:text-primary-300">
                             <X size={20} />
                         </button>
                     </div>
@@ -57,28 +57,28 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                     <div className="space-y-6">
                         {/* API Key */}
                         <div>
-                            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                            <label className="block text-sm font-medium text-primary-700 dark:text-primary-300 mb-2">
                                 <span className="flex items-center gap-1.5"><Key size={14} /> API Key</span>
                             </label>
                             <input
                                 type="password"
                                 value={localSettings.aiApiKey || ''}
                                 onChange={(e) => setLocalSettings(prev => ({ ...prev, aiApiKey: e.target.value }))}
-                                className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-zinc-800 dark:text-white dark:ring-zinc-700 sm:text-sm sm:leading-6 px-3"
+                                className="block w-full rounded-md border-0 py-1.5 text-primary-900 shadow-sm ring-1 ring-inset ring-primary-300 placeholder:text-primary-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-primary-800 dark:text-white dark:ring-primary-700 sm:text-sm sm:leading-6 px-3"
                                 placeholder="Enter your AI API key"
                             />
-                            <p className="mt-1 text-xs text-zinc-500">Required for AI image generation.</p>
+                            <p className="mt-1 text-xs text-primary-500">Required for AI image generation.</p>
                         </div>
 
                         {/* Aspect Ratio */}
                         <div>
-                            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">AspectRatio</label>
+                            <label className="block text-sm font-medium text-primary-700 dark:text-primary-300 mb-2">AspectRatio</label>
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => handleAspectRatioChange('16:9')}
                                     className={`flex-1 py-2 px-3 rounded-md text-sm font-medium border transition-colors ${localSettings.aspectRatio === '16:9'
                                         ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-400'
-                                        : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                                        : 'bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-800'
                                         }`}
                                 >
                                     16:9 (Landscape)
@@ -87,7 +87,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                                     onClick={() => handleAspectRatioChange('1:1')}
                                     className={`flex-1 py-2 px-3 rounded-md text-sm font-medium border transition-colors ${localSettings.aspectRatio === '1:1'
                                         ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-400'
-                                        : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                                        : 'bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-800'
                                         }`}
                                 >
                                     1:1 (Square)
@@ -97,16 +97,16 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
 
                         {/* Seed */}
                         <div>
-                            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Seed</label>
+                            <label className="block text-sm font-medium text-primary-700 dark:text-primary-300 mb-2">Seed</label>
                             <div className="flex items-center gap-2 mb-3">
                                 <input
                                     type="checkbox"
                                     id="randomSeed"
                                     checked={localSettings.useRandomSeed}
                                     onChange={toggleRandomSeed}
-                                    className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800"
+                                    className="rounded border-primary-300 text-indigo-600 focus:ring-indigo-500 dark:border-primary-700 dark:bg-primary-800"
                                 />
-                                <label htmlFor="randomSeed" className="text-sm text-zinc-600 dark:text-zinc-400">Use Random Seed</label>
+                                <label htmlFor="randomSeed" className="text-sm text-primary-600 dark:text-primary-400">Use Random Seed</label>
                             </div>
 
                             {!localSettings.useRandomSeed && (
@@ -115,10 +115,10 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                                         type="number"
                                         value={localSettings.customSeed || 0}
                                         onChange={handleSeedChange}
-                                        className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-zinc-800 dark:text-white dark:ring-zinc-700 sm:text-sm sm:leading-6 px-3"
+                                        className="block w-full rounded-md border-0 py-1.5 text-primary-900 shadow-sm ring-1 ring-inset ring-primary-300 placeholder:text-primary-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-primary-800 dark:text-white dark:ring-primary-700 sm:text-sm sm:leading-6 px-3"
                                         placeholder="Enter seed number"
                                     />
-                                    <p className="mt-1 text-xs text-zinc-500">Same seed produces identical images for same prompt.</p>
+                                    <p className="mt-1 text-xs text-primary-500">Same seed produces identical images for same prompt.</p>
                                 </div>
                             )}
                         </div>

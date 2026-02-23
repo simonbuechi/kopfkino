@@ -62,10 +62,10 @@ export const ProjectDashboard: React.FC = () => {
     return (
         <div className="p-6 max-w-7xl mx-auto">
             <header className="mb-8">
-                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">
+                <h1 className="text-3xl font-bold text-primary-900 dark:text-white mb-2">
                     {activeProject?.name || 'Project Dashboard'}
                 </h1>
-                <p className="text-zinc-500 dark:text-zinc-400 max-w-2xl mb-4">
+                <p className="text-primary-500 dark:text-primary-400 max-w-2xl mb-4">
                     {activeProject?.description || 'Overview and statistics'}
                 </p>
                 {activeProject?.url && (
@@ -73,7 +73,7 @@ export const ProjectDashboard: React.FC = () => {
                         href={activeProject.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors border border-zinc-200 dark:border-zinc-700"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-primary-100 dark:bg-primary-800 text-primary-700 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-700 transition-colors border border-primary-200 dark:border-primary-700"
                     >
                         <ExternalLink size={14} />
                         {activeProject.url.replace(/^https?:\/\//, '')}
@@ -83,18 +83,18 @@ export const ProjectDashboard: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
                 {stats.map((stat) => (
-                    <div key={stat.label} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex flex-col shadow-sm group">
+                    <div key={stat.label} className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 rounded-xl p-4 flex flex-col shadow-sm group">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                                <p className="text-sm font-medium text-primary-500 dark:text-primary-400 mb-1">
                                     {stat.label}
                                 </p>
                                 <div>
-                                    <p className="text-2xl font-bold text-zinc-900 dark:text-white leading-none">
+                                    <p className="text-2xl font-bold text-primary-900 dark:text-white leading-none">
                                         {stat.count}
                                     </p>
                                     {stat.subCount && (
-                                        <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">
+                                        <p className="text-xs font-medium text-primary-400 dark:text-primary-500 mt-1">
                                             {stat.subCount}
                                         </p>
                                     )}
@@ -107,7 +107,7 @@ export const ProjectDashboard: React.FC = () => {
                         {stat.action ? (
                             <button
                                 onClick={() => navigate(stat.action!.path)}
-                                className="flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-md bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-medium text-zinc-600 dark:text-zinc-300 transition-colors border border-zinc-200 dark:border-zinc-700 mt-auto"
+                                className="flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-md bg-primary-50 dark:bg-primary-800/50 hover:bg-primary-100 dark:hover:bg-primary-800 text-sm font-medium text-primary-600 dark:text-primary-300 transition-colors border border-primary-200 dark:border-primary-700 mt-auto"
                             >
                                 <Plus size={16} />
                                 {stat.action.label}

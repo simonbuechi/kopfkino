@@ -44,8 +44,8 @@ export const LocationForm: React.FC = () => {
 
     return (
         <div className="max-w-2xl mx-auto w-full">
-            <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white">{id ? 'Edit Location' : 'New Location'}</h2>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6 bg-white dark:bg-zinc-900 p-8 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+            <h2 className="text-3xl font-bold mb-8 text-primary-900 dark:text-white">{id ? 'Edit Location' : 'New Location'}</h2>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6 bg-white dark:bg-primary-900 p-8 rounded-xl border border-primary-200 dark:border-primary-800 shadow-sm">
                 <Input
                     name="name"
                     label="Name"

@@ -245,18 +245,18 @@ export const CharacterDetail: React.FC = () => {
     return (
         <div className="flex flex-col gap-8 w-full max-w-3xl mx-auto">
             <div>
-                <Button variant="ghost" onClick={() => navigate('..')} size="sm" className="-ml-3 text-zinc-500">
+                <Button variant="ghost" onClick={() => navigate('..')} size="sm" className="-ml-3 text-primary-500">
                     <ArrowLeft size={16} /> Back to Characters
                 </Button>
             </div>
 
-            <div className="flex flex-col md:flex-row justify-between items-start gap-4 pb-6 border-b border-zinc-200 dark:border-zinc-800">
-                <h1 className="text-4xl font-bold text-zinc-900 dark:text-white">{isNew ? 'New Character' : name}</h1>
+            <div className="flex flex-col md:flex-row justify-between items-start gap-4 pb-6 border-b border-primary-200 dark:border-primary-800">
+                <h1 className="text-4xl font-bold text-primary-900 dark:text-white">{isNew ? 'New Character' : name}</h1>
                 <div className="flex gap-2 items-center">
                     {!isNew && (
                         <>
                             {saveStatus === 'saving' && (
-                                <span className="text-zinc-500 text-sm flex items-center gap-1">
+                                <span className="text-primary-500 text-sm flex items-center gap-1">
                                     <Loader2 className="animate-spin" size={14} /> Saving...
                                 </span>
                             )}
@@ -266,11 +266,11 @@ export const CharacterDetail: React.FC = () => {
                                 </span>
                             )}
                             {saveStatus === 'error' && (
-                                <span className="text-red-600 text-sm font-medium">
+                                <span className="text-danger-600 text-sm font-medium">
                                     Error saving
                                 </span>
                             )}
-                            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-1"></div>
+                            <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1"></div>
                             <Button variant="danger" onClick={handleDelete} size="sm">
                                 <Trash2 size={16} /> Delete
                             </Button>
@@ -289,7 +289,7 @@ export const CharacterDetail: React.FC = () => {
                 {/* Image Section */}
                 <div className="flex flex-col md:flex-row gap-8 items-start">
                     <div className="w-full md:w-1/3 flex flex-col gap-4">
-                        <div className="aspect-[3/4] bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden relative group flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
+                        <div className="aspect-[3/4] bg-primary-100 dark:bg-primary-800 rounded-xl overflow-hidden relative group flex items-center justify-center border border-primary-200 dark:border-primary-700">
                             {imageUrl ? (
                                 <>
                                     <img
@@ -306,7 +306,7 @@ export const CharacterDetail: React.FC = () => {
                                     </button>
                                 </>
                             ) : (
-                                <User size={48} className="text-zinc-300 dark:text-zinc-600" />
+                                <User size={48} className="text-primary-300 dark:text-primary-600" />
                             )}
                         </div>
 
@@ -321,7 +321,7 @@ export const CharacterDetail: React.FC = () => {
 
                     <div className="w-full md:w-2/3 flex flex-col gap-6">
                         <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-zinc-900 dark:text-zinc-300">Name</label>
+                            <label className="text-sm font-medium text-primary-900 dark:text-primary-300">Name</label>
                             <input
                                 type="text"
                                 value={name}
@@ -331,13 +331,13 @@ export const CharacterDetail: React.FC = () => {
                                     setSaveStatus(null);
                                     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
                                 }}
-                                className="w-full p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                                className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
                                 placeholder="Character Name"
                             />
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-zinc-900 dark:text-zinc-300">Type</label>
+                            <label className="text-sm font-medium text-primary-900 dark:text-primary-300">Type</label>
                             <select
                                 value={type || ''}
                                 onChange={(e) => {
@@ -346,7 +346,7 @@ export const CharacterDetail: React.FC = () => {
                                     setSaveStatus(null);
                                     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
                                 }}
-                                className="w-full p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium appearance-none"
+                                className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium appearance-none"
                             >
                                 <option value="">Select a type...</option>
                                 <option value="main">Main Character</option>
@@ -357,7 +357,7 @@ export const CharacterDetail: React.FC = () => {
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-zinc-900 dark:text-zinc-300">Description</label>
+                            <label className="text-sm font-medium text-primary-900 dark:text-primary-300">Description</label>
                             <textarea
                                 value={description}
                                 onChange={(e) => {
@@ -366,13 +366,13 @@ export const CharacterDetail: React.FC = () => {
                                     setSaveStatus(null);
                                     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
                                 }}
-                                className="w-full p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[120px]"
+                                className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[120px]"
                                 placeholder="Physical appearance, personality, role..."
                             />
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-zinc-900 dark:text-zinc-300">Notes / Comments</label>
+                            <label className="text-sm font-medium text-primary-900 dark:text-primary-300">Notes / Comments</label>
                             <textarea
                                 value={comment}
                                 onChange={(e) => {
@@ -381,7 +381,7 @@ export const CharacterDetail: React.FC = () => {
                                     setSaveStatus(null);
                                     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
                                 }}
-                                className="w-full p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[80px]"
+                                className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[80px]"
                                 placeholder="Internal notes, casting ideas..."
                             />
                         </div>
@@ -396,7 +396,7 @@ export const CharacterDetail: React.FC = () => {
                     onClick={() => setIsFullscreen(false)}
                 >
                     <button
-                        className="absolute top-4 right-4 text-white hover:text-zinc-300 transition-colors bg-black/50 rounded-full p-2"
+                        className="absolute top-4 right-4 text-white hover:text-primary-300 transition-colors bg-black/50 rounded-full p-2"
                         onClick={() => setIsFullscreen(false)}
                     >
                         <X size={24} />

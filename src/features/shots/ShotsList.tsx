@@ -95,23 +95,23 @@ const SortableShotItem = ({
 
     if (viewMode === 'slim') {
         return (
-            <div ref={setNodeRef} style={style} className="flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg group overflow-hidden">
+            <div ref={setNodeRef} style={style} className="flex flex-col bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 rounded-lg group overflow-hidden">
                 <div className="flex items-center gap-3 p-3">
                     {/* Drag Handle */}
                     <div
                         {...attributes}
                         {...listeners}
-                        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-grab active:cursor-grabbing p-1"
+                        className="text-primary-400 hover:text-primary-600 dark:hover:text-primary-300 cursor-grab active:cursor-grabbing p-1"
                     >
                         <GripVertical size={16} />
                     </div>
 
-                    <div className="font-medium text-zinc-900 dark:text-zinc-100 flex-1 truncate select-none flex items-center gap-2">
+                    <div className="font-medium text-primary-900 dark:text-primary-100 flex-1 truncate select-none flex items-center gap-2">
                         {shot.name}
                         {(shot.length && shot.length > 0) ? (
-                            <span className="text-xs text-zinc-400 font-normal">({shot.length}s)</span>
+                            <span className="text-xs text-primary-400 font-normal">({shot.length}s)</span>
                         ) : null}
-                        {shot.audio && <Volume2 size={12} className="text-zinc-400" />}
+                        {shot.audio && <Volume2 size={12} className="text-primary-400" />}
                     </div>
 
                     {/* Actions */}
@@ -120,7 +120,7 @@ const SortableShotItem = ({
                             type="button"
                             onClick={() => displayImage && onImageClick(displayImage, shot.name)}
                             disabled={!displayImage}
-                            className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 disabled:opacity-30 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
+                            className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-30 text-primary-400 hover:text-primary-900 hover:bg-primary-100 dark:text-primary-500 dark:hover:text-primary-100 dark:hover:bg-primary-800"
                             title={displayImage ? "View Full Image" : "No Image"}
                         >
                             <ImageIcon size={14} />
@@ -128,7 +128,7 @@ const SortableShotItem = ({
                         <button
                             type="button"
                             onClick={() => onEdit(shot.id)}
-                            className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
+                            className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 text-primary-400 hover:text-primary-900 hover:bg-primary-100 dark:text-primary-500 dark:hover:text-primary-100 dark:hover:bg-primary-800"
                             title="Edit Shot"
                         >
                             <Edit size={14} />
@@ -136,7 +136,7 @@ const SortableShotItem = ({
                         <button
                             type="button"
                             onClick={() => onDelete(shot.id)}
-                            className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:text-zinc-500 dark:hover:text-red-400 dark:hover:bg-red-900/20"
+                            className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 text-primary-400 hover:text-danger-600 hover:bg-danger-50 dark:text-primary-500 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
                             title="Delete Shot"
                         >
                             <Trash2 size={14} />
@@ -149,19 +149,19 @@ const SortableShotItem = ({
 
     if (viewMode === 'detailed') {
         return (
-            <div ref={setNodeRef} style={style} className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg group overflow-hidden items-stretch">
+            <div ref={setNodeRef} style={style} className="flex bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 rounded-lg group overflow-hidden items-stretch">
                 {/* Drag Handle */}
                 <div
                     {...attributes}
                     {...listeners}
-                    className="flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-800/50 border-r border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-grab active:cursor-grabbing px-2"
+                    className="flex flex-col items-center justify-center bg-primary-50 dark:bg-primary-800/50 border-r border-primary-200 dark:border-primary-800 text-primary-400 hover:text-primary-600 dark:hover:text-primary-300 cursor-grab active:cursor-grabbing px-2"
                 >
                     <GripVertical size={16} />
                 </div>
 
                 {/* Small Image Section */}
                 <div
-                    className="relative w-32 shrink-0 bg-zinc-100 dark:bg-zinc-800 cursor-pointer overflow-hidden group/image border-r border-zinc-200 dark:border-zinc-800"
+                    className="relative w-32 shrink-0 bg-primary-100 dark:bg-primary-800 cursor-pointer overflow-hidden group/image border-r border-primary-200 dark:border-primary-800"
                     onClick={() => displayImage && onImageClick(displayImage, shot.name)}
                     title={shot.videoUrl ? "Contains Video" : "View Full Image"}
                 >
@@ -178,7 +178,7 @@ const SortableShotItem = ({
                             className="w-full h-full object-cover transition-transform duration-500 group-hover/image:scale-105"
                         />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-zinc-300 dark:text-zinc-700">
+                        <div className="w-full h-full flex items-center justify-center text-primary-300 dark:text-primary-700">
                             <ImageIcon size={24} />
                         </div>
                     )}
@@ -188,14 +188,14 @@ const SortableShotItem = ({
                 <div className="flex-1 p-4 flex flex-col gap-2 min-w-0">
                     <div className="flex justify-between items-start gap-4">
                         <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-zinc-900 dark:text-white leading-tight truncate" title={shot.name}>{shot.name}</h3>
+                            <h3 className="font-bold text-primary-900 dark:text-white leading-tight truncate" title={shot.name}>{shot.name}</h3>
                             {(shot.length && shot.length > 0) ? (
-                                <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 font-medium">
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-800 text-primary-500 font-medium">
                                     {shot.length}s
                                 </span>
                             ) : null}
                             {shot.audio && (
-                                <span className="text-zinc-400" title="Has Audio">
+                                <span className="text-primary-400" title="Has Audio">
                                     <Volume2 size={14} />
                                 </span>
                             )}
@@ -212,7 +212,7 @@ const SortableShotItem = ({
                             />
                             <button
                                 type="button"
-                                className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50"
+                                className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 text-primary-500 hover:text-primary-900 hover:bg-primary-100 dark:text-primary-400 dark:hover:text-primary-100 dark:hover:bg-primary-800 disabled:opacity-50"
                                 title="Upload Image"
                             >
                                 {isUploading ? <Loader2 className="animate-spin" size={14} /> : <ImageIcon size={14} />}
@@ -237,9 +237,9 @@ const SortableShotItem = ({
                                     }
                                 }}
                                 disabled={isUploading}
-                                className={`flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 ${shot.videoUrl
-                                    ? 'text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300'
-                                    : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
+                                className={`flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 hover:bg-primary-100 dark:hover:bg-primary-800 disabled:opacity-50 ${shot.videoUrl
+                                    ? 'text-danger-500 hover:text-danger-600 dark:text-danger-400 dark:hover:text-danger-300'
+                                    : 'text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100'
                                     }`}
                                 title={shot.videoUrl ? "Delete Video" : "Upload Video"}
                             >
@@ -248,7 +248,7 @@ const SortableShotItem = ({
                             <button
                                 type="button"
                                 onClick={() => onEdit(shot.id)}
-                                className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
+                                className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 text-primary-500 hover:text-primary-900 hover:bg-primary-100 dark:text-primary-400 dark:hover:text-primary-100 dark:hover:bg-primary-800"
                                 title="Edit Shot"
                             >
                                 <Edit size={14} />
@@ -256,7 +256,7 @@ const SortableShotItem = ({
                             <button
                                 type="button"
                                 onClick={() => onDelete(shot.id)}
-                                className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:text-zinc-400 dark:hover:text-red-400 dark:hover:bg-red-900/20"
+                                className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 text-primary-500 hover:text-danger-600 hover:bg-danger-50 dark:text-primary-400 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
                                 title="Delete Shot"
                             >
                                 <Trash2 size={14} />
@@ -267,14 +267,14 @@ const SortableShotItem = ({
                     <div className="grid grid-cols-2 gap-4 mt-2">
                         {shot.description && (
                             <div>
-                                <h4 className="text-xs font-semibold text-zinc-900 dark:text-white mb-1 uppercase tracking-wider">Description</h4>
-                                <p className="text-sm text-zinc-600 dark:text-zinc-300">{shot.description}</p>
+                                <h4 className="text-xs font-semibold text-primary-900 dark:text-white mb-1 uppercase tracking-wider">Description</h4>
+                                <p className="text-sm text-primary-600 dark:text-primary-300">{shot.description}</p>
                             </div>
                         )}
                         {shot.notes && (
                             <div>
-                                <h4 className="text-xs font-semibold text-zinc-900 dark:text-white mb-1 uppercase tracking-wider">Notes</h4>
-                                <p className="text-sm text-zinc-500 dark:text-zinc-400 italic">{shot.notes}</p>
+                                <h4 className="text-xs font-semibold text-primary-900 dark:text-white mb-1 uppercase tracking-wider">Notes</h4>
+                                <p className="text-sm text-primary-500 dark:text-primary-400 italic">{shot.notes}</p>
                             </div>
                         )}
                     </div>
@@ -285,10 +285,10 @@ const SortableShotItem = ({
 
     return (
         <div ref={setNodeRef} style={style}>
-            <Card className="flex flex-col !p-0 overflow-hidden group/card bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+            <Card className="flex flex-col !p-0 overflow-hidden group/card bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800">
                 {/* Image Section */}
                 <div
-                    className="relative w-full aspect-video bg-zinc-100 dark:bg-zinc-800 cursor-pointer overflow-hidden group/image"
+                    className="relative w-full aspect-video bg-primary-100 dark:bg-primary-800 cursor-pointer overflow-hidden group/image"
                     onClick={() => displayImage && onImageClick(displayImage, shot.name)}
                     title={shot.videoUrl ? "Contains Video" : "View Full Image"}
                 >
@@ -306,7 +306,7 @@ const SortableShotItem = ({
                             className="w-full h-full object-cover transition-transform duration-500 group-hover/image:scale-105"
                         />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-zinc-300 dark:text-zinc-700">
+                        <div className="w-full h-full flex items-center justify-center text-primary-300 dark:text-primary-700">
                             <ImageIcon size={32} />
                         </div>
                     )}
@@ -326,14 +326,14 @@ const SortableShotItem = ({
                     <div className="flex justify-between items-start gap-2">
                         <div className="min-w-0 flex-1 flex flex-col">
                             <div className="flex items-center gap-2">
-                                <h3 className="font-bold text-zinc-900 dark:text-white leading-tight truncate" title={shot.name}>{shot.name}</h3>
+                                <h3 className="font-bold text-primary-900 dark:text-white leading-tight truncate" title={shot.name}>{shot.name}</h3>
                                 {(shot.length && shot.length > 0) ? (
-                                    <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 font-medium">
+                                    <span className="text-xs px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-800 text-primary-500 font-medium">
                                         {shot.length}s
                                     </span>
                                 ) : null}
                                 {shot.audio && (
-                                    <span className="text-zinc-400" title="Has Audio">
+                                    <span className="text-primary-400" title="Has Audio">
                                         <Volume2 size={14} />
                                     </span>
                                 )}
@@ -351,7 +351,7 @@ const SortableShotItem = ({
                             />
                             <button
                                 type="button"
-                                className="flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50"
+                                className="flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 text-primary-500 hover:text-primary-900 hover:bg-primary-100 dark:text-primary-400 dark:hover:text-primary-100 dark:hover:bg-primary-800 disabled:opacity-50"
                                 title="Upload Image"
                             >
                                 {isUploading ? <Loader2 className="animate-spin" size={14} /> : <ImageIcon size={14} />}
@@ -376,9 +376,9 @@ const SortableShotItem = ({
                                     }
                                 }}
                                 disabled={isUploading}
-                                className={`flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 ${shot.videoUrl
-                                    ? 'text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300'
-                                    : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
+                                className={`flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 hover:bg-primary-100 dark:hover:bg-primary-800 disabled:opacity-50 ${shot.videoUrl
+                                    ? 'text-danger-500 hover:text-danger-600 dark:text-danger-400 dark:hover:text-danger-300'
+                                    : 'text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100'
                                     }`}
                                 title={shot.videoUrl ? "Delete Video" : "Upload Video"}
                             >
@@ -387,7 +387,7 @@ const SortableShotItem = ({
                             <button
                                 type="button"
                                 onClick={() => onEdit(shot.id)}
-                                className="flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
+                                className="flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 text-primary-500 hover:text-primary-900 hover:bg-primary-100 dark:text-primary-400 dark:hover:text-primary-100 dark:hover:bg-primary-800"
                                 title="Edit Shot"
                             >
                                 <Edit size={14} />
@@ -395,15 +395,15 @@ const SortableShotItem = ({
                             <button
                                 type="button"
                                 onClick={() => onDelete(shot.id)}
-                                className="flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:text-zinc-400 dark:hover:text-red-400 dark:hover:bg-red-900/20"
+                                className="flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 text-primary-500 hover:text-danger-600 hover:bg-danger-50 dark:text-primary-400 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
                                 title="Delete Shot"
                             >
                                 <Trash2 size={14} />
                             </button>
                         </div>
                     </div>
-                    <p className="text-xs text-zinc-500 line-clamp-2">{shot.description}</p>
-                    {shot.notes && <p className="text-xs text-zinc-400 mt-1 italic line-clamp-2">{shot.notes}</p>}
+                    <p className="text-xs text-primary-500 line-clamp-2">{shot.description}</p>
+                    {shot.notes && <p className="text-xs text-primary-400 mt-1 italic line-clamp-2">{shot.notes}</p>}
                 </div>
             </Card >
         </div >
@@ -501,7 +501,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-3">
-                        <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Shots List</h3>
+                        <h3 className="text-xl font-bold text-primary-900 dark:text-white">Shots List</h3>
                         <div className="flex items-center gap-2">
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-300 border border-amber-100 dark:border-amber-800">
                                 <Film size={12} />
@@ -521,12 +521,12 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                             </div>
                         </div>
                     </div>
-                    <div className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg flex gap-1">
+                    <div className="bg-primary-100 dark:bg-primary-800 p-1 rounded-lg flex gap-1">
                         <button
                             onClick={() => setViewMode('preview')}
                             className={`p-1.5 rounded-md transition-all ${viewMode === 'preview'
-                                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                                ? 'bg-white dark:bg-primary-700 text-primary-900 dark:text-white shadow-sm'
+                                : 'text-primary-500 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-200'
                                 }`}
                             title="Preview View"
                         >
@@ -535,8 +535,8 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                         <button
                             onClick={() => setViewMode('detailed')}
                             className={`p-1.5 rounded-md transition-all ${viewMode === 'detailed'
-                                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                                ? 'bg-white dark:bg-primary-700 text-primary-900 dark:text-white shadow-sm'
+                                : 'text-primary-500 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-200'
                                 }`}
                             title="Detailed View"
                         >
@@ -545,8 +545,8 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                         <button
                             onClick={() => setViewMode('slim')}
                             className={`p-1.5 rounded-md transition-all ${viewMode === 'slim'
-                                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                                ? 'bg-white dark:bg-primary-700 text-primary-900 dark:text-white shadow-sm'
+                                : 'text-primary-500 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-200'
                                 }`}
                             title="Slim View"
                         >
@@ -566,7 +566,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
             >
                 <div className={`flex flex-col gap-${viewMode === 'preview' ? '6' : '3'}`}>
                     {shots.length === 0 ? (
-                        <p className="text-zinc-500 italic">No shots yet.</p>
+                        <p className="text-primary-500 italic">No shots yet.</p>
                     ) : (
                         <SortableContext
                             items={shots.map(s => s.id)}
@@ -599,7 +599,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                 >
                     <div className="absolute top-4 right-4 flex gap-2">
                         <button
-                            className="text-white hover:text-zinc-300 p-2 bg-black/50 rounded-full transition-colors"
+                            className="text-white hover:text-primary-300 p-2 bg-black/50 rounded-full transition-colors"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 downloadImage(imageModal.url, `shot-${new Date().getTime()}.png`);
@@ -609,7 +609,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                             <Download size={24} />
                         </button>
                         <button
-                            className="text-white hover:text-zinc-300 p-2 bg-black/50 rounded-full transition-colors"
+                            className="text-white hover:text-primary-300 p-2 bg-black/50 rounded-full transition-colors"
                             onClick={() => setImageModal(null)}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>

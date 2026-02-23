@@ -278,13 +278,13 @@ export const LocationDetail: React.FC = () => {
             <div>
                 <Link
                     to=".."
-                    className="inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 h-8 px-3 text-sm -ml-3 gap-2"
+                    className="inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none hover:bg-primary-100 dark:hover:bg-primary-800 text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100 h-8 px-3 text-sm -ml-3 gap-2"
                 >
                     <ArrowLeft size={16} /> Back to Locations
                 </Link>
             </div>
 
-            <div className="flex flex-col md:flex-row justify-between items-start gap-4 pb-6 border-b border-zinc-200 dark:border-zinc-800">
+            <div className="flex flex-col md:flex-row justify-between items-start gap-4 pb-6 border-b border-primary-200 dark:border-primary-800">
                 <div className="flex-1 w-full">
                     <input
                         type="text"
@@ -295,13 +295,13 @@ export const LocationDetail: React.FC = () => {
                             setSaveStatus(null);
                             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
                         }}
-                        className="text-4xl font-bold text-zinc-900 dark:text-white mb-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-zinc-300 dark:placeholder-zinc-700 transition-colors hover:border-zinc-300 dark:hover:border-zinc-600 shadow-sm"
+                        className="text-4xl font-bold text-primary-900 dark:text-white mb-2 bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-primary-300 dark:placeholder-primary-700 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
                         placeholder="Location Name"
                     />
                 </div>
                 <div className="flex gap-2 items-center flex-wrap justify-end">
                     {saveStatus === 'saving' && (
-                        <span className="text-zinc-500 text-sm flex items-center gap-1">
+                        <span className="text-primary-500 text-sm flex items-center gap-1">
                             <Loader2 className="animate-spin" size={14} /> Saving...
                         </span>
                     )}
@@ -311,11 +311,11 @@ export const LocationDetail: React.FC = () => {
                         </span>
                     )}
                     {saveStatus === 'error' && (
-                        <span className="text-red-600 text-sm font-medium">
+                        <span className="text-danger-600 text-sm font-medium">
                             Error saving
                         </span>
                     )}
-                    <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-1"></div>
+                    <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1"></div>
                     <Button onClick={handleImageUploadClick} disabled={isUploading || isGenerating} size="sm" variant="secondary">
                         {isUploading ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
                         {isUploading ? 'Uploading...' : 'Upload Image'}
@@ -324,7 +324,7 @@ export const LocationDetail: React.FC = () => {
                         <Sparkles size={16} />
                         Generate Image
                     </Button>
-                    <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-1"></div>
+                    <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1"></div>
                     <Button variant="danger" onClick={handleDelete} size="sm">
                         <Trash2 size={16} /> Delete
                     </Button>
@@ -336,7 +336,7 @@ export const LocationDetail: React.FC = () => {
                 <div className="space-y-6">
                     <section>
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Image</h3>
+                            <h3 className="text-xl font-bold text-primary-900 dark:text-white">Image</h3>
                             <input
                                 type="file"
                                 ref={fileInputRef}
@@ -349,7 +349,7 @@ export const LocationDetail: React.FC = () => {
                         {(images && images.length > 0) ? (
                             <div className="grid grid-cols-1 gap-4">
                                 {images.map((img, idx) => (
-                                    <div key={idx} className="relative rounded-xl overflow-hidden group aspect-video bg-zinc-100 dark:bg-zinc-800">
+                                    <div key={idx} className="relative rounded-xl overflow-hidden group aspect-video bg-primary-100 dark:bg-primary-800">
                                         <img src={img} alt={`Location viz ${idx}`} className="w-full h-full object-cover" />
                                         <button
                                             onClick={() => handleDeleteImage(img)}
@@ -362,7 +362,7 @@ export const LocationDetail: React.FC = () => {
                             </div>
                         ) : (
                             thumbnailUrl ? (
-                                <div className="rounded-xl overflow-hidden aspect-video bg-zinc-100 dark:bg-zinc-800 max-h-[400px]">
+                                <div className="rounded-xl overflow-hidden aspect-video bg-primary-100 dark:bg-primary-800 max-h-[400px]">
                                     <img
                                         src={thumbnailUrl}
                                         alt={name}
@@ -370,7 +370,7 @@ export const LocationDetail: React.FC = () => {
                                     />
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center py-12 text-zinc-400 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/50">
+                                <div className="flex flex-col items-center justify-center py-12 text-primary-400 border border-dashed border-primary-200 dark:border-primary-800 rounded-xl bg-primary-50/50 dark:bg-primary-900/50">
                                     <Sparkles size={24} className="mb-2 opacity-20" />
                                     <p className="italic">No images generated yet.</p>
                                 </div>
@@ -382,8 +382,8 @@ export const LocationDetail: React.FC = () => {
                 {/* Right Side: Details */}
                 <div className="flex flex-col gap-6">
                     <section className="flex flex-col gap-2">
-                        <h3 className="font-semibold text-zinc-900 dark:text-white">Location Details</h3>
-                        <div className="flex gap-4 text-zinc-500 items-center">
+                        <h3 className="font-semibold text-primary-900 dark:text-white">Location Details</h3>
+                        <div className="flex gap-4 text-primary-500 items-center">
                             <MapPin size={16} className="shrink-0" />
                             <input
                                 type="text"
@@ -394,7 +394,7 @@ export const LocationDetail: React.FC = () => {
                                     setSaveStatus(null);
                                     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
                                 }}
-                                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-zinc-400 transition-colors hover:border-zinc-300 dark:hover:border-zinc-600 shadow-sm"
+                                className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-primary-400 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
                                 placeholder="Add geolocation..."
                             />
                             <select
@@ -405,7 +405,7 @@ export const LocationDetail: React.FC = () => {
                                     setSaveStatus(null);
                                     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
                                 }}
-                                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors hover:border-zinc-300 dark:hover-zinc-600 shadow-sm appearance-none font-medium text-zinc-700 dark:text-zinc-300"
+                                className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors hover:border-primary-300 dark:hover-primary-600 shadow-sm appearance-none font-medium text-primary-700 dark:text-primary-300"
                             >
                                 <option value="">Select Type...</option>
                                 <option value="INT.">INT.</option>
@@ -416,7 +416,7 @@ export const LocationDetail: React.FC = () => {
                     </section>
 
                     <section className="flex flex-col gap-2 flex-grow">
-                        <h3 className="font-semibold text-zinc-900 dark:text-white">Description</h3>
+                        <h3 className="font-semibold text-primary-900 dark:text-white">Description</h3>
                         <textarea
                             value={description}
                             onChange={(e) => {
@@ -425,13 +425,13 @@ export const LocationDetail: React.FC = () => {
                                 setSaveStatus(null);
                                 if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
                             }}
-                            className="w-full p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all min-h-[120px] resize-y shadow-sm flex-grow"
+                            className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[120px] resize-y shadow-sm flex-grow"
                             placeholder="Detailed description of the location..."
                         />
                     </section>
 
                     <section className="flex flex-col gap-2">
-                        <h3 className="font-semibold text-zinc-900 dark:text-white">Notes</h3>
+                        <h3 className="font-semibold text-primary-900 dark:text-white">Notes</h3>
                         <textarea
                             value={comment}
                             onChange={(e) => {
@@ -440,7 +440,7 @@ export const LocationDetail: React.FC = () => {
                                 setSaveStatus(null);
                                 if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
                             }}
-                            className="w-full p-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all min-h-[120px] resize-y shadow-sm"
+                            className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[120px] resize-y shadow-sm"
                             placeholder="Notes about lighting, access, etc."
                         />
                     </section>
@@ -448,18 +448,18 @@ export const LocationDetail: React.FC = () => {
             </div>
 
             <section>
-                <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">Scenes ({associatedScenes.length})</h3>
+                <h3 className="font-semibold text-primary-900 dark:text-white mb-4">Scenes ({associatedScenes.length})</h3>
                 {associatedScenes.length > 0 ? (
                     <div className="grid gap-3">
                         {associatedScenes.map(scene => (
-                            <div key={scene.id} onClick={() => navigate(`../../scenes/${scene.id}`)} className="flex items-center gap-4 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer transition-colors bg-white dark:bg-zinc-950/50">
-                                <span className="font-mono font-bold text-zinc-400 w-8">{scene.number}</span>
-                                <span className="font-medium text-zinc-900 dark:text-white">{scene.name}</span>
+                            <div key={scene.id} onClick={() => navigate(`../../scenes/${scene.id}`)} className="flex items-center gap-4 p-4 rounded-lg border border-primary-200 dark:border-primary-800 hover:bg-primary-50 dark:hover:bg-primary-900 cursor-pointer transition-colors bg-white dark:bg-primary-950/50">
+                                <span className="font-mono font-bold text-primary-400 w-8">{scene.number}</span>
+                                <span className="font-medium text-primary-900 dark:text-white">{scene.name}</span>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <p className="text-zinc-500 italic">No scenes linked to this location.</p>
+                    <p className="text-primary-500 italic">No scenes linked to this location.</p>
                 )}
             </section>
         </div>

@@ -53,7 +53,7 @@ const SortableCharacterCard = ({
 
     return (
         <div ref={setNodeRef} style={style} className="h-full">
-            <Card className="!p-0 flex flex-col h-full bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 relative group/card">
+            <Card className="!p-0 flex flex-col h-full bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800 relative group/card">
                 {/* Drag Handle */}
                 <div
                     {...attributes}
@@ -68,25 +68,25 @@ const SortableCharacterCard = ({
                         <img
                             src={character.imageUrl}
                             alt={character.name}
-                            className="w-full h-48 object-cover bg-zinc-100 dark:bg-zinc-800 hover:opacity-95 transition-opacity"
+                            className="w-full h-48 object-cover bg-primary-100 dark:bg-primary-800 hover:opacity-95 transition-opacity"
                         />
                     ) : (
-                        <div className="w-full h-48 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-300 dark:text-zinc-700">
+                        <div className="w-full h-48 bg-primary-100 dark:bg-primary-800 flex items-center justify-center text-primary-300 dark:text-primary-700">
                             <User size={32} />
                         </div>
                     )}
                 </div>
 
                 <div className="p-4 flex flex-col gap-2 flex-1">
-                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-white pointer-events-none select-none">{character.name}</h3>
+                    <h3 className="text-lg font-semibold text-primary-900 dark:text-white pointer-events-none select-none">{character.name}</h3>
                     {character.type && (
-                        <span className="w-fit px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 capitalize pointer-events-none select-none">
+                        <span className="w-fit px-2 py-0.5 rounded text-xs font-medium bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-400 capitalize pointer-events-none select-none">
                             {character.type}
                         </span>
                     )}
-                    <p className="text-zinc-500 text-sm line-clamp-3 mb-4 pointer-events-none select-none">{character.description}</p>
+                    <p className="text-primary-500 text-sm line-clamp-3 mb-4 pointer-events-none select-none">{character.description}</p>
 
-                    <div className="mt-auto pt-2 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+                    <div className="mt-auto pt-2 border-t border-primary-100 dark:border-primary-800 flex justify-end">
                         <Button
                             size="sm"
                             className="w-full"
@@ -132,12 +132,12 @@ const SortableCharacterListItem = ({
 
     return (
         <div ref={setNodeRef} style={style} className="w-full">
-            <Card className="!p-3 flex items-center gap-4 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 relative group/item">
+            <Card className="!p-3 flex items-center gap-4 bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800 relative group/item">
                 {/* Drag Handle */}
                 <div
                     {...attributes}
                     {...listeners}
-                    className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-grab active:cursor-grabbing"
+                    className="text-primary-400 hover:text-primary-600 dark:hover:text-primary-300 cursor-grab active:cursor-grabbing"
                 >
                     <GripVertical size={16} />
                 </div>
@@ -149,14 +149,14 @@ const SortableCharacterListItem = ({
                             variant="ghost"
                             onClick={() => character.imageUrl && onClickImage(character.imageUrl)}
                             disabled={!character.imageUrl}
-                            className="h-8 w-8 !p-0 shrink-0 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                            className="h-8 w-8 !p-0 shrink-0 text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100 disabled:opacity-30 disabled:hover:bg-transparent"
                             title={character.imageUrl ? "View Image" : "No Image Available"}
                         >
                             <User size={16} />
                         </Button>
-                        <h3 className="font-medium text-zinc-900 dark:text-white truncate select-none">{character.name}</h3>
+                        <h3 className="font-medium text-primary-900 dark:text-white truncate select-none">{character.name}</h3>
                         {character.type && (
-                            <span className="shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 capitalize pointer-events-none select-none">
+                            <span className="shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-400 capitalize pointer-events-none select-none">
                                 {character.type}
                             </span>
                         )}
@@ -167,7 +167,7 @@ const SortableCharacterListItem = ({
                             size="sm"
                             variant="ghost"
                             onClick={() => onEdit(character.id)}
-                            className="h-8 w-8 !p-0 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                            className="h-8 w-8 !p-0 text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100"
                             title="Edit Character"
                         >
                             <Edit size={16} />
@@ -344,14 +344,14 @@ export const CharacterList: React.FC = () => {
     return (
         <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-3xl font-bold text-zinc-900 dark:text-white">Characters</h2>
+                <h2 className="text-3xl font-bold text-primary-900 dark:text-white">Characters</h2>
                 <div className="flex flex-wrap gap-2">
-                    <div className="flex bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1 mr-2">
+                    <div className="flex bg-primary-100 dark:bg-primary-800 rounded-lg p-1 mr-2">
                         <button
                             onClick={() => setViewMode('expanded')}
                             className={`p-1.5 rounded-md transition-all ${viewMode === 'expanded'
-                                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                                ? 'bg-white dark:bg-primary-700 text-primary-900 dark:text-white shadow-sm'
+                                : 'text-primary-500 hover:text-primary-700 dark:hover:text-primary-300'
                                 }`}
                             title="Expanded View"
                         >
@@ -360,8 +360,8 @@ export const CharacterList: React.FC = () => {
                         <button
                             onClick={() => setViewMode('slim')}
                             className={`p-1.5 rounded-md transition-all ${viewMode === 'slim'
-                                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                                ? 'bg-white dark:bg-primary-700 text-primary-900 dark:text-white shadow-sm'
+                                : 'text-primary-500 hover:text-primary-700 dark:hover:text-primary-300'
                                 }`}
                             title="Slim View"
                         >
@@ -396,7 +396,7 @@ export const CharacterList: React.FC = () => {
                 onDragEnd={handleDragEnd}
             >
                 {characters.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
+                    <div className="flex flex-col items-center justify-center py-16 text-primary-500 border-2 border-dashed border-primary-200 dark:border-primary-800 rounded-xl">
                         <User size={48} className="mb-4 opacity-50" />
                         <p>No characters yet. Create your first one!</p>
                     </div>
@@ -441,7 +441,7 @@ export const CharacterList: React.FC = () => {
                 >
                     <div className="absolute top-4 right-4 flex gap-2">
                         <button
-                            className="text-white hover:text-zinc-300 transition-colors bg-black/50 rounded-full p-2"
+                            className="text-white hover:text-primary-300 transition-colors bg-black/50 rounded-full p-2"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 downloadImage(fullscreenImage, `character-${new Date().getTime()}.png`);
@@ -451,7 +451,7 @@ export const CharacterList: React.FC = () => {
                             <Download size={24} />
                         </button>
                         <button
-                            className="text-white hover:text-zinc-300 transition-colors bg-black/50 rounded-full p-2"
+                            className="text-white hover:text-primary-300 transition-colors bg-black/50 rounded-full p-2"
                             onClick={() => setFullscreenImage(null)}
                         >
                             <X size={24} />
