@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import type { Unsubscribe } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Location, Scene, Settings, Character, Project } from '../types/types';
+import type { Location, Scene, Settings, Character, Project, Schedule } from '../types/types';
 
 const COLLECTIONS = {
     USERS: 'users',
@@ -21,6 +21,7 @@ const COLLECTIONS = {
     CHARACTERS: 'characters',
     SETTINGS: 'settings', // Subcollection or doc logic
     PROJECTS: 'projects',
+    SCHEDULES: 'schedules',
 };
 
 // Helper for single document settings
@@ -232,6 +233,30 @@ export const storage = {
 
         await batch.commit();
     },
+    // Schedules
+    subscribeToSchedules: (userId: string, projectId: string, callback: (schedules: Schedule[]) => void): Unsubscribe => {
+        const q = query(
+            getUserCollection(userId, COLLECTIONS.SCHEDULES),
+            where('projectId', '==', projectId)
+        );
+        return onSnapshot(q, (snapshot) => {
+            const schedules = snapshot.docs.map(doc => doc.data() as Schedule);
+            // Sort by date or updatedAt
+            schedules.sort((a, b) => b.updatedAt - a.updatedAt);
+            callback(schedules);
+        });
+    },
+
+    saveSchedule: async (userId: string, schedule: Schedule) => {
+        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SCHEDULES, schedule.id);
+        await setDoc(docRef, schedule);
+    },
+
+    deleteSchedule: async (userId: string, scheduleId: string) => {
+        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SCHEDULES, scheduleId);
+        await deleteDoc(docRef);
+    },
+
     // Stats
     getAllProjectStats: async (userId: string) => {
         const stats: Record<string, { locations: number; scenes: number; shots: number; characters: number; length: number }> = {};

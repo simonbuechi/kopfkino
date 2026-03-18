@@ -10,6 +10,7 @@ import { CharactersPage } from './features/characters';
 import { ProjectDashboard } from './features/dashboard';
 import { StartPage } from './features/start';
 import { AuthPage } from './features/auth/AuthPage.tsx';
+import { SchedulingPage } from './features/scheduling';
 
 // Protected Route Wrapper
 const RequireAuth = ({ children }: { children: ReactNode }) => {
@@ -47,6 +48,7 @@ function App() {
                   <Route path="locations/*" element={<LocationsPage />} />
                   <Route path="scenes/*" element={<ScenesPage />} />
                   <Route path="characters/*" element={<CharactersPage />} />
+                  <Route path="scheduling/*" element={<SchedulingPage />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>

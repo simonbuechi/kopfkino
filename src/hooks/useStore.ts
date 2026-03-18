@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Location, Scene, Shot, Settings, Character } from '../types/types';
+import type { Location, Scene, Shot, Settings, Character, Schedule } from '../types/types';
 import { storage } from '../services/storage';
 import { useAuth } from '../context/AuthContext';
 import { useProjects } from '../context/ProjectContext';
@@ -15,6 +15,7 @@ export const useStore = () => {
     const [locations, setLocations] = useState<Location[]>([]);
     const [scenes, setScenes] = useState<Scene[]>([]);
     const [characters, setCharacters] = useState<Character[]>([]);
+    const [schedules, setSchedules] = useState<Schedule[]>([]);
     const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
     useEffect(() => {
@@ -22,6 +23,7 @@ export const useStore = () => {
             setLocations([]);
             setScenes([]);
             setCharacters([]);
+            setSchedules([]);
             setSettings(DEFAULT_SETTINGS);
             return;
         }
@@ -29,6 +31,7 @@ export const useStore = () => {
         const unsubLocations = storage.subscribeToLocations(user.uid, activeProjectId, setLocations);
         const unsubScenes = storage.subscribeToScenes(user.uid, activeProjectId, setScenes);
         const unsubCharacters = storage.subscribeToCharacters(user.uid, activeProjectId, setCharacters);
+        const unsubSchedules = storage.subscribeToSchedules(user.uid, activeProjectId, setSchedules);
         const unsubSettings = storage.subscribeToSettings(user.uid, (data) => {
             if (data) {
                 setSettings(data);
@@ -41,6 +44,7 @@ export const useStore = () => {
             unsubLocations();
             unsubScenes();
             unsubCharacters();
+            unsubSchedules();
             unsubSettings();
         };
     }, [user, activeProjectId]);
@@ -178,6 +182,22 @@ export const useStore = () => {
         await storage.saveSettings(user.uid, newSettings);
     };
 
+    // Schedules
+    const addSchedule = async (schedule: Schedule) => {
+        if (!user) return;
+        await storage.saveSchedule(user.uid, schedule);
+    };
+
+    const deleteSchedule = async (id: string) => {
+        if (!user) return;
+        await storage.deleteSchedule(user.uid, id);
+    };
+
+    const updateSchedule = async (schedule: Schedule) => {
+        if (!user) return;
+        await storage.saveSchedule(user.uid, schedule);
+    };
+
     const refresh = () => {
         // No-op or maybe re-fetch if needed, but subscriptions handle it.
         // Keeping it for interface compatibility if needed, but it's largely deprecated.
@@ -207,6 +227,10 @@ export const useStore = () => {
         replaceCharacters,
         reorderCharacters,
         updateSettings,
+        schedules,
+        addSchedule,
+        deleteSchedule,
+        updateSchedule,
         refresh,
     };
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useProjects } from '../context/ProjectContext';
-import { MapPin, Clapperboard, User, ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react';
+import { MapPin, Clapperboard, User, ChevronLeft, ChevronRight, LayoutDashboard, Calendar } from 'lucide-react';
 import icon from '../assets/icon.webp';
 import clsx from 'clsx';
 import { version } from '../../package.json';
@@ -63,6 +63,10 @@ export const Sidebar: React.FC = () => {
                         <NavLink to={`/project/${activeProjectId}/characters`} className={linkClass} title={isCollapsed ? "Characters" : undefined}>
                             <User size={20} className="shrink-0" />
                             {!isCollapsed && <span>Characters</span>}
+                        </NavLink>
+                        <NavLink to={`/project/${activeProjectId}/scheduling`} className={linkClass} title={isCollapsed ? "Scheduling" : undefined}>
+                            <Calendar size={20} className="shrink-0" />
+                            {!isCollapsed && <span>Scheduling</span>}
                         </NavLink>
                     </>
                 )}

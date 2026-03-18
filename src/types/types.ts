@@ -72,3 +72,27 @@ export interface Project {
     url?: string;
 }
 
+export type ScheduleItemType = 'shot' | 'special';
+export type SpecialItemType = 'break' | 'lunch' | 'set up' | 'call time' | 'wrap out' | 'other';
+
+export interface ScheduleItem {
+    id: string;
+    time: string;
+    duration: number; // in minutes
+    notes?: string;
+    type: ScheduleItemType;
+    shotId?: string; // if type === 'shot'
+    specialType?: SpecialItemType; // if type === 'special'
+}
+
+export interface Schedule {
+    id: string;
+    projectId: string;
+    date: string;
+    name: string;
+    notes?: string;
+    items: ScheduleItem[];
+    createdAt: number;
+    updatedAt: number;
+}
+
