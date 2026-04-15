@@ -5,6 +5,17 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: '/kopfkino/',
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+          'vendor-ui': ['@headlessui/react', 'lucide-react', 'react-router-dom']
+        }
+      }
+    }
+  },
   server: {
     proxy: {
       '/firebase-storage': {
