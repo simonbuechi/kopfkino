@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Location, Scene, Shot, Settings, Character, Schedule } from '../types/types';
+import type { Location, Scene, Shot, Settings, Character, Schedule, Asset, Person } from '../types/types';
 import { storage } from '../services/storage';
 import { useAuth } from '../context/AuthContext';
 import { useProjects } from '../context/ProjectContext';
@@ -16,6 +16,8 @@ export const useStore = () => {
     const [scenes, setScenes] = useState<Scene[]>([]);
     const [characters, setCharacters] = useState<Character[]>([]);
     const [schedules, setSchedules] = useState<Schedule[]>([]);
+    const [assets, setAssets] = useState<Asset[]>([]);
+    const [people, setPeople] = useState<Person[]>([]);
     const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
     useEffect(() => {
@@ -32,6 +34,8 @@ export const useStore = () => {
         const unsubScenes = storage.subscribeToScenes(user.uid, activeProjectId, setScenes);
         const unsubCharacters = storage.subscribeToCharacters(user.uid, activeProjectId, setCharacters);
         const unsubSchedules = storage.subscribeToSchedules(user.uid, activeProjectId, setSchedules);
+        const unsubAssets = storage.subscribeToAssets(user.uid, activeProjectId, setAssets);
+        const unsubPeople = storage.subscribeToPeople(user.uid, activeProjectId, setPeople);
         const unsubSettings = storage.subscribeToSettings(user.uid, (data) => {
             if (data) {
                 setSettings(data);
@@ -45,6 +49,8 @@ export const useStore = () => {
             unsubScenes();
             unsubCharacters();
             unsubSchedules();
+            unsubAssets();
+            unsubPeople();
             unsubSettings();
         };
     }, [user, activeProjectId]);
@@ -198,6 +204,52 @@ export const useStore = () => {
         await storage.saveSchedule(user.uid, schedule);
     };
 
+    // Assets
+    const addAsset = async (asset: Asset) => {
+        if (!user) return;
+        await storage.saveAsset(user.uid, asset);
+    };
+    const deleteAsset = async (id: string) => {
+        if (!user) return;
+        await storage.deleteAsset(user.uid, id);
+    };
+    const updateAsset = async (asset: Asset) => {
+        if (!user) return;
+        await storage.saveAsset(user.uid, asset);
+    };
+    const reorderAssets = async (newOrder: Asset[]) => {
+        if (!user) return;
+        setAssets(newOrder);
+        const assetsWithOrder = newOrder.map((asset, index) => ({
+            ...asset,
+            order: index
+        }));
+        await storage.updateAssetOrders(user.uid, assetsWithOrder);
+    };
+
+    // People
+    const addPerson = async (person: Person) => {
+        if (!user) return;
+        await storage.savePerson(user.uid, person);
+    };
+    const deletePerson = async (id: string) => {
+        if (!user) return;
+        await storage.deletePerson(user.uid, id);
+    };
+    const updatePerson = async (person: Person) => {
+        if (!user) return;
+        await storage.savePerson(user.uid, person);
+    };
+    const reorderPeople = async (newOrder: Person[]) => {
+        if (!user) return;
+        setPeople(newOrder);
+        const peopleWithOrder = newOrder.map((person, index) => ({
+            ...person,
+            order: index
+        }));
+        await storage.updatePersonOrders(user.uid, peopleWithOrder);
+    };
+
     const refresh = () => {
         // No-op or maybe re-fetch if needed, but subscriptions handle it.
         // Keeping it for interface compatibility if needed, but it's largely deprecated.
@@ -231,6 +283,16 @@ export const useStore = () => {
         addSchedule,
         deleteSchedule,
         updateSchedule,
+        assets,
+        addAsset,
+        deleteAsset,
+        updateAsset,
+        reorderAssets,
+        people,
+        addPerson,
+        deletePerson,
+        updatePerson,
+        reorderPeople,
         refresh,
     };
 };

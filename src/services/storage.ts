@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import type { Unsubscribe } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Location, Scene, Settings, Character, Project, Schedule } from '../types/types';
+import type { Location, Scene, Settings, Character, Project, Schedule, Asset, Person } from '../types/types';
 
 const COLLECTIONS = {
     USERS: 'users',
@@ -22,6 +22,8 @@ const COLLECTIONS = {
     SETTINGS: 'settings', // Subcollection or doc logic
     PROJECTS: 'projects',
     SCHEDULES: 'schedules',
+    ASSETS: 'assets',
+    PEOPLE: 'people',
 };
 
 // Helper for single document settings
@@ -254,6 +256,78 @@ export const storage = {
 
     deleteSchedule: async (userId: string, scheduleId: string) => {
         const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SCHEDULES, scheduleId);
+        await deleteDoc(docRef);
+    },
+
+    // Assets
+    subscribeToAssets: (userId: string, projectId: string, callback: (assets: Asset[]) => void): Unsubscribe => {
+        const q = query(
+            getUserCollection(userId, COLLECTIONS.ASSETS),
+            where('projectId', '==', projectId)
+        );
+        return onSnapshot(q, (snapshot) => {
+            const assets = snapshot.docs.map(doc => doc.data() as Asset);
+            assets.sort((a, b) => {
+                const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+                const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+                return orderA - orderB;
+            });
+            callback(assets);
+        });
+    },
+
+    updateAssetOrders: async (userId: string, assets: Asset[]) => {
+        const batch = writeBatch(db);
+        assets.forEach((asset) => {
+            const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ASSETS, asset.id);
+            batch.update(docRef, { order: asset.order });
+        });
+        await batch.commit();
+    },
+
+    saveAsset: async (userId: string, asset: Asset) => {
+        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ASSETS, asset.id);
+        await setDoc(docRef, asset);
+    },
+
+    deleteAsset: async (userId: string, assetId: string) => {
+        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ASSETS, assetId);
+        await deleteDoc(docRef);
+    },
+
+    // People
+    subscribeToPeople: (userId: string, projectId: string, callback: (people: Person[]) => void): Unsubscribe => {
+        const q = query(
+            getUserCollection(userId, COLLECTIONS.PEOPLE),
+            where('projectId', '==', projectId)
+        );
+        return onSnapshot(q, (snapshot) => {
+            const people = snapshot.docs.map(doc => doc.data() as Person);
+            people.sort((a, b) => {
+                const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+                const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+                return orderA - orderB;
+            });
+            callback(people);
+        });
+    },
+
+    updatePersonOrders: async (userId: string, people: Person[]) => {
+        const batch = writeBatch(db);
+        people.forEach((person) => {
+            const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.PEOPLE, person.id);
+            batch.update(docRef, { order: person.order });
+        });
+        await batch.commit();
+    },
+
+    savePerson: async (userId: string, person: Person) => {
+        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.PEOPLE, person.id);
+        await setDoc(docRef, person);
+    },
+
+    deletePerson: async (userId: string, personId: string) => {
+        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.PEOPLE, personId);
         await deleteDoc(docRef);
     },
 

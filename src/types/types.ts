@@ -96,3 +96,33 @@ export interface Schedule {
     updatedAt: number;
 }
 
+export type AssetType = 'Equipment' | 'Props' | 'Expendables' | 'Other';
+
+export interface Asset {
+    id: string;
+    projectId: string;
+    name: string;
+    description: string;
+    type: AssetType;
+    owner: string;
+    comment?: string;
+    imageUrl?: string;
+    order?: number;
+}
+
+export type PersonType = 'Actor' | 'Crew' | 'Other';
+
+export interface Person {
+    id: string;
+    projectId: string;
+    name: string;
+    description: string;
+    type: PersonType;
+    role: string;
+    phone: string;
+    email: string;
+    comment?: string;
+    imageUrl?: string;
+    order?: number;
+}
+
