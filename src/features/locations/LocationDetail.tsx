@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
-import { MapPin, Trash2, ArrowLeft, Sparkles, Loader2, X, Upload } from 'lucide-react';
+import { MapPin, Trash2, ArrowLeft, Sparkles, Loader2, X, Upload, Star } from 'lucide-react';
 import { generateImage } from '../../services/ai';
 import { uploadImageFromUrl, deleteImageFromUrl, uploadFile } from '../../services/storageService';
 import { useAuth } from '../../context/AuthContext';
@@ -216,7 +216,7 @@ export const LocationDetail: React.FC = () => {
             const permanentUrl = await uploadImageFromUrl(tempUrl, user.uid);
 
             // 3. Update Local State (Effect will trigger save)
-            const updatedImages = [...images, permanentUrl];
+            const updatedImages = [...images, permanentUrl].slice(0, 4);
             setImages(updatedImages);
             if (!thumbnailUrl) setThumbnailUrl(permanentUrl);
             setIsDirty(true); // Ensure dirty to prevent sync revert
@@ -258,7 +258,7 @@ export const LocationDetail: React.FC = () => {
             const permanentUrl = await uploadFile(file, user.uid);
 
             // 2. Update Local State (Effect will trigger save)
-            const updatedImages = [...images, permanentUrl];
+            const updatedImages = [...images, permanentUrl].slice(0, 4);
             setImages(updatedImages);
             if (!thumbnailUrl) setThumbnailUrl(permanentUrl);
             setIsDirty(true); // Ensure dirty to prevent sync revert
@@ -316,11 +316,22 @@ export const LocationDetail: React.FC = () => {
                         </span>
                     )}
                     <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1"></div>
-                    <Button onClick={handleImageUploadClick} disabled={isUploading || isGenerating} size="sm" variant="secondary">
+                    <Button 
+                        onClick={handleImageUploadClick} 
+                        disabled={isUploading || isGenerating || images.length >= 4} 
+                        size="sm" 
+                        variant="secondary"
+                        title={images.length >= 4 ? "Maximum 4 images allowed" : "Upload Image"}
+                    >
                         {isUploading ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
                         {isUploading ? 'Uploading...' : 'Upload Image'}
                     </Button>
-                    <Button onClick={handleGenerateImage} disabled={true} size="sm">
+                    <Button 
+                        onClick={handleGenerateImage} 
+                        disabled={true || images.length >= 4} 
+                        size="sm"
+                        title={images.length >= 4 ? "Maximum 4 images allowed" : "Generate Image"}
+                    >
                         <Sparkles size={16} />
                         Generate Image
                     </Button>
@@ -336,27 +347,46 @@ export const LocationDetail: React.FC = () => {
                 <div className="space-y-6">
                     <section>
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold text-primary-900 dark:text-white">Image</h3>
+                            <h3 className="text-xl font-bold text-primary-900 dark:text-white">Images ({images.length}/4)</h3>
                             <input
                                 type="file"
                                 ref={fileInputRef}
                                 onChange={onFileSelected}
                                 className="hidden"
                                 accept="image/*"
+                                disabled={images.length >= 4}
                             />
                         </div>
 
                         {(images && images.length > 0) ? (
                             <div className="grid grid-cols-1 gap-4">
                                 {images.map((img, idx) => (
-                                    <div key={idx} className="relative rounded-xl overflow-hidden group aspect-video bg-primary-100 dark:bg-primary-800">
+                                    <div key={idx} className={`relative rounded-xl overflow-hidden group aspect-video bg-primary-100 dark:bg-primary-800 border-2 ${thumbnailUrl === img ? 'border-primary-500' : 'border-transparent'}`}>
                                         <img src={img} alt={`Location viz ${idx}`} className="w-full h-full object-cover" />
-                                        <button
-                                            onClick={() => handleDeleteImage(img)}
-                                            className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
-                                        >
-                                            <X size={14} />
-                                        </button>
+                                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => {
+                                                    setThumbnailUrl(img);
+                                                    setIsDirty(true);
+                                                }}
+                                                className={`p-1.5 rounded-full transition-colors ${thumbnailUrl === img ? 'bg-primary-500 text-white' : 'bg-black/60 text-white hover:bg-black/80'}`}
+                                                title={thumbnailUrl === img ? "Primary Image" : "Set as Primary"}
+                                            >
+                                                <Star size={14} fill={thumbnailUrl === img ? "currentColor" : "none"} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteImage(img)}
+                                                className="bg-black/60 text-white p-1.5 rounded-full hover:bg-black/80"
+                                                title="Delete Image"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                        {thumbnailUrl === img && (
+                                            <div className="absolute bottom-2 left-2 bg-primary-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                                                PRIMARY
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
