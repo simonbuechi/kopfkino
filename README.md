@@ -49,6 +49,7 @@ Kopfkino is a specialized tool for visualizing and managing film production elem
     VITE_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
     VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
     VITE_FIREBASE_APP_ID=your_app_id
+    VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
     ```
 
 4.  Start the development server:

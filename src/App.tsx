@@ -53,7 +53,7 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <ProjectProvider>
-          <BrowserRouter basename={import.meta.env.URL.includes('github.io') ? '/kopfkino/' : '/'}>
+          <BrowserRouter basename={import.meta.env.BASE_URL}>
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
                 <Route path="/login" element={<AuthPage />} />

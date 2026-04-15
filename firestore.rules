@@ -11,14 +11,21 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
+    // Helper function to check if the resource is within safe size limits (1MB)
+    function isWithinSizeLimit() {
+      return request.resource.size < 1 * 1024 * 1024;
+    }
+
     // Match the users collection and their documents
     match /users/{userId} {
-      // Allow user to read/write their own document (if we used it for profiles)
-      allow read, write: if isSignedIn() && isOwner(userId);
+      // Allow user to read/write their own document
+      allow read: if isSignedIn() && isOwner(userId);
+      allow write: if isSignedIn() && isOwner(userId) && isWithinSizeLimit();
 
-      // Match all subcollections (locations, scenes, shots)
+      // Match all subcollections (locations, scenes, shots, etc.)
       match /{collectionName}/{document=**} {
-        allow read, write: if isSignedIn() && isOwner(userId);
+        allow read: if isSignedIn() && isOwner(userId);
+        allow write: if isSignedIn() && isOwner(userId) && isWithinSizeLimit();
       }
     }
     
