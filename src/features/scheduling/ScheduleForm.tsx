@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, Trash2, ArrowLeft, Save, Clock } from 'lucide-react';
 import { useStore } from '../../hooks/useStore';
@@ -9,10 +9,40 @@ export const ScheduleForm: React.FC = () => {
     const navigate = useNavigate();
     const { schedules, scenes, addSchedule, updateSchedule } = useStore();
 
-    const [name, setName] = useState('');
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-    const [notes, setNotes] = useState('');
-    const [items, setItems] = useState<ScheduleItem[]>([]);
+    interface ScheduleState {
+        name: string;
+        date: string;
+        notes: string;
+        items: ScheduleItem[];
+    }
+
+    type ScheduleAction = 
+        | { type: 'RESET'; payload: ScheduleState }
+        | { type: 'SET_FIELD'; field: string; value: string | number | boolean | ScheduleItem[] | undefined }
+        | { type: 'UPDATE_ITEMS'; items: ScheduleItem[] }
+        | { type: 'SET_STATE'; payload: Partial<ScheduleState> };
+
+    const [state, dispatch] = useReducer((state: ScheduleState, action: ScheduleAction): ScheduleState => {
+        switch (action.type) {
+            case 'RESET':
+                return action.payload;
+            case 'SET_FIELD':
+                return { ...state, [action.field]: action.value };
+            case 'UPDATE_ITEMS':
+                return { ...state, items: action.items };
+            case 'SET_STATE':
+                return { ...state, ...action.payload };
+            default:
+                return state;
+        }
+    }, {
+        name: '',
+        date: new Date().toISOString().split('T')[0],
+        notes: '',
+        items: [] as ScheduleItem[]
+    });
+
+    const { name, date, notes, items } = state;
 
     // Get all shots from all scenes
     const allShots = scenes.flatMap(scene => 
@@ -27,10 +57,15 @@ export const ScheduleForm: React.FC = () => {
         if (scheduleId && schedules.length > 0) {
             const existing = schedules.find(s => s.id === scheduleId);
             if (existing) {
-                setName(existing.name);
-                setDate(existing.date);
-                setNotes(existing.notes || '');
-                setItems(existing.items);
+                dispatch({ 
+                    type: 'RESET', 
+                    payload: {
+                        name: existing.name,
+                        date: existing.date,
+                        notes: existing.notes || '',
+                        items: existing.items
+                    }
+                });
             }
         }
     }, [scheduleId, schedules]);
@@ -44,15 +79,15 @@ export const ScheduleForm: React.FC = () => {
             specialType: 'other',
             notes: ''
         };
-        setItems([...items, newItem]);
+        dispatch({ type: 'UPDATE_ITEMS', items: [...items, newItem] });
     };
 
     const handleRemoveItem = (id: string) => {
-        setItems(items.filter(item => item.id !== id));
+        dispatch({ type: 'UPDATE_ITEMS', items: items.filter((item) => item.id !== id) });
     };
 
     const handleUpdateItem = (id: string, updates: Partial<ScheduleItem>) => {
-        setItems(items.map(item => item.id === id ? { ...item, ...updates } : item));
+        dispatch({ type: 'UPDATE_ITEMS', items: items.map((item) => item.id === id ? { ...item, ...updates } : item) });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -116,7 +151,7 @@ export const ScheduleForm: React.FC = () => {
                             <input
                                 type="text"
                                 value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                onChange={(e) => dispatch({ type: 'SET_STATE', payload: { name: e.target.value } })}
                                 className="w-full bg-primary-50 dark:bg-primary-800 border border-primary-200 dark:border-primary-700 rounded-lg px-4 py-2 text-primary-900 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
                                 placeholder="Day 1 - Shooting"
                                 required
@@ -129,7 +164,7 @@ export const ScheduleForm: React.FC = () => {
                             <input
                                 type="date"
                                 value={date}
-                                onChange={(e) => setDate(e.target.value)}
+                                onChange={(e) => dispatch({ type: 'SET_STATE', payload: { date: e.target.value } })}
                                 className="w-full bg-primary-50 dark:bg-primary-800 border border-primary-200 dark:border-primary-700 rounded-lg px-4 py-2 text-primary-900 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
                                 required
                             />
@@ -141,7 +176,7 @@ export const ScheduleForm: React.FC = () => {
                         </label>
                         <textarea
                             value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
+                            onChange={(e) => dispatch({ type: 'SET_STATE', payload: { notes: e.target.value } })}
                             className="w-full bg-primary-50 dark:bg-primary-800 border border-primary-200 dark:border-primary-700 rounded-lg px-4 py-2 text-primary-900 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none h-24 resize-none"
                             placeholder="General notes for this shoot day..."
                         />

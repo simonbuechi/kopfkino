@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Edit, Trash2, Plus, Image as ImageIcon, Loader2, GripVertical, List, Grid, Download, Timer, Film, Volume2 } from 'lucide-react';

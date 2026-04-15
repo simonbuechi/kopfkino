@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
-import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext';
-import { useProjects } from '../context/ProjectContext';
+import { useTheme } from '../hooks/useTheme';
+import { useAuth } from '../hooks/useAuth';
+import { useProjects } from '../hooks/useProjects';
 import { Sun, Moon, Settings as SettingsIcon, LogOut, Clapperboard, ArrowRightLeft } from 'lucide-react';
 import { SettingsDialog } from '../features/settings/SettingsDialog';
 
@@ -24,13 +24,9 @@ export const Layout: React.FC = () => {
             selectProject(projectId);
         } else if (!projectId && activeProjectId && location.pathname === '/') {
             // If explicit root visit and context has project, decide if we clear it.
-            // Actually, if we are at root "/", we generally want to see the project list (StartPage).
-            // But StartPage handles "if (!activeProjectId)".
-            // If we have activeProjectId, StartPage might auto-redirect? 
-            // Let's decide: URL is source of truth.
             selectProject(null);
         }
-    }, [projectId, location.pathname]);
+    }, [projectId, location.pathname, activeProjectId, selectProject]);
 
     // Handle Switch Project
     const handleSwitchProject = () => {

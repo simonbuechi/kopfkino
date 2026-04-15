@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
-import { useProjects } from '../../context/ProjectContext';
+import { useProjects } from '../../hooks/useProjects';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { MapPin, Plus, Upload, Download, Edit, GripVertical, X, LayoutGrid, List } from 'lucide-react';

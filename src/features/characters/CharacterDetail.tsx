@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useReducer, useEffect, useRef, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
-import { useProjects } from '../../context/ProjectContext';
+import { useProjects } from '../../hooks/useProjects';
 import { Button } from '../../components/ui/Button';
 import { ArrowLeft, Save, Trash2, User, Loader2, Upload, X } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import type { Character, CharacterType } from '../../types/types';
 import { useDebounce } from '../../hooks/useDebounce';
 import { uploadFile, deleteImageFromUrl } from '../../services/storageService';
@@ -19,100 +19,125 @@ export const CharacterDetail: React.FC = () => {
     const isNew = id === 'new';
     const existingCharacter = characters.find(c => c.id === id);
 
+    interface CharacterState {
+        name: string;
+        description: string;
+        comment: string;
+        imageUrl?: string;
+        type?: CharacterType;
+        isDirty: boolean;
+        saveStatus: 'saved' | 'saving' | 'error' | null;
+    }
 
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [comment, setComment] = useState('');
-    const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
-    const [type, setType] = useState<CharacterType | undefined>(undefined);
+    type CharacterAction = 
+        | { type: 'SET_FIELD'; field: string; value: string | number | boolean | string[] | undefined | CharacterType }
+        | { type: 'SET_MULTIPLE'; payload: Partial<CharacterState> }
+        | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
+        | { type: 'SAVED' }
+        | { type: 'SYNC'; payload: Partial<CharacterState> }
+        | { type: 'RESET' };
 
-    // Track if potentially unsaved changes exist to avoid instant save on load
-    const [isDirty, setIsDirty] = useState(false);
+    // Local state for editing using a reducer
+    const [state, dispatch] = useReducer((state: CharacterState, action: CharacterAction): CharacterState => {
+        switch (action.type) {
+            case 'SET_FIELD':
+                return { ...state, [action.field]: action.value, isDirty: true, saveStatus: null };
+            case 'SET_MULTIPLE':
+                return { ...state, ...action.payload, isDirty: true, saveStatus: null };
+            case 'SET_STATUS':
+                return { ...state, saveStatus: action.status };
+            case 'SAVED':
+                return { ...state, saveStatus: 'saved', isDirty: false };
+            case 'SYNC':
+                return { ...state, ...action.payload, isDirty: false };
+            case 'RESET':
+                return {
+                    name: '',
+                    description: '',
+                    comment: '',
+                    imageUrl: undefined,
+                    type: undefined,
+                    isDirty: false,
+                    saveStatus: null
+                };
+            default:
+                return state;
+        }
+    }, {
+        name: '',
+        description: '',
+        comment: '',
+        imageUrl: undefined,
+        type: undefined,
+        isDirty: false,
+        saveStatus: null
+    });
 
-    // Debounce values to avoid saving on every keystroke
-    const debouncedName = useDebounce(name, 1000);
-    const debouncedDescription = useDebounce(description, 1000);
-    const debouncedComment = useDebounce(comment, 1000);
+    const { name, description, comment, imageUrl, type, isDirty, saveStatus } = state;
 
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
 
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
-    const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-    const latestStateRef = React.useRef({ name, description, comment, imageUrl, type });
+    const debouncedName = useDebounce(name, 1000);
+    const debouncedDescription = useDebounce(description, 1000);
+    const debouncedComment = useDebounce(comment, 1000);
 
-    // Update ref whenever state changes
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const latestStateRef = useRef(state);
+
     useEffect(() => {
-        latestStateRef.current = { name, description, comment, imageUrl, type };
-    }, [name, description, comment, imageUrl, type]);
+        latestStateRef.current = state;
+    }, [state]);
 
     // Initial load and sync effect
     useEffect(() => {
         if (existingCharacter) {
-            // If we are dirty (user has typed), do NOT overwrite unless ID changed (navigation)
-            // or unless current values match remote structure (e.g. after save)
-            // simplified: only sync if not dirty OR if ID changed (navigation)
+            const payload = {
+                name: existingCharacter.name,
+                description: existingCharacter.description,
+                comment: existingCharacter.comment || '',
+                imageUrl: existingCharacter.imageUrl,
+                type: existingCharacter.type
+            };
 
-            const isSameCharacter = existingCharacter.id === id;
+            const needsSync = 
+                payload.name !== name ||
+                payload.description !== description ||
+                payload.comment !== comment ||
+                payload.imageUrl !== imageUrl ||
+                payload.type !== type;
 
-            // If navigating to a new ID (that is existing), always sync
-            // If staying on same ID, only sync if not dirty (to avoid overwrite during typing)
-            // BUT: if we just saved, existingCharacter updates. We want to clear isDirty if matches.
-
-            if (!isSameCharacter || !isDirty) {
-                setName(existingCharacter.name);
-                setDescription(existingCharacter.description);
-                setComment(existingCharacter.comment || '');
-                setImageUrl(existingCharacter.imageUrl);
-                setType(existingCharacter.type);
-                setIsDirty(false);
-            } else if (isDirty) {
-                // Check if remote matches local (meaning save was successful and propagated)
-                const matches =
-                    existingCharacter.name === name &&
-                    existingCharacter.description === description &&
-                    (existingCharacter.comment || '') === comment &&
-                    existingCharacter.imageUrl === imageUrl &&
-                    existingCharacter.type === type;
-
-                if (matches) {
-                    setIsDirty(false);
-                }
+            if (needsSync && (!isDirty || existingCharacter.id !== id)) {
+                dispatch({ type: 'SYNC', payload });
             }
+        } else if (isNew) {
+            dispatch({ type: 'RESET' });
         }
-    }, [existingCharacter, id, name, description, comment, imageUrl, type, isDirty]);
+    }, [existingCharacter, id, isNew, name, description, comment, imageUrl, type, isDirty]);
 
     // Auto-save effect
     useEffect(() => {
-        // Don't auto-save new characters or if not dirty
         if (isNew || !existingCharacter || !isDirty) return;
-
-        // Don't save if name is empty
         if (!debouncedName.trim()) return;
 
         const save = async () => {
-            // Clear any existing timeout to remove status
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+            dispatch({ type: 'SET_STATUS', status: 'saving' });
 
-            setSaveStatus('saving');
             try {
                 const characterData: Character = {
-                    id: id!,
-                    projectId: existingCharacter?.projectId || activeProjectId || '',
+                    ...existingCharacter,
                     name: debouncedName,
                     description: debouncedDescription,
                     comment: debouncedComment,
                     imageUrl: imageUrl,
                     type: type,
-                    order: existingCharacter.order,
                 };
 
                 await addCharacter(characterData);
 
-                // Only show "Saved" if the current state still matches what we saved.
-                // If user typed 'C' while we were saving 'B', latestState (B+C) != savedData (B).
                 const current = latestStateRef.current;
                 const isStillMatches =
                     current.name === characterData.name &&
@@ -122,24 +147,16 @@ export const CharacterDetail: React.FC = () => {
                     current.type === characterData.type;
 
                 if (isStillMatches) {
-                    setSaveStatus('saved');
-                    // Set timeout to clear saved status
+                    dispatch({ type: 'SAVED' });
                     saveTimeoutRef.current = setTimeout(() => {
-                        setSaveStatus(null);
+                        dispatch({ type: 'SET_STATUS', status: null });
                     }, 2000);
                 } else {
-                    // If changed, silently finish (the next debounce wil trigger save)
-                    // We might move back to null or keep 'saving'?
-                    // Better to just clear status or let the next save cycle handle it.
-                    // If we leave it 'saving', it might look stuck until next save start.
-                    // If we set null, it just disappears.
-                    // Since next save logic (debounce) is running, it will eventually call save() which sets 'saving'.
-                    // So setting null here is safe.
-                    setSaveStatus(null);
+                    dispatch({ type: 'SET_STATUS', status: null });
                 }
             } catch (error) {
                 console.error("Auto-save failed", error);
-                setSaveStatus('error');
+                dispatch({ type: 'SET_STATUS', status: 'error' });
             }
         };
 
@@ -155,20 +172,12 @@ export const CharacterDetail: React.FC = () => {
         }
     }, [debouncedName, debouncedDescription, debouncedComment, imageUrl, type, isNew, existingCharacter, addCharacter, id, isDirty]);
 
-    // Handle Image change for auto-save immediately
-    useEffect(() => {
-        if (!isNew && existingCharacter && imageUrl !== existingCharacter.imageUrl) {
-            setIsDirty(true);
-        }
-    }, [imageUrl, isNew, existingCharacter]);
-
     // Clean up timeout on unmount
     useEffect(() => {
         return () => {
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         };
     }, []);
-
 
     const handleManualSave = async () => {
         if (!name.trim()) return;
@@ -180,14 +189,10 @@ export const CharacterDetail: React.FC = () => {
                 name,
                 description,
                 type,
+                comment,
+                imageUrl,
+                order: existingCharacter?.order
             };
-
-            if (existingCharacter?.order !== undefined) {
-                characterData.order = existingCharacter.order;
-            }
-
-            if (comment) characterData.comment = comment;
-            if (imageUrl) characterData.imageUrl = imageUrl;
 
             await addCharacter(characterData);
             navigate('..');
@@ -213,30 +218,26 @@ export const CharacterDetail: React.FC = () => {
         setIsUploading(true);
         try {
             const url = await uploadFile(file, user.uid);
-            setImageUrl(url);
-        } catch (error: any) {
+            dispatch({ type: 'SET_FIELD', field: 'imageUrl', value: url });
+        } catch (error: unknown) {
             console.error("Failed to upload image", error);
-            alert(`Failed to upload image: ${error.message || 'Unknown error'}`);
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            alert(`Failed to upload image: ${message}`);
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
-
     const handleRemoveImage = async () => {
         if (!imageUrl) return;
         if (confirm('Remove this image?')) {
-            // If we really want to be clean, we should delete from storage.
-            // But for now just unlinking is safer if we share images (though we don't here).
-            // Let's try to delete if it looks like a firebase storage url.
             if (imageUrl.includes('firebasestorage')) {
                 await deleteImageFromUrl(imageUrl);
             }
-            setImageUrl(undefined);
+            dispatch({ type: 'SET_FIELD', field: 'imageUrl', value: undefined });
         }
     };
-
 
     if (!isNew && !existingCharacter) {
         return <div className="p-8">Character not found</div>;
@@ -245,9 +246,12 @@ export const CharacterDetail: React.FC = () => {
     return (
         <div className="flex flex-col gap-8 w-full max-w-3xl mx-auto">
             <div>
-                <Button variant="ghost" onClick={() => navigate('..')} size="sm" className="-ml-3 text-primary-500">
+                <Link
+                    to=".."
+                    className="inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none hover:bg-primary-100 dark:hover:bg-primary-800 text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100 h-8 px-3 text-sm -ml-3 gap-2"
+                >
                     <ArrowLeft size={16} /> Back to Characters
-                </Button>
+                </Link>
             </div>
 
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 pb-6 border-b border-primary-200 dark:border-primary-800">
@@ -325,12 +329,7 @@ export const CharacterDetail: React.FC = () => {
                             <input
                                 type="text"
                                 value={name}
-                                onChange={(e) => {
-                                    setName(e.target.value);
-                                    setIsDirty(true);
-                                    setSaveStatus(null);
-                                    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-                                }}
+                                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'name', value: e.target.value })}
                                 className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
                                 placeholder="Character Name"
                             />
@@ -340,12 +339,7 @@ export const CharacterDetail: React.FC = () => {
                             <label className="text-sm font-medium text-primary-900 dark:text-primary-300">Type</label>
                             <select
                                 value={type || ''}
-                                onChange={(e) => {
-                                    setType((e.target.value as CharacterType) || undefined);
-                                    setIsDirty(true);
-                                    setSaveStatus(null);
-                                    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-                                }}
+                                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'type', value: (e.target.value as CharacterType) || undefined })}
                                 className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium appearance-none"
                             >
                                 <option value="">Select a type...</option>
@@ -360,12 +354,7 @@ export const CharacterDetail: React.FC = () => {
                             <label className="text-sm font-medium text-primary-900 dark:text-primary-300">Description</label>
                             <textarea
                                 value={description}
-                                onChange={(e) => {
-                                    setDescription(e.target.value);
-                                    setIsDirty(true);
-                                    setSaveStatus(null);
-                                    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-                                }}
+                                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })}
                                 className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[120px]"
                                 placeholder="Physical appearance, personality, role..."
                             />
@@ -375,12 +364,7 @@ export const CharacterDetail: React.FC = () => {
                             <label className="text-sm font-medium text-primary-900 dark:text-primary-300">Notes / Comments</label>
                             <textarea
                                 value={comment}
-                                onChange={(e) => {
-                                    setComment(e.target.value);
-                                    setIsDirty(true);
-                                    setSaveStatus(null);
-                                    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-                                }}
+                                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'comment', value: e.target.value })}
                                 className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[80px]"
                                 placeholder="Internal notes, casting ideas..."
                             />

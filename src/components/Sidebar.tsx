@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { useProjects } from '../context/ProjectContext';
+import { useProjects } from '../hooks/useProjects';
 import { MapPin, Clapperboard, User, ChevronLeft, ChevronRight, LayoutDashboard, Calendar, Package, Users } from 'lucide-react';
 import icon from '../assets/icon.webp';
 import clsx from 'clsx';

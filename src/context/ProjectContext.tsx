@@ -1,27 +1,44 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { useAuth } from './AuthContext';
+import React, { useReducer, useEffect, useRef } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import { storage } from '../services/storage';
 import type { Project } from '../types/types';
+import { ProjectContext } from './ProjectContextObject';
 
-interface ProjectContextType {
+type ProjectState = {
     projects: Project[];
-    activeProject: Project | null;
     activeProjectId: string | null;
-    createProject: (name: string, description: string, url?: string) => Promise<void>;
-    selectProject: (projectId: string | null) => void;
-    deleteProject: (projectId: string) => Promise<void>;
     loading: boolean;
-}
+};
 
-const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
+type ProjectAction = 
+    | { type: 'SET_DATA'; payload: Partial<ProjectState> }
+    | { type: 'RESET' };
+
+const projectReducer = (state: ProjectState, action: ProjectAction): ProjectState => {
+    switch (action.type) {
+        case 'SET_DATA':
+            return { ...state, ...action.payload };
+        case 'RESET':
+            return {
+                projects: [],
+                activeProjectId: null,
+                loading: false
+            };
+        default:
+            return state;
+    }
+};
 
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user } = useAuth();
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [activeProjectId, setActiveProjectId] = useState<string | null>(() => {
-        return localStorage.getItem('activeProjectId');
+    
+    const [state, dispatch] = useReducer(projectReducer, {
+        projects: [],
+        activeProjectId: localStorage.getItem('activeProjectId'),
+        loading: true
     });
-    const [loading, setLoading] = useState(true);
+
+    const { projects, activeProjectId, loading } = state;
 
     // Ref to access current activeProjectId inside useEffect closure without adding it to dependencies
     const activeProjectIdRef = useRef(activeProjectId);
@@ -39,16 +56,13 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     useEffect(() => {
         if (!user) {
-            setProjects([]);
-            setActiveProjectId(null);
-            setLoading(false);
+            dispatch({ type: 'RESET' });
             return;
         }
 
         const unsubscribe = storage.subscribeToProjects(user.uid, async (fetchedProjects) => {
-            setProjects(fetchedProjects);
-
             const currentActiveId = activeProjectIdRef.current;
+            let nextActiveId = currentActiveId;
 
             if (fetchedProjects.length === 0) {
                 // No projects exist. Create Default Project.
@@ -66,23 +80,28 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 // Trigger Migration of Legacy Data
                 await storage.migrateLegacyData(user.uid, defaultProject.id);
 
-                setActiveProjectId(defaultProject.id);
+                nextActiveId = defaultProject.id;
             } else {
                 // Projects exist. Check if active project is still valid.
                 const isValid = currentActiveId && fetchedProjects.find(p => p.id === currentActiveId);
 
                 if (!isValid) {
                     if (fetchedProjects.length === 1) {
-                        // Only one project exists, auto-select it
-                        setActiveProjectId(fetchedProjects[0].id);
+                        nextActiveId = fetchedProjects[0].id;
                     } else {
-                        // Multiple projects, user must select
-                        setActiveProjectId(null);
+                        nextActiveId = null;
                     }
                 }
             }
 
-            setLoading(false);
+            dispatch({ 
+                type: 'SET_DATA', 
+                payload: { 
+                    projects: fetchedProjects, 
+                    activeProjectId: nextActiveId, 
+                    loading: false 
+                } 
+            });
         });
 
         return () => unsubscribe();
@@ -99,11 +118,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
             url
         };
         await storage.saveProject(user.uid, newProject);
-        setActiveProjectId(newProject.id);
+        dispatch({ type: 'SET_DATA', payload: { activeProjectId: newProject.id } });
     };
 
     const selectProject = (projectId: string | null) => {
-        setActiveProjectId(projectId);
+        dispatch({ type: 'SET_DATA', payload: { activeProjectId: projectId } });
     };
 
     const deleteProject = async (projectId: string) => {
@@ -124,12 +143,4 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
             {children}
         </ProjectContext.Provider>
     );
-};
-
-export const useProjects = () => {
-    const context = useContext(ProjectContext);
-    if (context === undefined) {
-        throw new Error('useProjects must be used within a ProjectProvider');
-    }
-    return context;
 };

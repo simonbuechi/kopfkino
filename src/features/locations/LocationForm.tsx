@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
-import { useProjects } from '../../context/ProjectContext';
+import { useProjects } from '../../hooks/useProjects';
 import { Input, TextArea } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import type { Location } from '../../types/types';
@@ -12,7 +12,10 @@ export const LocationForm: React.FC = () => {
     const { locations, addLocation } = useStore();
     const { activeProjectId } = useProjects();
 
-    const [formData, setFormData] = useState<Location>({
+    const [formData, dispatch] = useReducer((state: Location, action: { type: 'SET'; payload: Partial<Location> } | { type: 'RESET'; payload: Location }) => {
+        if (action.type === 'RESET') return action.payload;
+        return { ...state, ...action.payload };
+    }, {
         id: crypto.randomUUID(),
         projectId: activeProjectId || '',
         name: '',
@@ -26,14 +29,14 @@ export const LocationForm: React.FC = () => {
         if (id) {
             const existing = locations.find((l) => l.id === id);
             if (existing) {
-                setFormData(existing);
+                dispatch({ type: 'RESET', payload: existing });
             }
         }
     }, [id, locations]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        dispatch({ type: 'SET', payload: { [name]: value } });
     };
 
     const handleSubmit = (e: React.FormEvent) => {

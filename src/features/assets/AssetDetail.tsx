@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useReducer, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
-import { Package, Trash2, ArrowLeft, Loader2 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useProjects } from '../../context/ProjectContext';
+import { Trash2, ArrowLeft, Loader2 } from 'lucide-react';
+import { useProjects } from '../../hooks/useProjects';
 import { useDebounce } from '../../hooks/useDebounce';
 import type { Asset, AssetType } from '../../types/types';
 
@@ -12,23 +11,67 @@ export const AssetDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { assets, deleteAsset, addAsset, updateAsset } = useStore();
-    const { user } = useAuth();
     const { activeProjectId } = useProjects();
 
     // Derived state
     const existingAsset = assets.find((a) => a.id === id);
     const isNew = !id || id === 'new';
 
-    // Local state for editing
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [type, setType] = useState<AssetType>('Other');
-    const [owner, setOwner] = useState('');
-    const [comment, setComment] = useState('');
+    interface AssetState {
+        name: string;
+        description: string;
+        type: AssetType;
+        owner: string;
+        comment: string;
+        isDirty: boolean;
+        saveStatus: 'saved' | 'saving' | 'error' | null;
+    }
 
-    // Auto-save state
-    const [isDirty, setIsDirty] = useState(false);
-    const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
+    type AssetAction = 
+        | { type: 'SET_FIELD'; field: string; value: string | number | boolean | string[] | undefined | AssetType }
+        | { type: 'SET_MULTIPLE'; payload: Partial<AssetState> }
+        | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
+        | { type: 'SAVED' }
+        | { type: 'SYNC'; payload: Partial<AssetState> }
+        | { type: 'RESET' };
+
+    // Local state for editing using a reducer
+    const [state, dispatch] = useReducer((state: AssetState, action: AssetAction): AssetState => {
+        switch (action.type) {
+            case 'SET_FIELD':
+                return { ...state, [action.field]: action.value, isDirty: true, saveStatus: null };
+            case 'SET_MULTIPLE':
+                return { ...state, ...action.payload, isDirty: true, saveStatus: null };
+            case 'SET_STATUS':
+                return { ...state, saveStatus: action.status };
+            case 'SAVED':
+                return { ...state, saveStatus: 'saved', isDirty: false };
+            case 'SYNC':
+                return { ...state, ...action.payload, isDirty: false };
+            case 'RESET':
+                return {
+                    name: '',
+                    description: '',
+                    type: 'Other' as AssetType,
+                    owner: '',
+                    comment: '',
+                    isDirty: false,
+                    saveStatus: null
+                };
+            default:
+                return state;
+        }
+    }, {
+        name: '',
+        description: '',
+        type: 'Other' as AssetType,
+        owner: '',
+        comment: '',
+        isDirty: false,
+        saveStatus: null
+    });
+
+    const { name, description, type, owner, comment, isDirty, saveStatus } = state;
 
     const debouncedName = useDebounce(name, 1000);
     const debouncedDescription = useDebounce(description, 1000);
@@ -37,24 +80,31 @@ export const AssetDetail: React.FC = () => {
 
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Initial load
+    // Initial load and sync
     useEffect(() => {
         if (existingAsset) {
-            setName(existingAsset.name);
-            setDescription(existingAsset.description);
-            setType(existingAsset.type);
-            setOwner(existingAsset.owner);
-            setComment(existingAsset.comment || '');
-            setIsDirty(false);
+            const payload = {
+                name: existingAsset.name,
+                description: existingAsset.description,
+                type: existingAsset.type,
+                owner: existingAsset.owner,
+                comment: existingAsset.comment || ''
+            };
+
+            const needsSync = 
+                payload.name !== name ||
+                payload.description !== description ||
+                payload.type !== type ||
+                payload.owner !== owner ||
+                payload.comment !== comment;
+
+            if (needsSync && !isDirty) {
+                dispatch({ type: 'SYNC', payload });
+            }
         } else if (isNew) {
-            setName('');
-            setDescription('');
-            setType('Other');
-            setOwner('');
-            setComment('');
-            setIsDirty(false);
+            dispatch({ type: 'RESET' });
         }
-    }, [existingAsset, isNew]);
+    }, [existingAsset, isNew, name, description, type, owner, comment, isDirty]);
 
     // Handle initial creation for "new" route
     useEffect(() => {
@@ -75,7 +125,7 @@ export const AssetDetail: React.FC = () => {
             };
             createAsset();
         }
-    }, [debouncedName, isNew, activeProjectId, addAsset, navigate]);
+    }, [debouncedName, isNew, activeProjectId, addAsset, navigate, name, description, type, owner, comment]);
 
     // Auto-save effect for existing assets
     useEffect(() => {
@@ -84,7 +134,7 @@ export const AssetDetail: React.FC = () => {
 
         const save = async () => {
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-            setSaveStatus('saving');
+            dispatch({ type: 'SET_STATUS', status: 'saving' });
 
             try {
                 const updatedAsset: Asset = {
@@ -97,14 +147,13 @@ export const AssetDetail: React.FC = () => {
                 };
 
                 await updateAsset(updatedAsset);
-                setSaveStatus('saved');
+                dispatch({ type: 'SAVED' });
                 saveTimeoutRef.current = setTimeout(() => {
-                    setSaveStatus(null);
+                    dispatch({ type: 'SET_STATUS', status: null });
                 }, 2000);
-                setIsDirty(false);
             } catch (error) {
                 console.error("Auto-save failed", error);
-                setSaveStatus('error');
+                dispatch({ type: 'SET_STATUS', status: 'error' });
             }
         };
 
@@ -138,10 +187,7 @@ export const AssetDetail: React.FC = () => {
                     <input
                         type="text"
                         value={name}
-                        onChange={(e) => {
-                            setName(e.target.value);
-                            setIsDirty(true);
-                        }}
+                        onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'name', value: e.target.value })}
                         className="text-4xl font-bold text-primary-900 dark:text-white mb-2 bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-primary-300 dark:placeholder-primary-700 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
                         placeholder="Asset Name"
                     />
@@ -180,10 +226,7 @@ export const AssetDetail: React.FC = () => {
                         <h3 className="font-semibold text-primary-900 dark:text-white">Type</h3>
                         <select
                             value={type}
-                            onChange={(e) => {
-                                setType(e.target.value as AssetType);
-                                setIsDirty(true);
-                            }}
+                            onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'type', value: e.target.value as AssetType })}
                             className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm appearance-none font-medium text-primary-700 dark:text-primary-300"
                         >
                             <option value="Equipment">Equipment</option>
@@ -198,10 +241,7 @@ export const AssetDetail: React.FC = () => {
                         <input
                             type="text"
                             value={owner}
-                            onChange={(e) => {
-                                setOwner(e.target.value);
-                                setIsDirty(true);
-                            }}
+                            onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'owner', value: e.target.value })}
                             className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-primary-400 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
                             placeholder="Who owns this?"
                         />
@@ -211,10 +251,7 @@ export const AssetDetail: React.FC = () => {
                         <h3 className="font-semibold text-primary-900 dark:text-white">Internal Notes</h3>
                         <textarea
                             value={comment}
-                            onChange={(e) => {
-                                setComment(e.target.value);
-                                setIsDirty(true);
-                            }}
+                            onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'comment', value: e.target.value })}
                             className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[100px] resize-y shadow-sm"
                             placeholder="Internal notes..."
                         />
@@ -227,10 +264,7 @@ export const AssetDetail: React.FC = () => {
                         <h3 className="font-semibold text-primary-900 dark:text-white">Description</h3>
                         <textarea
                             value={description}
-                            onChange={(e) => {
-                                setDescription(e.target.value);
-                                setIsDirty(true);
-                            }}
+                            onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })}
                             className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[200px] resize-y shadow-sm flex-grow"
                             placeholder="Detailed description of the asset..."
                         />

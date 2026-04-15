@@ -1,7 +1,7 @@
 import React, { useRef, type ChangeEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
-import { useProjects } from '../../context/ProjectContext';
+import { useProjects } from '../../hooks/useProjects';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Clapperboard, Plus, MapPin, Upload, Download, LayoutList, GripVertical, AlignJustify, Users, Timer, Film } from 'lucide-react';

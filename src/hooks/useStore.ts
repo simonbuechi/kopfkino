@@ -1,47 +1,79 @@
-import { useState, useEffect } from 'react';
+import { useReducer, useEffect, useCallback } from 'react';
 import type { Location, Scene, Shot, Settings, Character, Schedule, Asset, Person } from '../types/types';
 import { storage } from '../services/storage';
-import { useAuth } from '../context/AuthContext';
-import { useProjects } from '../context/ProjectContext';
+import { useAuth } from './useAuth';
+import { useProjects } from './useProjects';
 
 const DEFAULT_SETTINGS: Settings = {
     aspectRatio: '16:9',
     useRandomSeed: true
 };
 
+type StoreState = {
+    locations: Location[];
+    scenes: Scene[];
+    characters: Character[];
+    schedules: Schedule[];
+    assets: Asset[];
+    people: Person[];
+    settings: Settings;
+};
+
+type StoreAction = 
+    | { type: 'SET_LOCATIONS'; payload: Location[] }
+    | { type: 'SET_SCENES'; payload: Scene[] }
+    | { type: 'SET_CHARACTERS'; payload: Character[] }
+    | { type: 'SET_SCHEDULES'; payload: Schedule[] }
+    | { type: 'SET_ASSETS'; payload: Asset[] }
+    | { type: 'SET_PEOPLE'; payload: Person[] }
+    | { type: 'SET_SETTINGS'; payload: Settings }
+    | { type: 'RESET' };
+
+const initialState: StoreState = {
+    locations: [],
+    scenes: [],
+    characters: [],
+    schedules: [],
+    assets: [],
+    people: [],
+    settings: DEFAULT_SETTINGS
+};
+
+function storeReducer(state: StoreState, action: StoreAction): StoreState {
+    switch (action.type) {
+        case 'SET_LOCATIONS': return { ...state, locations: action.payload };
+        case 'SET_SCENES': return { ...state, scenes: action.payload };
+        case 'SET_CHARACTERS': return { ...state, characters: action.payload };
+        case 'SET_SCHEDULES': return { ...state, schedules: action.payload };
+        case 'SET_ASSETS': return { ...state, assets: action.payload };
+        case 'SET_PEOPLE': return { ...state, people: action.payload };
+        case 'SET_SETTINGS': return { ...state, settings: action.payload };
+        case 'RESET': return initialState;
+        default: return state;
+    }
+}
+
 export const useStore = () => {
     const { user } = useAuth();
     const { activeProjectId } = useProjects();
-    const [locations, setLocations] = useState<Location[]>([]);
-    const [scenes, setScenes] = useState<Scene[]>([]);
-    const [characters, setCharacters] = useState<Character[]>([]);
-    const [schedules, setSchedules] = useState<Schedule[]>([]);
-    const [assets, setAssets] = useState<Asset[]>([]);
-    const [people, setPeople] = useState<Person[]>([]);
-    const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+    const [state, dispatch] = useReducer(storeReducer, initialState);
+
+    const { locations, scenes, characters, schedules, assets, people, settings } = state;
 
     useEffect(() => {
         if (!user || !activeProjectId) {
-            setLocations([]);
-            setScenes([]);
-            setCharacters([]);
-            setSchedules([]);
-            setSettings(DEFAULT_SETTINGS);
+            dispatch({ type: 'RESET' });
             return;
         }
 
-        const unsubLocations = storage.subscribeToLocations(user.uid, activeProjectId, setLocations);
-        const unsubScenes = storage.subscribeToScenes(user.uid, activeProjectId, setScenes);
-        const unsubCharacters = storage.subscribeToCharacters(user.uid, activeProjectId, setCharacters);
-        const unsubSchedules = storage.subscribeToSchedules(user.uid, activeProjectId, setSchedules);
-        const unsubAssets = storage.subscribeToAssets(user.uid, activeProjectId, setAssets);
-        const unsubPeople = storage.subscribeToPeople(user.uid, activeProjectId, setPeople);
+        const unsubLocations = storage.subscribeToLocations(user.uid, activeProjectId, (payload) => dispatch({ type: 'SET_LOCATIONS', payload }));
+        const unsubScenes = storage.subscribeToScenes(user.uid, activeProjectId, (payload) => dispatch({ type: 'SET_SCENES', payload }));
+        const unsubCharacters = storage.subscribeToCharacters(user.uid, activeProjectId, (payload) => dispatch({ type: 'SET_CHARACTERS', payload }));
+        const unsubSchedules = storage.subscribeToSchedules(user.uid, activeProjectId, (payload) => dispatch({ type: 'SET_SCHEDULES', payload }));
+        const unsubAssets = storage.subscribeToAssets(user.uid, activeProjectId, (payload) => dispatch({ type: 'SET_ASSETS', payload }));
+        const unsubPeople = storage.subscribeToPeople(user.uid, activeProjectId, (payload) => dispatch({ type: 'SET_PEOPLE', payload }));
         const unsubSettings = storage.subscribeToSettings(user.uid, (data) => {
-            if (data) {
-                setSettings(data);
-            } else {
-                setSettings(DEFAULT_SETTINGS);
-            }
+            dispatch({ type: 'SET_SETTINGS', payload: data || DEFAULT_SETTINGS });
         });
 
         return () => {
@@ -71,7 +103,8 @@ export const useStore = () => {
 
     const reorderLocations = async (newOrder: Location[]) => {
         if (!user) return;
-        setLocations(newOrder);
+        // Optimistic update
+        dispatch({ type: 'SET_LOCATIONS', payload: newOrder });
         const locationsWithOrder = newOrder.map((loc, index) => ({
             ...loc,
             order: index
@@ -95,7 +128,8 @@ export const useStore = () => {
 
     const reorderScenes = async (newOrder: Scene[]) => {
         if (!user) return;
-        setScenes(newOrder);
+        // Optimistic update
+        dispatch({ type: 'SET_SCENES', payload: newOrder });
         const scenesWithOrder = newOrder.map((scene, index) => ({
             ...scene,
             order: index
@@ -140,12 +174,6 @@ export const useStore = () => {
         if (!scene) return;
 
         const updatedScene = { ...scene, shots: newShots };
-
-        // Optimistic update if we want, but local state in UI handles drag visually. 
-        // We might want to update store state too for consistency if we don't refetch immediately.
-        // Actually since we subscribe to scenes, we should wait for Firestore or update optimistic.
-        // For simplicity and speed in UI, we often rely on local state during drag, and commit on end.
-
         await storage.saveScene(user.uid, updatedScene);
     };
 
@@ -171,10 +199,8 @@ export const useStore = () => {
         if (!user) return;
 
         // Optimistic update
-        setCharacters(newOrder);
+        dispatch({ type: 'SET_CHARACTERS', payload: newOrder });
 
-        // Update orders in storage
-        // We need to ensure the validation of 'order' property
         const charactersWithOrder = newOrder.map((char, index) => ({
             ...char,
             order: index
@@ -219,7 +245,8 @@ export const useStore = () => {
     };
     const reorderAssets = async (newOrder: Asset[]) => {
         if (!user) return;
-        setAssets(newOrder);
+        // Optimistic update
+        dispatch({ type: 'SET_ASSETS', payload: newOrder });
         const assetsWithOrder = newOrder.map((asset, index) => ({
             ...asset,
             order: index
@@ -242,7 +269,8 @@ export const useStore = () => {
     };
     const reorderPeople = async (newOrder: Person[]) => {
         if (!user) return;
-        setPeople(newOrder);
+        // Optimistic update
+        dispatch({ type: 'SET_PEOPLE', payload: newOrder });
         const peopleWithOrder = newOrder.map((person, index) => ({
             ...person,
             order: index
@@ -250,11 +278,9 @@ export const useStore = () => {
         await storage.updatePersonOrders(user.uid, peopleWithOrder);
     };
 
-    const refresh = () => {
-        // No-op or maybe re-fetch if needed, but subscriptions handle it.
-        // Keeping it for interface compatibility if needed, but it's largely deprecated.
+    const refresh = useCallback(() => {
         console.log("Refresh called, but store is real-time now.");
-    };
+    }, []);
 
     return {
         locations,

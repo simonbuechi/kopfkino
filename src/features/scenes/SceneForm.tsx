@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
-import { useProjects } from '../../context/ProjectContext';
+import { useProjects } from '../../hooks/useProjects';
 import { Input, TextArea } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import type { Scene } from '../../types/types';
@@ -12,7 +12,10 @@ export const SceneForm: React.FC = () => {
     const { scenes, addScene, locations, characters } = useStore();
     const { activeProjectId } = useProjects();
 
-    const [formData, setFormData] = useState<Scene>({
+    const [formData, dispatch] = useReducer((state: Scene, action: { type: 'SET'; payload: Partial<Scene> } | { type: 'RESET'; payload: Scene }) => {
+        if (action.type === 'RESET') return action.payload;
+        return { ...state, ...action.payload };
+    }, {
         id: crypto.randomUUID(),
         projectId: activeProjectId || '',
         number: '',
@@ -21,32 +24,29 @@ export const SceneForm: React.FC = () => {
         comment: '',
         locationId: '',
         characters: [],
-        shots: [], // Initialize shots
+        shots: [],
     });
 
     useEffect(() => {
         if (id) {
             const existing = scenes.find((s) => s.id === id);
             if (existing) {
-                setFormData(existing);
+                dispatch({ type: 'RESET', payload: existing });
             }
         }
     }, [id, scenes]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        dispatch({ type: 'SET', payload: { [name]: value } });
     };
 
     const toggleCharacter = (characterId: string) => {
-        setFormData(prev => {
-            const current = prev.characters || [];
-            if (current.includes(characterId)) {
-                return { ...prev, characters: current.filter(id => id !== characterId) };
-            } else {
-                return { ...prev, characters: [...current, characterId] };
-            }
-        });
+        const current = formData.characters || [];
+        const newCharacters = current.includes(characterId)
+            ? current.filter(id => id !== characterId)
+            : [...current, characterId];
+        dispatch({ type: 'SET', payload: { characters: newCharacters } });
     };
 
     const handleSubmit = (e: React.FormEvent) => {

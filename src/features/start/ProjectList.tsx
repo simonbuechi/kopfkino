@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProjects } from '../../context/ProjectContext';
-import { useAuth } from '../../context/AuthContext';
+import { useProjects } from '../../hooks/useProjects';
+import { useAuth } from '../../hooks/useAuth';
 import { storage } from '../../services/storage';
 import { Plus, Trash2, Edit2, Play, MapPin, Users, Clapperboard, Film, Clock, Video, ExternalLink } from 'lucide-react';
 import { Button } from '../../components/ui/Button';

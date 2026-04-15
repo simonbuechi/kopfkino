@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { MapPin, Users, Clapperboard, Video, ExternalLink, Plus } from 'lucide-react';
-import { useProjects } from '../../context/ProjectContext';
+import { useProjects } from '../../hooks/useProjects';
 
 const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);

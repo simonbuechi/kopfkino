@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Input, TextArea } from '../../components/ui/Input';
@@ -6,16 +6,16 @@ import { Button } from '../../components/ui/Button';
 import type { Shot } from '../../types/types';
 
 export const ShotForm: React.FC = () => {
-    // We expect the URL to be /scenes/:sceneId/shots/new or /scenes/:sceneId/shots/:shotId/edit
     const { id: sceneId, shotId } = useParams<{ id: string, shotId?: string }>();
     const navigate = useNavigate();
     const { scenes, addShotToScene, updateShotInScene } = useStore();
-
     const scene = scenes.find(s => s.id === sceneId);
 
-    const [formData, setFormData] = useState<Shot>({
+    const [formData, dispatch] = useReducer((state: Shot, action: { type: 'SET'; payload: Partial<Shot> } | { type: 'RESET'; payload: Shot }) => {
+        if (action.type === 'RESET') return action.payload;
+        return { ...state, ...action.payload };
+    }, {
         id: crypto.randomUUID(),
-        // number: '', // Removed
         name: '',
         description: `Size: (full, medium, close-up)
 Angle: (eye, shoulder, hip, dutch)
@@ -28,17 +28,17 @@ Focus: (shallow, deep)`,
     });
 
     useEffect(() => {
-        if (shotId && scene && scene.shots) {
+        if (shotId && scene?.shots) {
             const existing = scene.shots.find((s) => s.id === shotId);
             if (existing) {
-                setFormData(existing);
+                dispatch({ type: 'RESET', payload: existing });
             }
         }
     }, [shotId, scene]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        dispatch({ type: 'SET', payload: { [name]: value } });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -91,7 +91,7 @@ Focus: (shallow, deep)`,
                         id="audio"
                         name="audio"
                         checked={formData.audio ?? true}
-                        onChange={(e) => setFormData(prev => ({ ...prev, audio: e.target.checked }))}
+                        onChange={(e) => dispatch({ type: 'SET', payload: { audio: e.target.checked } })}
                         className="w-4 h-4 text-primary-900 bg-gray-100 border-gray-300 rounded focus:ring-primary-900 dark:focus:ring-primary-600 dark:ring-offset-primary-800 focus:ring-2 dark:bg-primary-700 dark:border-primary-600"
                     />
                     <label htmlFor="audio" className="text-sm font-medium text-primary-900 dark:text-primary-100">

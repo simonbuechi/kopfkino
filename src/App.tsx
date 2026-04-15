@@ -2,14 +2,15 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import type { ReactNode } from 'react';
 import { Layout } from './components/Layout';
 import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider, useAuth } from './context/AuthContext.tsx';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './hooks/useAuth';
 import { ProjectProvider } from './context/ProjectContext';
 import { LocationsPage } from './features/locations';
 import { ScenesPage } from './features/scenes';
 import { CharactersPage } from './features/characters';
 import { ProjectDashboard } from './features/dashboard';
 import { StartPage } from './features/start';
-import { AuthPage } from './features/auth/AuthPage.tsx';
+import { AuthPage } from './features/auth/AuthPage';
 import { SchedulingPage } from './features/scheduling';
 import { AssetsPage } from './features/assets';
 import { PeoplePage } from './features/people';
