@@ -1,11 +1,20 @@
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from "firebase/storage";
 import { storage } from "./firebase";
 
+const IMAGE_COUNT_TTL = 5 * 60 * 1000; // 5 minutes
+const imageCountCache = new Map<string, { count: number; expiresAt: number }>();
+
 export const getImageCount = async (userId: string): Promise<number> => {
+    const cached = imageCountCache.get(userId);
+    if (cached && Date.now() < cached.expiresAt) {
+        return cached.count;
+    }
     try {
         const imagesRef = ref(storage, `users/${userId}/images`);
         const result = await listAll(imagesRef);
-        return result.items.length;
+        const count = result.items.length;
+        imageCountCache.set(userId, { count, expiresAt: Date.now() + IMAGE_COUNT_TTL });
+        return count;
     } catch (error) {
         console.error("Error getting image count:", error);
         return 0;

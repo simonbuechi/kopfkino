@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import { ProjectProvider } from './context/ProjectContext';
+import { StoreProvider } from './context/StoreProvider';
 import { Loader2 } from 'lucide-react';
 
 // Lazy load feature pages
@@ -53,6 +54,7 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <ProjectProvider>
+          <StoreProvider>
           <BrowserRouter>
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
@@ -78,6 +80,7 @@ function App() {
               </Routes>
             </Suspense>
           </BrowserRouter>
+          </StoreProvider>
         </ProjectProvider>
       </AuthProvider>
     </ThemeProvider>

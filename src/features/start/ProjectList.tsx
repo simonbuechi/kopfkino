@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProjects } from '../../hooks/useProjects';
 import { useAuth } from '../../hooks/useAuth';
+import { useStore } from '../../hooks/useStore';
 import { storage } from '../../services/storage';
 import { Plus, Trash2, Edit2, Play, MapPin, Users, Clapperboard, Film, Clock, Video, ExternalLink } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -14,8 +15,9 @@ const formatTime = (seconds: number) => {
 };
 
 export const ProjectList: React.FC = () => {
-    const { projects, createProject, deleteProject } = useProjects(); // Remove selectProject usage here
+    const { projects, createProject, deleteProject, activeProjectId } = useProjects();
     const { user } = useAuth();
+    const { locations, scenes, characters } = useStore();
     const navigate = useNavigate();
     const [isCreating, setIsCreating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -23,17 +25,26 @@ export const ProjectList: React.FC = () => {
     const [desc, setDesc] = useState('');
     const [url, setUrl] = useState('');
 
-    const [stats, setStats] = useState<Record<string, { locations: number; scenes: number; shots: number; characters: number; length: number }>>({});
+    const [otherStats, setOtherStats] = useState<Record<string, { locations: number; scenes: number; shots: number; characters: number; length: number }>>({});
 
+    // Fetch stats for non-active projects once per user session (served from Firestore cache after first load)
     useEffect(() => {
-        const fetchStats = async () => {
-            if (user) {
-                const data = await storage.getAllProjectStats(user.uid);
-                setStats(data);
-            }
-        };
-        fetchStats();
-    }, [user, projects]); // Refetch when projects change (creation/deletion)
+        if (!user) return;
+        storage.getAllProjectStats(user.uid).then(setOtherStats);
+    }, [user]);
+
+    // Compute active project stats from already-loaded in-memory data — no extra Firestore read
+    const activeStats = useMemo(() => {
+        if (!activeProjectId) return null;
+        const shots = scenes.reduce((n, s) => n + (s.shots?.length ?? 0), 0);
+        const length = scenes.reduce((total, s) => total + (s.shots?.reduce((acc, shot) => acc + (shot.length || 0), 0) ?? 0), 0);
+        return { locations: locations.length, scenes: scenes.length, shots, characters: characters.length, length };
+    }, [activeProjectId, locations, scenes, characters]);
+
+    const stats = useMemo(() => {
+        if (!activeProjectId || !activeStats) return otherStats;
+        return { ...otherStats, [activeProjectId]: activeStats };
+    }, [otherStats, activeProjectId, activeStats]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
