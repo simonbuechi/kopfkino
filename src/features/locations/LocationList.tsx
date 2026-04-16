@@ -1,11 +1,14 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { MapPin, Plus, Upload, Download, Edit, GripVertical, X, LayoutGrid, List } from 'lucide-react';
-import { downloadImage } from '../../services/storageService';
+import { MapPin, Plus, Upload, Download, Edit } from 'lucide-react';
+import { ViewToggle } from '../../components/ui/ViewToggle';
+import { DragHandle } from '../../components/ui/DragHandle';
+import { ImageModal } from '../../components/ui/ImageModal';
+import { EmptyState } from '../../components/ui/EmptyState';
 import type { Location } from '../../types/types';
 import {
     DndContext,
@@ -54,14 +57,7 @@ const SortableLocationCard = ({
     return (
         <div ref={setNodeRef} style={style} className="h-full">
             <Card className="!p-0 flex flex-col h-full bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800 relative group/card">
-                {/* Drag Handle */}
-                <div
-                    {...attributes}
-                    {...listeners}
-                    className="absolute top-2 left-2 z-10 bg-black/40 text-white p-1.5 rounded cursor-grab active:cursor-grabbing opacity-0 group-hover/card:opacity-100 transition-opacity hover:bg-black/60"
-                >
-                    <GripVertical size={16} />
-                </div>
+                <DragHandle variant="card" attributes={attributes} listeners={listeners} />
 
                 <div className="relative group cursor-pointer" onClick={() => location.thumbnailUrl && onClickImage(location.thumbnailUrl)}>
                     {location.thumbnailUrl ? (
@@ -137,14 +133,7 @@ const SortableLocationListItem = ({
     return (
         <div ref={setNodeRef} style={style} className="w-full">
             <Card className="!p-3 flex items-center gap-4 bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800 relative group/item">
-                {/* Drag Handle */}
-                <div
-                    {...attributes}
-                    {...listeners}
-                    className="text-primary-400 hover:text-primary-600 dark:hover:text-primary-300 cursor-grab active:cursor-grabbing"
-                >
-                    <GripVertical size={16} />
-                </div>
+                <DragHandle variant="list" attributes={attributes} listeners={listeners} />
 
                 <Button
                     size="sm"
@@ -182,22 +171,6 @@ export const LocationList: React.FC = () => {
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
-
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape' && fullscreenImage) {
-                setFullscreenImage(null);
-            }
-        };
-
-        if (fullscreenImage) {
-            window.addEventListener('keydown', handleKeyDown);
-        }
-
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [fullscreenImage]);
 
     const handleImportClick = () => {
         if (confirm('WARNING: Importing a CSV file will PERMANENTLY DELETE all existing locations. Do you want to proceed?')) {
@@ -312,28 +285,7 @@ export const LocationList: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 className="text-3xl font-bold text-primary-900 dark:text-white">Locations</h2>
                 <div className="flex flex-wrap gap-2">
-                    <div className="flex bg-primary-100 dark:bg-primary-800 rounded-lg p-1 mr-2">
-                        <button
-                            onClick={() => setViewMode('expanded')}
-                            className={`p-1.5 rounded-md transition-all ${viewMode === 'expanded'
-                                ? 'bg-white dark:bg-primary-700 text-primary-900 dark:text-white shadow-sm'
-                                : 'text-primary-500 hover:text-primary-700 dark:hover:text-primary-300'
-                                }`}
-                            title="Expanded View"
-                        >
-                            <LayoutGrid size={16} />
-                        </button>
-                        <button
-                            onClick={() => setViewMode('slim')}
-                            className={`p-1.5 rounded-md transition-all ${viewMode === 'slim'
-                                ? 'bg-white dark:bg-primary-700 text-primary-900 dark:text-white shadow-sm'
-                                : 'text-primary-500 hover:text-primary-700 dark:hover:text-primary-300'
-                                }`}
-                            title="Slim View"
-                        >
-                            <List size={16} />
-                        </button>
-                    </div>
+                    <ViewToggle value={viewMode} onChange={setViewMode} />
                     <input
                         type="file"
                         accept=".csv"
@@ -362,10 +314,7 @@ export const LocationList: React.FC = () => {
                 onDragEnd={handleDragEnd}
             >
                 {locations.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-primary-500 border-2 border-dashed border-primary-200 dark:border-primary-800 rounded-xl">
-                        <MapPin size={48} className="mb-4 opacity-50" />
-                        <p>No locations yet. Create your first one!</p>
-                    </div>
+                    <EmptyState icon={<MapPin size={48} />} message="No locations yet. Create your first one!" />
                 ) : (
                     <SortableContext
                         items={locations.map(l => l.id)}
@@ -397,37 +346,13 @@ export const LocationList: React.FC = () => {
                 )}
             </DndContext>
 
-            {/* Fullscreen Image Overlay */}
             {fullscreenImage && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-                    onClick={() => setFullscreenImage(null)}
-                >
-                    <div className="absolute top-4 right-4 flex gap-2">
-                        <button
-                            className="text-white hover:text-primary-300 transition-colors bg-black/50 rounded-full p-2"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                downloadImage(fullscreenImage, `location-${new Date().getTime()}.png`);
-                            }}
-                            title="Download Image"
-                        >
-                            <Download size={24} />
-                        </button>
-                        <button
-                            className="text-white hover:text-primary-300 transition-colors bg-black/50 rounded-full p-2"
-                            onClick={() => setFullscreenImage(null)}
-                        >
-                            <X size={24} />
-                        </button>
-                    </div>
-                    <img
-                        src={fullscreenImage}
-                        alt="Fullscreen"
-                        className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                </div>
+                <ImageModal
+                    src={fullscreenImage}
+                    alt="Fullscreen"
+                    onClose={() => setFullscreenImage(null)}
+                    downloadFilename={`location-${new Date().getTime()}.png`}
+                />
             )}
         </div>
     );

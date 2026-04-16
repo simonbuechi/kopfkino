@@ -204,7 +204,7 @@ export const PersonDetail: React.FC = () => {
                         type="text"
                         value={name}
                         onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'name', value: e.target.value })}
-                        className="text-4xl font-bold text-primary-900 dark:text-white mb-2 bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-primary-300 dark:placeholder-primary-700 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
+                        className="text-4xl font-bold text-primary-900 dark:text-white mb-2 bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-primary-300 dark:placeholder-primary-700 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
                         placeholder="Person Name"
                     />
                 </div>
@@ -244,7 +244,7 @@ export const PersonDetail: React.FC = () => {
                             <select
                                 value={type}
                                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'type', value: e.target.value as PersonType })}
-                                className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm appearance-none font-medium text-primary-700 dark:text-primary-300"
+                                className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm appearance-none font-medium text-primary-700 dark:text-primary-300"
                             >
                                 <option value="Actor">Actor</option>
                                 <option value="Crew">Crew</option>
@@ -260,7 +260,7 @@ export const PersonDetail: React.FC = () => {
                                     type="text"
                                     value={role}
                                     onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'role', value: e.target.value })}
-                                    className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md pl-9 pr-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-primary-400 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
+                                    className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md pl-9 pr-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-primary-400 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
                                     placeholder="e.g. Director, Lead"
                                 />
                             </div>
@@ -277,7 +277,7 @@ export const PersonDetail: React.FC = () => {
                                         type="email"
                                         value={email}
                                         onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'email', value: e.target.value })}
-                                        className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md pl-9 pr-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-primary-400 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
+                                        className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md pl-9 pr-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-primary-400 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
                                         placeholder="email@example.com"
                                     />
                                 </div>
@@ -287,7 +287,7 @@ export const PersonDetail: React.FC = () => {
                                         type="tel"
                                         value={phone}
                                         onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'phone', value: e.target.value })}
-                                        className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md pl-9 pr-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-primary-400 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
+                                        className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md pl-9 pr-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-primary-400 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
                                         placeholder="+1 234 567 890"
                                     />
                                 </div>
@@ -300,7 +300,7 @@ export const PersonDetail: React.FC = () => {
                         <textarea
                             value={comment}
                             onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'comment', value: e.target.value })}
-                            className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[100px] resize-y shadow-sm"
+                            className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[100px] resize-y shadow-sm"
                             placeholder="Internal notes about availability, agents, etc."
                         />
                     </section>
@@ -313,7 +313,7 @@ export const PersonDetail: React.FC = () => {
                         <textarea
                             value={description}
                             onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })}
-                            className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[250px] resize-y shadow-sm flex-grow"
+                            className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[250px] resize-y shadow-sm flex-grow"
                             placeholder="Short biography or description..."
                         />
                     </section>

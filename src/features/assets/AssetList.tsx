@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Package, Plus, Edit, GripVertical, LayoutGrid, List } from 'lucide-react';
+import { Package, Plus, Edit } from 'lucide-react';
+import { ViewToggle } from '../../components/ui/ViewToggle';
+import { DragHandle } from '../../components/ui/DragHandle';
+import { EmptyState } from '../../components/ui/EmptyState';
 import type { Asset } from '../../types/types';
 import {
     DndContext,
@@ -50,14 +53,7 @@ const SortableAssetCard = ({
     return (
         <div ref={setNodeRef} style={style} className="h-full">
             <Card className="!p-0 flex flex-col h-full bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800 relative group/card">
-                {/* Drag Handle */}
-                <div
-                    {...attributes}
-                    {...listeners}
-                    className="absolute top-2 left-2 z-10 bg-black/40 text-white p-1.5 rounded cursor-grab active:cursor-grabbing opacity-0 group-hover/card:opacity-100 transition-opacity hover:bg-black/60"
-                >
-                    <GripVertical size={16} />
-                </div>
+                <DragHandle variant="card" attributes={attributes} listeners={listeners} />
 
                 <div className="p-6 flex flex-col gap-2 flex-1">
                     <div className="flex items-start justify-between gap-2">
@@ -116,14 +112,7 @@ const SortableAssetListItem = ({
     return (
         <div ref={setNodeRef} style={style} className="w-full">
             <Card className="!p-3 flex items-center gap-4 bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800 relative group/item">
-                {/* Drag Handle */}
-                <div
-                    {...attributes}
-                    {...listeners}
-                    className="text-primary-400 hover:text-primary-600 dark:hover:text-primary-300 cursor-grab active:cursor-grabbing"
-                >
-                    <GripVertical size={16} />
-                </div>
+                <DragHandle variant="list" attributes={attributes} listeners={listeners} />
 
                 <Button
                     size="sm"
@@ -177,28 +166,7 @@ export const AssetList: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 className="text-3xl font-bold text-primary-900 dark:text-white">Assets</h2>
                 <div className="flex flex-wrap gap-2">
-                    <div className="flex bg-primary-100 dark:bg-primary-800 rounded-lg p-1 mr-2">
-                        <button
-                            onClick={() => setViewMode('expanded')}
-                            className={`p-1.5 rounded-md transition-all ${viewMode === 'expanded'
-                                ? 'bg-white dark:bg-primary-700 text-primary-900 dark:text-white shadow-sm'
-                                : 'text-primary-500 hover:text-primary-700 dark:hover:text-primary-300'
-                                }`}
-                            title="Expanded View"
-                        >
-                            <LayoutGrid size={16} />
-                        </button>
-                        <button
-                            onClick={() => setViewMode('slim')}
-                            className={`p-1.5 rounded-md transition-all ${viewMode === 'slim'
-                                ? 'bg-white dark:bg-primary-700 text-primary-900 dark:text-white shadow-sm'
-                                : 'text-primary-500 hover:text-primary-700 dark:hover:text-primary-300'
-                                }`}
-                            title="Slim View"
-                        >
-                            <List size={16} />
-                        </button>
-                    </div>
+                    <ViewToggle value={viewMode} onChange={setViewMode} />
                     <Button onClick={() => navigate('new')} size="sm">
                         <Plus size={16} />
                         Add asset
@@ -212,10 +180,7 @@ export const AssetList: React.FC = () => {
                 onDragEnd={handleDragEnd}
             >
                 {assets.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-primary-500 border-2 border-dashed border-primary-200 dark:border-primary-800 rounded-xl">
-                        <Package size={48} className="mb-4 opacity-50" />
-                        <p>No assets yet. Add your first one!</p>
-                    </div>
+                    <EmptyState icon={<Package size={48} />} message="No assets yet. Add your first one!" />
                 ) : (
                     <SortableContext
                         items={assets.map(a => a.id)}

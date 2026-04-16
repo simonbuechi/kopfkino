@@ -4,6 +4,7 @@ import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { Button } from '../../components/ui/Button';
 import { ArrowLeft, Save, Trash2, User, Loader2, Upload, X } from 'lucide-react';
+import { ImageModal } from '../../components/ui/ImageModal';
 import { useAuth } from '../../hooks/useAuth';
 import type { Character, CharacterType } from '../../types/types';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -330,7 +331,7 @@ export const CharacterDetail: React.FC = () => {
                                 type="text"
                                 value={name}
                                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'name', value: e.target.value })}
-                                className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                                className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all font-medium"
                                 placeholder="Character Name"
                             />
                         </div>
@@ -340,7 +341,7 @@ export const CharacterDetail: React.FC = () => {
                             <select
                                 value={type || ''}
                                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'type', value: (e.target.value as CharacterType) || undefined })}
-                                className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium appearance-none"
+                                className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all font-medium appearance-none"
                             >
                                 <option value="">Select a type...</option>
                                 <option value="main">Main Character</option>
@@ -355,7 +356,7 @@ export const CharacterDetail: React.FC = () => {
                             <textarea
                                 value={description}
                                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })}
-                                className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[120px]"
+                                className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all min-h-[120px]"
                                 placeholder="Physical appearance, personality, role..."
                             />
                         </div>
@@ -365,7 +366,7 @@ export const CharacterDetail: React.FC = () => {
                             <textarea
                                 value={comment}
                                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'comment', value: e.target.value })}
-                                className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[80px]"
+                                className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all min-h-[80px]"
                                 placeholder="Internal notes, casting ideas..."
                             />
                         </div>
@@ -373,25 +374,12 @@ export const CharacterDetail: React.FC = () => {
                 </div>
             </div>
 
-            {/* Fullscreen Image Overlay */}
             {isFullscreen && imageUrl && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-                    onClick={() => setIsFullscreen(false)}
-                >
-                    <button
-                        className="absolute top-4 right-4 text-white hover:text-primary-300 transition-colors bg-black/50 rounded-full p-2"
-                        onClick={() => setIsFullscreen(false)}
-                    >
-                        <X size={24} />
-                    </button>
-                    <img
-                        src={imageUrl}
-                        alt={name}
-                        className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                </div>
+                <ImageModal
+                    src={imageUrl}
+                    alt={name}
+                    onClose={() => setIsFullscreen(false)}
+                />
             )}
         </div>
     );

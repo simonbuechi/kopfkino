@@ -188,7 +188,7 @@ export const AssetDetail: React.FC = () => {
                         type="text"
                         value={name}
                         onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'name', value: e.target.value })}
-                        className="text-4xl font-bold text-primary-900 dark:text-white mb-2 bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-primary-300 dark:placeholder-primary-700 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
+                        className="text-4xl font-bold text-primary-900 dark:text-white mb-2 bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-primary-300 dark:placeholder-primary-700 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
                         placeholder="Asset Name"
                     />
                 </div>
@@ -227,7 +227,7 @@ export const AssetDetail: React.FC = () => {
                         <select
                             value={type}
                             onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'type', value: e.target.value as AssetType })}
-                            className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm appearance-none font-medium text-primary-700 dark:text-primary-300"
+                            className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm appearance-none font-medium text-primary-700 dark:text-primary-300"
                         >
                             <option value="Equipment">Equipment</option>
                             <option value="Props">Props</option>
@@ -242,7 +242,7 @@ export const AssetDetail: React.FC = () => {
                             type="text"
                             value={owner}
                             onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'owner', value: e.target.value })}
-                            className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-primary-400 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
+                            className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-primary-400 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
                             placeholder="Who owns this?"
                         />
                     </section>
@@ -252,7 +252,7 @@ export const AssetDetail: React.FC = () => {
                         <textarea
                             value={comment}
                             onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'comment', value: e.target.value })}
-                            className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[100px] resize-y shadow-sm"
+                            className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[100px] resize-y shadow-sm"
                             placeholder="Internal notes..."
                         />
                     </section>
@@ -265,7 +265,7 @@ export const AssetDetail: React.FC = () => {
                         <textarea
                             value={description}
                             onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })}
-                            className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[200px] resize-y shadow-sm flex-grow"
+                            className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[200px] resize-y shadow-sm flex-grow"
                             placeholder="Detailed description of the asset..."
                         />
                     </section>

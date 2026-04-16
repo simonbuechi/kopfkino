@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { useStore } from '../../hooks/useStore';
 import { ScheduleForm } from './ScheduleForm';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 export const SchedulingPage: React.FC = () => {
     const navigate = useNavigate();
@@ -25,22 +26,20 @@ export const SchedulingPage: React.FC = () => {
                         </div>
 
                         {schedules.length === 0 ? (
-                            <div className="bg-white dark:bg-primary-900/50 rounded-xl p-12 text-center border border-primary-200 dark:border-primary-800">
-                                <div className="w-16 h-16 bg-primary-100 dark:bg-primary-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <CalendarIcon size={32} className="text-primary-600 dark:text-primary-400" />
-                                </div>
-                                <h3 className="text-lg font-medium text-primary-900 dark:text-white mb-2">No schedules yet</h3>
-                                <p className="text-primary-500 dark:text-primary-400 max-w-sm mx-auto mb-6">
-                                    Organize your shoot days by creating a schedule with shots and special events.
-                                </p>
-                                <button
-                                    onClick={() => navigate('new')}
-                                    className="inline-flex items-center gap-2 text-primary-600 dark:text-primary-400 font-medium hover:underline"
-                                >
-                                    <Plus size={20} />
-                                    Add your first schedule
-                                </button>
-                            </div>
+                            <EmptyState
+                                icon={<CalendarIcon size={48} />}
+                                message="No schedules yet"
+                                description="Organize your shoot days by creating a schedule with shots and special events."
+                                action={
+                                    <button
+                                        onClick={() => navigate('new')}
+                                        className="inline-flex items-center gap-2 text-primary-600 dark:text-primary-400 font-medium hover:underline"
+                                    >
+                                        <Plus size={20} />
+                                        Add your first schedule
+                                    </button>
+                                }
+                            />
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {schedules.map(schedule => (

@@ -64,7 +64,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                                 type="password"
                                 value={localSettings.aiApiKey || ''}
                                 onChange={(e) => setLocalSettings(prev => ({ ...prev, aiApiKey: e.target.value }))}
-                                className="block w-full rounded-md border-0 py-1.5 text-primary-900 shadow-sm ring-1 ring-inset ring-primary-300 placeholder:text-primary-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-primary-800 dark:text-white dark:ring-primary-700 sm:text-sm sm:leading-6 px-3"
+                                className="block w-full rounded-md border-0 py-1.5 text-primary-900 shadow-sm ring-1 ring-inset ring-primary-300 placeholder:text-primary-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 dark:bg-primary-800 dark:text-white dark:ring-primary-700 sm:text-sm sm:leading-6 px-3"
                                 placeholder="Enter your AI API key"
                             />
                             <p className="mt-1 text-xs text-primary-500">Required for AI image generation.</p>
@@ -77,7 +77,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                                 <button
                                     onClick={() => handleAspectRatioChange('16:9')}
                                     className={`flex-1 py-2 px-3 rounded-md text-sm font-medium border transition-colors ${localSettings.aspectRatio === '16:9'
-                                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-400'
+                                        ? 'bg-primary-100 border-primary-300 text-primary-700 dark:bg-primary-800/50 dark:border-primary-600 dark:text-primary-300'
                                         : 'bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-800'
                                         }`}
                                 >
@@ -86,7 +86,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                                 <button
                                     onClick={() => handleAspectRatioChange('1:1')}
                                     className={`flex-1 py-2 px-3 rounded-md text-sm font-medium border transition-colors ${localSettings.aspectRatio === '1:1'
-                                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-400'
+                                        ? 'bg-primary-100 border-primary-300 text-primary-700 dark:bg-primary-800/50 dark:border-primary-600 dark:text-primary-300'
                                         : 'bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-800'
                                         }`}
                                 >
@@ -104,7 +104,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                                     id="randomSeed"
                                     checked={localSettings.useRandomSeed}
                                     onChange={toggleRandomSeed}
-                                    className="rounded border-primary-300 text-indigo-600 focus:ring-indigo-500 dark:border-primary-700 dark:bg-primary-800"
+                                    className="rounded border-primary-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:bg-primary-800"
                                 />
                                 <label htmlFor="randomSeed" className="text-sm text-primary-600 dark:text-primary-400">Use Random Seed</label>
                             </div>
@@ -115,7 +115,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                                         type="number"
                                         value={localSettings.customSeed || 0}
                                         onChange={handleSeedChange}
-                                        className="block w-full rounded-md border-0 py-1.5 text-primary-900 shadow-sm ring-1 ring-inset ring-primary-300 placeholder:text-primary-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-primary-800 dark:text-white dark:ring-primary-700 sm:text-sm sm:leading-6 px-3"
+                                        className="block w-full rounded-md border-0 py-1.5 text-primary-900 shadow-sm ring-1 ring-inset ring-primary-300 placeholder:text-primary-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 dark:bg-primary-800 dark:text-white dark:ring-primary-700 sm:text-sm sm:leading-6 px-3"
                                         placeholder="Enter seed number"
                                     />
                                     <p className="mt-1 text-xs text-primary-500">Same seed produces identical images for same prompt.</p>

@@ -33,21 +33,21 @@ export const ProjectDashboard: React.FC = () => {
             label: 'Locations',
             count: locations.length,
             icon: MapPin,
-            color: 'text-blue-500 bg-blue-500/10',
+            color: 'text-accent-500 bg-accent-500/10',
             action: { label: 'Create location', path: 'locations/new' }
         },
         {
             label: 'Scenes',
             count: scenes.length,
             icon: Clapperboard,
-            color: 'text-purple-500 bg-purple-500/10',
+            color: 'text-primary-500 bg-primary-500/10',
             action: { label: 'Create scene', path: 'scenes/new' }
         },
         {
             label: 'Characters',
             count: characters.length,
             icon: Users,
-            color: 'text-green-500 bg-green-500/10',
+            color: 'text-primary-400 bg-primary-400/10',
             action: { label: 'Create character', path: 'characters/new' }
         },
         {
@@ -55,7 +55,7 @@ export const ProjectDashboard: React.FC = () => {
             count: totalShots,
             subCount: `totalling to ${formatTime(totalLength)}`,
             icon: Video,
-            color: 'text-orange-500 bg-orange-500/10'
+            color: 'text-accent-400 bg-accent-400/10'
         }
     ];
 
