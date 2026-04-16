@@ -4,8 +4,10 @@ import { useProjects } from '../../hooks/useProjects';
 import { useAuth } from '../../hooks/useAuth';
 import { useStore } from '../../hooks/useStore';
 import { storage } from '../../services/storage';
-import { Plus, Trash2, Edit2, Play, MapPin, Users, Clapperboard, Film, Clock, Video, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Edit2, Play, MapPin, Users, Clapperboard, Film, Clock, Video, ExternalLink, Share2, Crown, Eye } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { ShareDialog } from './ShareDialog';
+import type { Project } from '../../types/types';
 
 
 const formatTime = (seconds: number) => {
@@ -21,19 +23,20 @@ export const ProjectList: React.FC = () => {
     const navigate = useNavigate();
     const [isCreating, setIsCreating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [sharingProject, setSharingProject] = useState<Project | null>(null);
     const [name, setName] = useState('');
     const [desc, setDesc] = useState('');
     const [url, setUrl] = useState('');
 
     const [otherStats, setOtherStats] = useState<Record<string, { locations: number; scenes: number; shots: number; characters: number; length: number }>>({});
 
-    // Fetch stats for non-active projects once per user session (served from Firestore cache after first load)
+    // Fetch stats for non-active projects once per user session
     useEffect(() => {
         if (!user) return;
         storage.getAllProjectStats(user.uid).then(setOtherStats);
     }, [user]);
 
-    // Compute active project stats from already-loaded in-memory data — no extra Firestore read
+    // Compute active project stats from already-loaded in-memory data
     const activeStats = useMemo(() => {
         if (!activeProjectId) return null;
         const shots = scenes.reduce((n, s) => n + (s.shots?.length ?? 0), 0);
@@ -56,7 +59,7 @@ export const ProjectList: React.FC = () => {
         setUrl('');
     };
 
-    const startEditing = (project: { id: string, name: string, description: string, url?: string }) => {
+    const startEditing = (project: Project) => {
         setEditingId(project.id);
         setName(project.name);
         setDesc(project.description);
@@ -67,11 +70,6 @@ export const ProjectList: React.FC = () => {
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim() || !user || !editingId) return;
-
-        // We need a method to update project details. 
-        // Since we don't have it in context explicitly exposed as 'updateProject', 
-        // we can use storage directly or add it to context. 
-        // For now let's reuse storage.saveProject but we need to keep other fields (createdAt).
         const project = projects.find(p => p.id === editingId);
         if (project) {
             const updated = { ...project, name, description: desc, url, updatedAt: Date.now() };
@@ -173,6 +171,10 @@ export const ProjectList: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {projects.map((project) => {
                     const projectStats = stats[project.id] || { locations: 0, scenes: 0, shots: 0, characters: 0, length: 0 };
+                    const isOwner = user && project.ownerId === user.uid;
+                    const myRole = user ? project.members?.[user.uid]?.role : null;
+                    const isShared = !isOwner;
+                    const memberCount = Object.keys(project.members ?? {}).length;
 
                     return (
                         <div
@@ -181,29 +183,64 @@ export const ProjectList: React.FC = () => {
                         >
                             <div className="p-6 flex-1">
                                 <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 rounded-lg bg-primary-100 dark:bg-primary-800 text-primary-900 dark:text-primary-100">
+                                    <div className="relative p-3 rounded-lg bg-primary-100 dark:bg-primary-800 text-primary-900 dark:text-primary-100">
                                         <Clapperboard size={24} />
                                     </div>
                                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); startEditing(project); }}
-                                            className="p-2 text-primary-400 hover:text-primary-900 dark:hover:text-primary-100 hover:bg-primary-100 dark:hover:bg-primary-700 rounded-md transition-colors"
-                                            title="Edit Project"
-                                        >
-                                            <Edit2 size={18} />
-                                        </button>
-                                        <button
-                                            onClick={(e) => handleDelete(e, project.id)}
-                                            className="p-2 text-primary-400 hover:text-danger-500 hover:bg-danger-500/10 rounded-md transition-colors"
-                                            title="Delete Project"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
+                                        {/* Share button — always visible for owner */}
+                                        {isOwner && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setSharingProject(project); }}
+                                                className="p-2 text-primary-400 hover:text-primary-900 dark:hover:text-primary-100 hover:bg-primary-100 dark:hover:bg-primary-700 rounded-md transition-colors"
+                                                title="Share Project"
+                                            >
+                                                <Share2 size={18} />
+                                            </button>
+                                        )}
+                                        {/* Edit & Delete only for owners */}
+                                        {isOwner && (
+                                            <>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); startEditing(project); }}
+                                                    className="p-2 text-primary-400 hover:text-primary-900 dark:hover:text-primary-100 hover:bg-primary-100 dark:hover:bg-primary-700 rounded-md transition-colors"
+                                                    title="Edit Project"
+                                                >
+                                                    <Edit2 size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => handleDelete(e, project.id)}
+                                                    className="p-2 text-primary-400 hover:text-danger-500 hover:bg-danger-500/10 rounded-md transition-colors"
+                                                    title="Delete Project"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
-                                <h3 className="text-xl font-bold text-primary-900 dark:text-white mb-2 truncate">
-                                    {project.name}
-                                </h3>
+
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                    <h3 className="text-xl font-bold text-primary-900 dark:text-white truncate">
+                                        {project.name}
+                                    </h3>
+                                    {/* Role badges */}
+                                    {isShared && myRole === 'viewer' && (
+                                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0">
+                                            <Eye size={11} /> View only
+                                        </span>
+                                    )}
+                                    {isShared && myRole === 'editor' && (
+                                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 shrink-0">
+                                            Shared
+                                        </span>
+                                    )}
+                                    {isOwner && memberCount > 1 && (
+                                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 shrink-0">
+                                            <Crown size={11} /> {memberCount} members
+                                        </span>
+                                    )}
+                                </div>
+
                                 <p className="text-primary-500 dark:text-primary-400 text-sm line-clamp-2 h-10 mb-3">
                                     {project.description || 'No description'}
                                 </p>
@@ -266,6 +303,13 @@ export const ProjectList: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {sharingProject && (
+                <ShareDialog
+                    project={sharingProject}
+                    onClose={() => setSharingProject(null)}
+                />
+            )}
         </div>
     );
 };

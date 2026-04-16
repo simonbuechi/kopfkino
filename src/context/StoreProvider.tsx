@@ -56,10 +56,12 @@ function storeReducer(state: StoreState, action: StoreAction): StoreState {
 
 export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth();
-    const { activeProjectId } = useProjects();
+    const { activeProjectId, activeProjectRole } = useProjects();
     const [state, dispatch] = useReducer(storeReducer, initialState);
 
     const { locations, scenes, characters, schedules, assets, people, settings } = state;
+
+    const isViewer = activeProjectRole === 'viewer';
 
     useEffect(() => {
         if (!user || !activeProjectId) {
@@ -67,12 +69,12 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
             return;
         }
 
-        const unsubLocations = storage.subscribeToLocations(user.uid, activeProjectId, (payload) => dispatch({ type: 'SET_LOCATIONS', payload }));
-        const unsubScenes = storage.subscribeToScenes(user.uid, activeProjectId, (payload) => dispatch({ type: 'SET_SCENES', payload }));
-        const unsubCharacters = storage.subscribeToCharacters(user.uid, activeProjectId, (payload) => dispatch({ type: 'SET_CHARACTERS', payload }));
-        const unsubSchedules = storage.subscribeToSchedules(user.uid, activeProjectId, (payload) => dispatch({ type: 'SET_SCHEDULES', payload }));
-        const unsubAssets = storage.subscribeToAssets(user.uid, activeProjectId, (payload) => dispatch({ type: 'SET_ASSETS', payload }));
-        const unsubPeople = storage.subscribeToPeople(user.uid, activeProjectId, (payload) => dispatch({ type: 'SET_PEOPLE', payload }));
+        const unsubLocations = storage.subscribeToLocations(activeProjectId, (payload) => dispatch({ type: 'SET_LOCATIONS', payload }));
+        const unsubScenes = storage.subscribeToScenes(activeProjectId, (payload) => dispatch({ type: 'SET_SCENES', payload }));
+        const unsubCharacters = storage.subscribeToCharacters(activeProjectId, (payload) => dispatch({ type: 'SET_CHARACTERS', payload }));
+        const unsubSchedules = storage.subscribeToSchedules(activeProjectId, (payload) => dispatch({ type: 'SET_SCHEDULES', payload }));
+        const unsubAssets = storage.subscribeToAssets(activeProjectId, (payload) => dispatch({ type: 'SET_ASSETS', payload }));
+        const unsubPeople = storage.subscribeToPeople(activeProjectId, (payload) => dispatch({ type: 'SET_PEOPLE', payload }));
         const unsubSettings = storage.subscribeToSettings(user.uid, (data) => {
             dispatch({ type: 'SET_SETTINGS', payload: data || DEFAULT_SETTINGS });
         });
@@ -90,98 +92,98 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Locations
     const addLocation = async (loc: Location) => {
-        if (!user) return;
-        await storage.saveLocation(user.uid, loc);
+        if (!activeProjectId || isViewer) return;
+        await storage.saveLocation(activeProjectId, loc);
     };
     const deleteLocation = async (id: string) => {
-        if (!user) return;
-        await storage.deleteLocation(user.uid, id);
+        if (!activeProjectId || isViewer) return;
+        await storage.deleteLocation(activeProjectId, id);
     };
     const replaceLocations = async (newLocations: Location[]) => {
-        if (!user) return;
-        await storage.replaceAllLocations(user.uid, newLocations);
+        if (!activeProjectId || isViewer) return;
+        await storage.replaceAllLocations(activeProjectId, newLocations);
     };
     const reorderLocations = async (newOrder: Location[]) => {
-        if (!user) return;
+        if (!activeProjectId || isViewer) return;
         dispatch({ type: 'SET_LOCATIONS', payload: newOrder });
         const locationsWithOrder = newOrder.map((loc, index) => ({ ...loc, order: index }));
-        await storage.updateLocationOrders(user.uid, locationsWithOrder);
+        await storage.updateLocationOrders(activeProjectId, locationsWithOrder);
     };
 
     // Scenes
     const addScene = async (scene: Scene) => {
-        if (!user) return;
-        await storage.saveScene(user.uid, scene);
+        if (!activeProjectId || isViewer) return;
+        await storage.saveScene(activeProjectId, scene);
     };
     const deleteScene = async (id: string) => {
-        if (!user) return;
-        await storage.deleteScene(user.uid, id);
+        if (!activeProjectId || isViewer) return;
+        await storage.deleteScene(activeProjectId, id);
     };
     const replaceScenes = async (newScenes: Scene[]) => {
-        if (!user) return;
-        await storage.replaceAllScenes(user.uid, newScenes);
+        if (!activeProjectId || isViewer) return;
+        await storage.replaceAllScenes(activeProjectId, newScenes);
     };
     const reorderScenes = async (newOrder: Scene[]) => {
-        if (!user) return;
+        if (!activeProjectId || isViewer) return;
         dispatch({ type: 'SET_SCENES', payload: newOrder });
         const scenesWithOrder = newOrder.map((scene, index) => ({ ...scene, order: index }));
-        await storage.updateSceneOrders(user.uid, scenesWithOrder);
+        await storage.updateSceneOrders(activeProjectId, scenesWithOrder);
     };
 
     // Shots — embedded in Scenes
     const addShotToScene = async (sceneId: string, shot: Shot) => {
-        if (!user) return;
+        if (!activeProjectId || isViewer) return;
         const scene = scenes.find(s => s.id === sceneId);
         if (!scene) return;
         const updatedScene = { ...scene, shots: [...(scene.shots || []), shot] };
-        await storage.saveScene(user.uid, updatedScene);
+        await storage.saveScene(activeProjectId, updatedScene);
     };
     const deleteShotFromScene = async (sceneId: string, shotId: string) => {
-        if (!user) return;
+        if (!activeProjectId || isViewer) return;
         const scene = scenes.find(s => s.id === sceneId);
         if (!scene?.shots) return;
         const updatedScene = { ...scene, shots: scene.shots.filter(s => s.id !== shotId) };
-        await storage.saveScene(user.uid, updatedScene);
+        await storage.saveScene(activeProjectId, updatedScene);
     };
     const updateShotInScene = async (sceneId: string, shot: Shot) => {
-        if (!user) return;
+        if (!activeProjectId || isViewer) return;
         const scene = scenes.find(s => s.id === sceneId);
         if (!scene?.shots) return;
         const updatedScene = { ...scene, shots: scene.shots.map(s => s.id === shot.id ? shot : s) };
-        await storage.saveScene(user.uid, updatedScene);
+        await storage.saveScene(activeProjectId, updatedScene);
     };
     const reorderShotsInScene = async (sceneId: string, newShots: Shot[]) => {
-        if (!user) return;
+        if (!activeProjectId || isViewer) return;
         const scene = scenes.find(s => s.id === sceneId);
         if (!scene) return;
-        await storage.saveScene(user.uid, { ...scene, shots: newShots });
+        await storage.saveScene(activeProjectId, { ...scene, shots: newShots });
     };
 
     // Characters
     const addCharacter = async (character: Character) => {
-        if (!user) return;
-        await storage.saveCharacter(user.uid, character);
+        if (!activeProjectId || isViewer) return;
+        await storage.saveCharacter(activeProjectId, character);
     };
     const deleteCharacter = async (id: string) => {
-        if (!user) return;
-        await storage.deleteCharacter(user.uid, id);
+        if (!activeProjectId || isViewer) return;
+        await storage.deleteCharacter(activeProjectId, id);
     };
     const updateCharacter = async (character: Character) => {
-        if (!user) return;
-        await storage.saveCharacter(user.uid, character);
+        if (!activeProjectId || isViewer) return;
+        await storage.saveCharacter(activeProjectId, character);
     };
     const replaceCharacters = async (newCharacters: Character[]) => {
-        if (!user) return;
-        await storage.replaceAllCharacters(user.uid, newCharacters);
+        if (!activeProjectId || isViewer) return;
+        await storage.replaceAllCharacters(activeProjectId, newCharacters);
     };
     const reorderCharacters = async (newOrder: Character[]) => {
-        if (!user) return;
+        if (!activeProjectId || isViewer) return;
         dispatch({ type: 'SET_CHARACTERS', payload: newOrder });
         const charactersWithOrder = newOrder.map((char, index) => ({ ...char, order: index }));
-        await storage.updateCharacterOrders(user.uid, charactersWithOrder);
+        await storage.updateCharacterOrders(activeProjectId, charactersWithOrder);
     };
 
-    // Settings
+    // Settings (user-scoped, always writable)
     const updateSettings = async (newSettings: Settings) => {
         if (!user) return;
         await storage.saveSettings(user.uid, newSettings);
@@ -189,56 +191,56 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Schedules
     const addSchedule = async (schedule: Schedule) => {
-        if (!user) return;
-        await storage.saveSchedule(user.uid, schedule);
+        if (!activeProjectId || isViewer) return;
+        await storage.saveSchedule(activeProjectId, schedule);
     };
     const deleteSchedule = async (id: string) => {
-        if (!user) return;
-        await storage.deleteSchedule(user.uid, id);
+        if (!activeProjectId || isViewer) return;
+        await storage.deleteSchedule(activeProjectId, id);
     };
     const updateSchedule = async (schedule: Schedule) => {
-        if (!user) return;
-        await storage.saveSchedule(user.uid, schedule);
+        if (!activeProjectId || isViewer) return;
+        await storage.saveSchedule(activeProjectId, schedule);
     };
 
     // Assets
     const addAsset = async (asset: Asset) => {
-        if (!user) return;
-        await storage.saveAsset(user.uid, asset);
+        if (!activeProjectId || isViewer) return;
+        await storage.saveAsset(activeProjectId, asset);
     };
     const deleteAsset = async (id: string) => {
-        if (!user) return;
-        await storage.deleteAsset(user.uid, id);
+        if (!activeProjectId || isViewer) return;
+        await storage.deleteAsset(activeProjectId, id);
     };
     const updateAsset = async (asset: Asset) => {
-        if (!user) return;
-        await storage.saveAsset(user.uid, asset);
+        if (!activeProjectId || isViewer) return;
+        await storage.saveAsset(activeProjectId, asset);
     };
     const reorderAssets = async (newOrder: Asset[]) => {
-        if (!user) return;
+        if (!activeProjectId || isViewer) return;
         dispatch({ type: 'SET_ASSETS', payload: newOrder });
         const assetsWithOrder = newOrder.map((asset, index) => ({ ...asset, order: index }));
-        await storage.updateAssetOrders(user.uid, assetsWithOrder);
+        await storage.updateAssetOrders(activeProjectId, assetsWithOrder);
     };
 
     // People
     const addPerson = async (person: Person) => {
-        if (!user) return;
-        await storage.savePerson(user.uid, person);
+        if (!activeProjectId || isViewer) return;
+        await storage.savePerson(activeProjectId, person);
     };
     const deletePerson = async (id: string) => {
-        if (!user) return;
-        await storage.deletePerson(user.uid, id);
+        if (!activeProjectId || isViewer) return;
+        await storage.deletePerson(activeProjectId, id);
     };
     const updatePerson = async (person: Person) => {
-        if (!user) return;
-        await storage.savePerson(user.uid, person);
+        if (!activeProjectId || isViewer) return;
+        await storage.savePerson(activeProjectId, person);
     };
     const reorderPeople = async (newOrder: Person[]) => {
-        if (!user) return;
+        if (!activeProjectId || isViewer) return;
         dispatch({ type: 'SET_PEOPLE', payload: newOrder });
         const peopleWithOrder = newOrder.map((person, index) => ({ ...person, order: index }));
-        await storage.updatePersonOrders(user.uid, peopleWithOrder);
+        await storage.updatePersonOrders(activeProjectId, peopleWithOrder);
     };
 
     const refresh = useCallback(() => {

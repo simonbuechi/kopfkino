@@ -63,6 +63,15 @@ export interface Character {
     order?: number;
 }
 
+export type ProjectRole = 'owner' | 'editor' | 'viewer';
+
+export interface ProjectMember {
+    role: ProjectRole;
+    email: string;
+    displayName: string;
+    addedAt: number;
+}
+
 export interface Project {
     id: string;
     name: string;
@@ -70,6 +79,23 @@ export interface Project {
     createdAt: number;
     updatedAt: number;
     url?: string;
+    ownerId: string;
+    members: Record<string, ProjectMember>;
+}
+
+export interface ProjectRef {
+    projectId: string;
+    role: ProjectRole;
+}
+
+export interface Invitation {
+    id: string;
+    email: string;
+    projectId: string;
+    role: ProjectRole;
+    invitedBy: string;
+    createdAt: number;
+    status: 'pending' | 'accepted';
 }
 
 export type ScheduleItemType = 'shot' | 'special';

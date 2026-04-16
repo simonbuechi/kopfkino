@@ -1,34 +1,74 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if the user is signed in
+
     function isSignedIn() {
       return request.auth != null;
     }
-    
-    // Helper function to check if the user is accessing their own data
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
 
-    // Helper function to check if the resource is within safe size limits (1MB)
     function isWithinSizeLimit() {
       return request.resource.size < 1 * 1024 * 1024;
     }
 
-    // Match the users collection and their documents
-    match /users/{userId} {
-      // Allow user to read/write their own document
-      allow read: if isSignedIn() && isOwner(userId);
-      allow write: if isSignedIn() && isOwner(userId) && isWithinSizeLimit();
+    function getProject(projectId) {
+      return get(/databases/$(database)/documents/projects/$(projectId)).data;
+    }
 
-      // Match all subcollections (locations, scenes, shots, etc.)
+    function isMember(projectId) {
+      return request.auth.uid in getProject(projectId).members;
+    }
+
+    function memberRole(projectId) {
+      return getProject(projectId).members[request.auth.uid].role;
+    }
+
+    function canWrite(projectId) {
+      return memberRole(projectId) in ['owner', 'editor'];
+    }
+
+    // Top-level project documents
+    match /projects/{projectId} {
+      allow read: if isSignedIn() && isMember(projectId);
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && canWrite(projectId) && isWithinSizeLimit();
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+
+      // Project subcollections (locations, scenes, characters, etc.)
       match /{collectionName}/{document=**} {
-        allow read: if isSignedIn() && isOwner(userId);
-        allow write: if isSignedIn() && isOwner(userId) && isWithinSizeLimit();
+        allow read: if isSignedIn() && isMember(projectId);
+        allow write: if isSignedIn() && canWrite(projectId) && isWithinSizeLimit();
       }
     }
-    
+
+    // Invitations — anyone signed in can create; only the invitee can read/update
+    match /invitations/{invitationId} {
+      allow create: if isSignedIn();
+      allow read, update: if isSignedIn() && request.auth.token.email == resource.data.email;
+    }
+
+    // User-scoped data: settings, projectRefs index, migration marker
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+
+      match /settings/{doc} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      match /projectRefs/{projectId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      match /meta/{doc} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      // Legacy subcollections — read-only after migration (kept for old image URLs, etc.)
+      match /{collectionName}/{document=**} {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow write: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

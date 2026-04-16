@@ -7,368 +7,453 @@ import {
     query,
     writeBatch,
     where,
-    getDocs
+    getDocs,
+    getDoc,
+    updateDoc,
 } from 'firebase/firestore';
 import type { Unsubscribe } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Location, Scene, Settings, Character, Project, Schedule, Asset, Person } from '../types/types';
+import type {
+    Location, Scene, Settings, Character, Project, Schedule, Asset, Person,
+    ProjectRole, ProjectMember, ProjectRef, Invitation,
+} from '../types/types';
+import type { User } from 'firebase/auth';
 
+// ---------------------------------------------------------------------------
+// Collection name constants
+// ---------------------------------------------------------------------------
 const COLLECTIONS = {
-    USERS: 'users',
+    PROJECTS: 'projects',
     LOCATIONS: 'locations',
     SCENES: 'scenes',
-    SHOTS: 'shots',
     CHARACTERS: 'characters',
-    SETTINGS: 'settings', // Subcollection or doc logic
-    PROJECTS: 'projects',
+    SETTINGS: 'settings',
     SCHEDULES: 'schedules',
     ASSETS: 'assets',
     PEOPLE: 'people',
+    PROJECT_REFS: 'projectRefs',
+    INVITATIONS: 'invitations',
+    USERS: 'users',
 };
 
-// Helper for single document settings
-const getSettingsDoc = (userId: string) => {
-    return doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SETTINGS, 'general');
-};
+// ---------------------------------------------------------------------------
+// Path helpers
+// ---------------------------------------------------------------------------
 
-// Helper to get user subcollection references
-const getUserCollection = (userId: string, collectionName: string) => {
-    return collection(db, COLLECTIONS.USERS, userId, collectionName);
-};
+/** Resources live under projects/{projectId}/{collection} */
+const getProjectCollection = (projectId: string, collectionName: string) =>
+    collection(db, COLLECTIONS.PROJECTS, projectId, collectionName);
 
+/** Settings and projectRefs live under users/{userId}/{collection} */
+const getUserCollection = (userId: string, collectionName: string) =>
+    collection(db, COLLECTIONS.USERS, userId, collectionName);
+
+const getSettingsDoc = (userId: string) =>
+    doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SETTINGS, 'general');
+
+const getProjectRefDoc = (userId: string, projectId: string) =>
+    doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.PROJECT_REFS, projectId);
+
+// ---------------------------------------------------------------------------
+// Storage API
+// ---------------------------------------------------------------------------
 export const storage = {
-    // Locations
-    subscribeToLocations: (userId: string, projectId: string, callback: (locations: Location[]) => void): Unsubscribe => {
+
+    // -------------------------------------------------------------------------
+    // Projects
+    // -------------------------------------------------------------------------
+
+    subscribeToProjects: (userId: string, callback: (projects: Project[]) => void): Unsubscribe => {
+        // Subscribe to the user's projectRefs index, then fan-out to each project doc.
+        const refsCollection = getUserCollection(userId, COLLECTIONS.PROJECT_REFS);
+        const projectUnsubscribers = new Map<string, Unsubscribe>();
+        const projectsMap = new Map<string, Project>();
+
+        const notifyCallback = () => {
+            const projects = Array.from(projectsMap.values()).sort((a, b) => b.createdAt - a.createdAt);
+            callback(projects);
+        };
+
+        const refsUnsub = onSnapshot(query(refsCollection), (refsSnap) => {
+            const currentIds = new Set(refsSnap.docs.map(d => d.id));
+
+            // Remove listeners for projects that are no longer in refs
+            for (const [id, unsub] of projectUnsubscribers) {
+                if (!currentIds.has(id)) {
+                    unsub();
+                    projectUnsubscribers.delete(id);
+                    projectsMap.delete(id);
+                }
+            }
+
+            // Add listeners for new project refs
+            for (const refDoc of refsSnap.docs) {
+                const projectId = refDoc.id;
+                if (!projectUnsubscribers.has(projectId)) {
+                    const projectDocRef = doc(db, COLLECTIONS.PROJECTS, projectId);
+                    const unsub = onSnapshot(projectDocRef, (projectSnap) => {
+                        if (projectSnap.exists()) {
+                            projectsMap.set(projectId, projectSnap.data() as Project);
+                        } else {
+                            projectsMap.delete(projectId);
+                        }
+                        notifyCallback();
+                    });
+                    projectUnsubscribers.set(projectId, unsub);
+                }
+            }
+
+            // If refs are empty, notify immediately
+            if (currentIds.size === 0) {
+                notifyCallback();
+            }
+        });
+
+        return () => {
+            refsUnsub();
+            for (const unsub of projectUnsubscribers.values()) {
+                unsub();
+            }
+        };
+    },
+
+    saveProject: async (userId: string, project: Project) => {
+        const projectDocRef = doc(db, COLLECTIONS.PROJECTS, project.id);
+        await setDoc(projectDocRef, project);
+        // Ensure the projectRef index entry exists for the owner
+        const role = project.members[userId]?.role ?? 'owner';
+        await setDoc(getProjectRefDoc(userId, project.id), { projectId: project.id, role } as ProjectRef);
+    },
+
+    deleteProject: async (userId: string, projectId: string) => {
+        const projectDocRef = doc(db, COLLECTIONS.PROJECTS, projectId);
+        await deleteDoc(projectDocRef);
+        await deleteDoc(getProjectRefDoc(userId, projectId));
+    },
+
+    // -------------------------------------------------------------------------
+    // Sharing & Members
+    // -------------------------------------------------------------------------
+
+    inviteToProject: async (
+        projectId: string,
+        inviterUserId: string,
+        inviteeEmail: string,
+        role: ProjectRole,
+    ) => {
+        const invitation: Invitation = {
+            id: crypto.randomUUID(),
+            email: inviteeEmail.toLowerCase().trim(),
+            projectId,
+            role,
+            invitedBy: inviterUserId,
+            createdAt: Date.now(),
+            status: 'pending',
+        };
+        const invitationRef = doc(db, COLLECTIONS.INVITATIONS, invitation.id);
+        await setDoc(invitationRef, invitation);
+    },
+
+    subscribeToInvitations: (email: string, callback: (invitations: Invitation[]) => void): Unsubscribe => {
         const q = query(
-            getUserCollection(userId, COLLECTIONS.LOCATIONS),
-            where('projectId', '==', projectId)
+            collection(db, COLLECTIONS.INVITATIONS),
+            where('email', '==', email.toLowerCase().trim()),
+            where('status', '==', 'pending'),
         );
-        return onSnapshot(q, (snapshot) => {
-            const locations = snapshot.docs.map(doc => doc.data() as Location);
-            locations.sort((a, b) => {
-                const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
-                const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
-                return orderA - orderB;
-            });
+        return onSnapshot(q, (snap) => {
+            callback(snap.docs.map(d => d.data() as Invitation));
+        });
+    },
+
+    getPendingInvitationsForProject: async (projectId: string): Promise<Invitation[]> => {
+        const q = query(
+            collection(db, COLLECTIONS.INVITATIONS),
+            where('projectId', '==', projectId),
+            where('status', '==', 'pending'),
+        );
+        const snap = await getDocs(q);
+        return snap.docs.map(d => d.data() as Invitation);
+    },
+
+    revokeInvitation: async (invitationId: string) => {
+        await deleteDoc(doc(db, COLLECTIONS.INVITATIONS, invitationId));
+    },
+
+    acceptInvitation: async (invitation: Invitation, user: User) => {
+        const projectDocRef = doc(db, COLLECTIONS.PROJECTS, invitation.projectId);
+        const member: ProjectMember = {
+            role: invitation.role,
+            email: user.email ?? '',
+            displayName: user.displayName ?? user.email ?? 'Unknown',
+            addedAt: Date.now(),
+        };
+        // Add user to project members
+        await updateDoc(projectDocRef, {
+            [`members.${user.uid}`]: member,
+        });
+        // Add projectRef for the new member
+        await setDoc(getProjectRefDoc(user.uid, invitation.projectId), {
+            projectId: invitation.projectId,
+            role: invitation.role,
+        } as ProjectRef);
+        // Mark invitation as accepted
+        const invitationRef = doc(db, COLLECTIONS.INVITATIONS, invitation.id);
+        await updateDoc(invitationRef, { status: 'accepted' });
+    },
+
+    updateMemberRole: async (projectId: string, targetUserId: string, role: ProjectRole) => {
+        const projectDocRef = doc(db, COLLECTIONS.PROJECTS, projectId);
+        await updateDoc(projectDocRef, { [`members.${targetUserId}.role`]: role });
+        // Sync projectRef role
+        await setDoc(getProjectRefDoc(targetUserId, projectId), { projectId, role } as ProjectRef, { merge: true });
+    },
+
+    removeMember: async (projectId: string, targetUserId: string) => {
+        const projectDocRef = doc(db, COLLECTIONS.PROJECTS, projectId);
+        // Remove the member map entry by setting it to deleteField() equivalent
+        const projectSnap = await getDoc(projectDocRef);
+        if (projectSnap.exists()) {
+            const data = projectSnap.data() as Project;
+            const members = { ...data.members };
+            delete members[targetUserId];
+            await updateDoc(projectDocRef, { members });
+        }
+        await deleteDoc(getProjectRefDoc(targetUserId, projectId));
+    },
+
+    transferOwnership: async (projectId: string, currentOwnerId: string, newOwnerId: string) => {
+        const projectDocRef = doc(db, COLLECTIONS.PROJECTS, projectId);
+        await updateDoc(projectDocRef, {
+            ownerId: newOwnerId,
+            [`members.${newOwnerId}.role`]: 'owner' as ProjectRole,
+            [`members.${currentOwnerId}.role`]: 'editor' as ProjectRole,
+        });
+        await setDoc(getProjectRefDoc(newOwnerId, projectId), { projectId, role: 'owner' as ProjectRole }, { merge: true });
+        await setDoc(getProjectRefDoc(currentOwnerId, projectId), { projectId, role: 'editor' as ProjectRole }, { merge: true });
+    },
+
+    // -------------------------------------------------------------------------
+    // Locations
+    // -------------------------------------------------------------------------
+
+    subscribeToLocations: (projectId: string, callback: (locations: Location[]) => void): Unsubscribe => {
+        return onSnapshot(query(getProjectCollection(projectId, COLLECTIONS.LOCATIONS)), (snapshot) => {
+            const locations = snapshot.docs.map(d => d.data() as Location);
+            locations.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
             callback(locations);
         });
     },
 
-    updateLocationOrders: async (userId: string, locations: Location[]) => {
+    updateLocationOrders: async (projectId: string, locations: Location[]) => {
         const batch = writeBatch(db);
         locations.forEach((loc) => {
-            const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.LOCATIONS, loc.id);
-            batch.update(docRef, { order: loc.order });
+            batch.update(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.LOCATIONS, loc.id), { order: loc.order });
         });
         await batch.commit();
     },
 
-    saveLocation: async (userId: string, location: Location) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.LOCATIONS, location.id);
-        await setDoc(docRef, location);
+    saveLocation: async (projectId: string, location: Location) => {
+        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.LOCATIONS, location.id), location);
     },
 
-    deleteLocation: async (userId: string, locationId: string) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.LOCATIONS, locationId);
-        await deleteDoc(docRef);
+    deleteLocation: async (projectId: string, locationId: string) => {
+        await deleteDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.LOCATIONS, locationId));
     },
 
+    replaceAllLocations: async (projectId: string, locations: Location[]) => {
+        for (const loc of locations) {
+            await storage.saveLocation(projectId, loc);
+        }
+    },
+
+    // -------------------------------------------------------------------------
     // Scenes
-    subscribeToScenes: (userId: string, projectId: string, callback: (scenes: Scene[]) => void): Unsubscribe => {
-        const q = query(
-            getUserCollection(userId, COLLECTIONS.SCENES),
-            where('projectId', '==', projectId)
-        );
-        return onSnapshot(q, (snapshot) => {
-            const scenes = snapshot.docs.map(doc => doc.data() as Scene);
-            scenes.sort((a, b) => {
-                const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
-                const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
-                return orderA - orderB;
-            });
+    // -------------------------------------------------------------------------
+
+    subscribeToScenes: (projectId: string, callback: (scenes: Scene[]) => void): Unsubscribe => {
+        return onSnapshot(query(getProjectCollection(projectId, COLLECTIONS.SCENES)), (snapshot) => {
+            const scenes = snapshot.docs.map(d => d.data() as Scene);
+            scenes.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
             callback(scenes);
         });
     },
 
-    updateSceneOrders: async (userId: string, scenes: Scene[]) => {
+    updateSceneOrders: async (projectId: string, scenes: Scene[]) => {
         const batch = writeBatch(db);
         scenes.forEach((scene) => {
-            const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SCENES, scene.id);
-            batch.update(docRef, { order: scene.order });
+            batch.update(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCENES, scene.id), { order: scene.order });
         });
         await batch.commit();
     },
 
-    saveScene: async (userId: string, scene: Scene) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SCENES, scene.id);
-        await setDoc(docRef, scene);
+    saveScene: async (projectId: string, scene: Scene) => {
+        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCENES, scene.id), scene);
     },
 
-    deleteScene: async (userId: string, sceneId: string) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SCENES, sceneId);
-        await deleteDoc(docRef);
+    deleteScene: async (projectId: string, sceneId: string) => {
+        await deleteDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCENES, sceneId));
     },
 
-    // Settings
-    subscribeToSettings: (userId: string, callback: (settings: Settings | null) => void): Unsubscribe => {
-        const docRef = getSettingsDoc(userId);
-        return onSnapshot(docRef, (docSnap) => {
-            if (docSnap.exists()) {
-                callback(docSnap.data() as Settings);
-            } else {
-                callback(null);
-            }
-        });
-    },
-
-    saveSettings: async (userId: string, settings: Settings) => {
-        const docRef = getSettingsDoc(userId);
-        await setDoc(docRef, settings);
-    },
-
-    // Batch replacements
-    replaceAllLocations: async (userId: string, locations: Location[]) => {
-        for (const loc of locations) {
-            await storage.saveLocation(userId, loc);
-        }
-    },
-
-    replaceAllScenes: async (userId: string, scenes: Scene[]) => {
+    replaceAllScenes: async (projectId: string, scenes: Scene[]) => {
         for (const scene of scenes) {
-            await storage.saveScene(userId, scene);
+            await storage.saveScene(projectId, scene);
         }
     },
 
+    // -------------------------------------------------------------------------
     // Characters
-    subscribeToCharacters: (userId: string, projectId: string, callback: (characters: Character[]) => void): Unsubscribe => {
-        const q = query(
-            getUserCollection(userId, COLLECTIONS.CHARACTERS),
-            where('projectId', '==', projectId)
-        );
-        return onSnapshot(q, (snapshot) => {
-            const characters = snapshot.docs.map(doc => doc.data() as Character);
-            characters.sort((a, b) => {
-                const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
-                const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
-                return orderA - orderB;
-            });
+    // -------------------------------------------------------------------------
+
+    subscribeToCharacters: (projectId: string, callback: (characters: Character[]) => void): Unsubscribe => {
+        return onSnapshot(query(getProjectCollection(projectId, COLLECTIONS.CHARACTERS)), (snapshot) => {
+            const characters = snapshot.docs.map(d => d.data() as Character);
+            characters.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
             callback(characters);
         });
     },
 
-    updateCharacterOrders: async (userId: string, characters: Character[]) => {
+    updateCharacterOrders: async (projectId: string, characters: Character[]) => {
         const batch = writeBatch(db);
         characters.forEach((char) => {
-            const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.CHARACTERS, char.id);
-            batch.update(docRef, { order: char.order });
+            batch.update(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.CHARACTERS, char.id), { order: char.order });
         });
         await batch.commit();
     },
 
-    saveCharacter: async (userId: string, character: Character) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.CHARACTERS, character.id);
-        await setDoc(docRef, character);
+    saveCharacter: async (projectId: string, character: Character) => {
+        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.CHARACTERS, character.id), character);
     },
 
-    deleteCharacter: async (userId: string, characterId: string) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.CHARACTERS, characterId);
-        await deleteDoc(docRef);
+    deleteCharacter: async (projectId: string, characterId: string) => {
+        await deleteDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.CHARACTERS, characterId));
     },
 
-    replaceAllCharacters: async (userId: string, characters: Character[]) => {
+    replaceAllCharacters: async (projectId: string, characters: Character[]) => {
         for (const char of characters) {
-            await storage.saveCharacter(userId, char);
+            await storage.saveCharacter(projectId, char);
         }
     },
 
-    // Projects
-    subscribeToProjects: (userId: string, callback: (projects: Project[]) => void): Unsubscribe => {
-        const q = query(getUserCollection(userId, COLLECTIONS.PROJECTS));
-        return onSnapshot(q, (snapshot) => {
-            const projects = snapshot.docs.map(doc => doc.data() as Project);
-            // Sort by createdAt desc
-            projects.sort((a, b) => b.createdAt - a.createdAt);
-            callback(projects);
-        });
-    },
-
-    saveProject: async (userId: string, project: Project) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.PROJECTS, project.id);
-        await setDoc(docRef, project);
-    },
-
-    deleteProject: async (userId: string, projectId: string) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.PROJECTS, projectId);
-        await deleteDoc(docRef);
-    },
-
-    // Migration
-    migrateLegacyData: async (userId: string, targetProjectId: string) => {
-        const batch = writeBatch(db);
-
-        // Locations
-        const locsSnapshot = await getDocs(getUserCollection(userId, COLLECTIONS.LOCATIONS));
-        locsSnapshot.docs.forEach(doc => {
-            const data = doc.data();
-            if (!data.projectId) {
-                batch.update(doc.ref, { projectId: targetProjectId });
-            }
-        });
-
-        // Scenes
-        const scenesSnapshot = await getDocs(getUserCollection(userId, COLLECTIONS.SCENES));
-        scenesSnapshot.docs.forEach(doc => {
-            const data = doc.data();
-            if (!data.projectId) {
-                batch.update(doc.ref, { projectId: targetProjectId });
-            }
-        });
-
-        // Characters
-        const charsSnapshot = await getDocs(getUserCollection(userId, COLLECTIONS.CHARACTERS));
-        charsSnapshot.docs.forEach(doc => {
-            const data = doc.data();
-            if (!data.projectId) {
-                batch.update(doc.ref, { projectId: targetProjectId });
-            }
-        });
-
-        await batch.commit();
-    },
+    // -------------------------------------------------------------------------
     // Schedules
-    subscribeToSchedules: (userId: string, projectId: string, callback: (schedules: Schedule[]) => void): Unsubscribe => {
-        const q = query(
-            getUserCollection(userId, COLLECTIONS.SCHEDULES),
-            where('projectId', '==', projectId)
-        );
-        return onSnapshot(q, (snapshot) => {
-            const schedules = snapshot.docs.map(doc => doc.data() as Schedule);
-            // Sort by date or updatedAt
+    // -------------------------------------------------------------------------
+
+    subscribeToSchedules: (projectId: string, callback: (schedules: Schedule[]) => void): Unsubscribe => {
+        return onSnapshot(query(getProjectCollection(projectId, COLLECTIONS.SCHEDULES)), (snapshot) => {
+            const schedules = snapshot.docs.map(d => d.data() as Schedule);
             schedules.sort((a, b) => b.updatedAt - a.updatedAt);
             callback(schedules);
         });
     },
 
-    saveSchedule: async (userId: string, schedule: Schedule) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SCHEDULES, schedule.id);
-        await setDoc(docRef, schedule);
+    saveSchedule: async (projectId: string, schedule: Schedule) => {
+        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCHEDULES, schedule.id), schedule);
     },
 
-    deleteSchedule: async (userId: string, scheduleId: string) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SCHEDULES, scheduleId);
-        await deleteDoc(docRef);
+    deleteSchedule: async (projectId: string, scheduleId: string) => {
+        await deleteDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCHEDULES, scheduleId));
     },
 
+    // -------------------------------------------------------------------------
     // Assets
-    subscribeToAssets: (userId: string, projectId: string, callback: (assets: Asset[]) => void): Unsubscribe => {
-        const q = query(
-            getUserCollection(userId, COLLECTIONS.ASSETS),
-            where('projectId', '==', projectId)
-        );
-        return onSnapshot(q, (snapshot) => {
-            const assets = snapshot.docs.map(doc => doc.data() as Asset);
-            assets.sort((a, b) => {
-                const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
-                const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
-                return orderA - orderB;
-            });
+    // -------------------------------------------------------------------------
+
+    subscribeToAssets: (projectId: string, callback: (assets: Asset[]) => void): Unsubscribe => {
+        return onSnapshot(query(getProjectCollection(projectId, COLLECTIONS.ASSETS)), (snapshot) => {
+            const assets = snapshot.docs.map(d => d.data() as Asset);
+            assets.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
             callback(assets);
         });
     },
 
-    updateAssetOrders: async (userId: string, assets: Asset[]) => {
+    updateAssetOrders: async (projectId: string, assets: Asset[]) => {
         const batch = writeBatch(db);
         assets.forEach((asset) => {
-            const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ASSETS, asset.id);
-            batch.update(docRef, { order: asset.order });
+            batch.update(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.ASSETS, asset.id), { order: asset.order });
         });
         await batch.commit();
     },
 
-    saveAsset: async (userId: string, asset: Asset) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ASSETS, asset.id);
-        await setDoc(docRef, asset);
+    saveAsset: async (projectId: string, asset: Asset) => {
+        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.ASSETS, asset.id), asset);
     },
 
-    deleteAsset: async (userId: string, assetId: string) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ASSETS, assetId);
-        await deleteDoc(docRef);
+    deleteAsset: async (projectId: string, assetId: string) => {
+        await deleteDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.ASSETS, assetId));
     },
 
+    // -------------------------------------------------------------------------
     // People
-    subscribeToPeople: (userId: string, projectId: string, callback: (people: Person[]) => void): Unsubscribe => {
-        const q = query(
-            getUserCollection(userId, COLLECTIONS.PEOPLE),
-            where('projectId', '==', projectId)
-        );
-        return onSnapshot(q, (snapshot) => {
-            const people = snapshot.docs.map(doc => doc.data() as Person);
-            people.sort((a, b) => {
-                const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
-                const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
-                return orderA - orderB;
-            });
+    // -------------------------------------------------------------------------
+
+    subscribeToPeople: (projectId: string, callback: (people: Person[]) => void): Unsubscribe => {
+        return onSnapshot(query(getProjectCollection(projectId, COLLECTIONS.PEOPLE)), (snapshot) => {
+            const people = snapshot.docs.map(d => d.data() as Person);
+            people.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
             callback(people);
         });
     },
 
-    updatePersonOrders: async (userId: string, people: Person[]) => {
+    updatePersonOrders: async (projectId: string, people: Person[]) => {
         const batch = writeBatch(db);
         people.forEach((person) => {
-            const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.PEOPLE, person.id);
-            batch.update(docRef, { order: person.order });
+            batch.update(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.PEOPLE, person.id), { order: person.order });
         });
         await batch.commit();
     },
 
-    savePerson: async (userId: string, person: Person) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.PEOPLE, person.id);
-        await setDoc(docRef, person);
+    savePerson: async (projectId: string, person: Person) => {
+        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.PEOPLE, person.id), person);
     },
 
-    deletePerson: async (userId: string, personId: string) => {
-        const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.PEOPLE, personId);
-        await deleteDoc(docRef);
+    deletePerson: async (projectId: string, personId: string) => {
+        await deleteDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.PEOPLE, personId));
     },
 
-    // Stats
+    // -------------------------------------------------------------------------
+    // Settings (remain user-scoped)
+    // -------------------------------------------------------------------------
+
+    subscribeToSettings: (userId: string, callback: (settings: Settings | null) => void): Unsubscribe => {
+        return onSnapshot(getSettingsDoc(userId), (docSnap) => {
+            callback(docSnap.exists() ? (docSnap.data() as Settings) : null);
+        });
+    },
+
+    saveSettings: async (userId: string, settings: Settings) => {
+        await setDoc(getSettingsDoc(userId), settings);
+    },
+
+    // -------------------------------------------------------------------------
+    // Stats (for project dashboard)
+    // -------------------------------------------------------------------------
+
     getAllProjectStats: async (userId: string) => {
         const stats: Record<string, { locations: number; scenes: number; shots: number; characters: number; length: number }> = {};
 
-        const locsSnapshot = await getDocs(getUserCollection(userId, COLLECTIONS.LOCATIONS));
-        locsSnapshot.docs.forEach(doc => {
-            const data = doc.data() as Location;
-            if (data.projectId) {
-                if (!stats[data.projectId]) stats[data.projectId] = { locations: 0, scenes: 0, shots: 0, characters: 0, length: 0 };
-                stats[data.projectId].locations++;
-            }
-        });
+        // Get all project refs for this user
+        const refsSnap = await getDocs(getUserCollection(userId, COLLECTIONS.PROJECT_REFS));
+        const projectIds = refsSnap.docs.map(d => d.id);
 
-        const charsSnapshot = await getDocs(getUserCollection(userId, COLLECTIONS.CHARACTERS));
-        charsSnapshot.docs.forEach(doc => {
-            const data = doc.data() as Character;
-            if (data.projectId) {
-                if (!stats[data.projectId]) stats[data.projectId] = { locations: 0, scenes: 0, shots: 0, characters: 0, length: 0 };
-                stats[data.projectId].characters++;
-            }
-        });
+        for (const projectId of projectIds) {
+            stats[projectId] = { locations: 0, scenes: 0, shots: 0, characters: 0, length: 0 };
 
-        const scenesSnapshot = await getDocs(getUserCollection(userId, COLLECTIONS.SCENES));
-        scenesSnapshot.docs.forEach(doc => {
-            const data = doc.data() as Scene;
-            if (data.projectId) {
-                if (!stats[data.projectId]) stats[data.projectId] = { locations: 0, scenes: 0, shots: 0, characters: 0, length: 0 };
-                stats[data.projectId].scenes++;
+            const locsSnap = await getDocs(getProjectCollection(projectId, COLLECTIONS.LOCATIONS));
+            stats[projectId].locations = locsSnap.size;
 
-                if (data.shots) {
-                    stats[data.projectId].shots += data.shots.length;
-                    // Calculate length
-                    const sceneLength = data.shots.reduce((acc, shot) => acc + (shot.length || 0), 0);
-                    stats[data.projectId].length += sceneLength;
-                }
-            }
-        });
+            const charsSnap = await getDocs(getProjectCollection(projectId, COLLECTIONS.CHARACTERS));
+            stats[projectId].characters = charsSnap.size;
+
+            const scenesSnap = await getDocs(getProjectCollection(projectId, COLLECTIONS.SCENES));
+            stats[projectId].scenes = scenesSnap.size;
+            scenesSnap.docs.forEach(d => {
+                const scene = d.data() as Scene;
+                stats[projectId].shots += (scene.shots?.length ?? 0);
+                stats[projectId].length += (scene.shots ?? []).reduce((acc, s) => acc + (s.length ?? 0), 0);
+            });
+        }
 
         return stats;
-    }
+    },
+
 };

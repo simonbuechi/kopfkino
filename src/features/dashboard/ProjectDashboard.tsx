@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
-import { MapPin, Users, Clapperboard, Video, ExternalLink, Plus } from 'lucide-react';
+import { MapPin, Users, Clapperboard, Video, ExternalLink, Plus, Eye } from 'lucide-react';
 import { useProjects } from '../../hooks/useProjects';
 
 const formatTime = (seconds: number) => {
@@ -15,11 +15,8 @@ const formatTime = (seconds: number) => {
 
 export const ProjectDashboard: React.FC = () => {
     const { locations, scenes, characters } = useStore();
-    const { projects, activeProjectId } = useProjects();
+    const { activeProject, activeProjectRole } = useProjects();
     const navigate = useNavigate();
-
-    // Find active project name
-    const activeProject = projects.find(p => p.id === activeProjectId);
 
     // Calculate stats
     const totalShots = scenes.reduce((total, scene) => total + (scene.shots?.length || 0), 0);
@@ -61,6 +58,12 @@ export const ProjectDashboard: React.FC = () => {
 
     return (
         <div className="p-6 max-w-7xl mx-auto">
+            {activeProjectRole === 'viewer' && (
+                <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-600 dark:text-zinc-400">
+                    <Eye size={16} className="shrink-0" />
+                    You have read-only access to this project. Contact the owner to request edit permissions.
+                </div>
+            )}
             <header className="mb-8">
                 <h1 className="text-3xl font-bold text-primary-900 dark:text-white mb-2">
                     {activeProject?.name || 'Project Dashboard'}
@@ -104,7 +107,7 @@ export const ProjectDashboard: React.FC = () => {
                                 <stat.icon size={20} />
                             </div>
                         </div>
-                        {stat.action ? (
+                        {stat.action && activeProjectRole !== 'viewer' ? (
                             <button
                                 onClick={() => navigate(stat.action!.path)}
                                 className="flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-md bg-primary-50 dark:bg-primary-800/50 hover:bg-primary-100 dark:hover:bg-primary-800 text-sm font-medium text-primary-600 dark:text-primary-300 transition-colors border border-primary-200 dark:border-primary-700 mt-auto"
@@ -113,7 +116,7 @@ export const ProjectDashboard: React.FC = () => {
                                 {stat.action.label}
                             </button>
                         ) : (
-                            <div className="h-9 mt-auto"></div> // Placeholder to maintain consistent height
+                            <div className="h-9 mt-auto"></div>
                         )}
                     </div>
                 ))}

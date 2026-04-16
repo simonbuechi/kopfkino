@@ -4,16 +4,16 @@ import { storage } from "./firebase";
 const IMAGE_COUNT_TTL = 5 * 60 * 1000; // 5 minutes
 const imageCountCache = new Map<string, { count: number; expiresAt: number }>();
 
-export const getImageCount = async (userId: string): Promise<number> => {
-    const cached = imageCountCache.get(userId);
+export const getImageCount = async (projectId: string): Promise<number> => {
+    const cached = imageCountCache.get(projectId);
     if (cached && Date.now() < cached.expiresAt) {
         return cached.count;
     }
     try {
-        const imagesRef = ref(storage, `users/${userId}/images`);
+        const imagesRef = ref(storage, `projects/${projectId}/images`);
         const result = await listAll(imagesRef);
         const count = result.items.length;
-        imageCountCache.set(userId, { count, expiresAt: Date.now() + IMAGE_COUNT_TTL });
+        imageCountCache.set(projectId, { count, expiresAt: Date.now() + IMAGE_COUNT_TTL });
         return count;
     } catch (error) {
         console.error("Error getting image count:", error);
@@ -21,14 +21,14 @@ export const getImageCount = async (userId: string): Promise<number> => {
     }
 };
 
-export const uploadImageFromUrl = async (url: string, userId: string): Promise<string> => {
+export const uploadImageFromUrl = async (url: string, projectId: string): Promise<string> => {
     try {
         // 1. Fetch the image blob
         const response = await fetch(url);
         if (!response.ok) throw new Error("Failed to fetch image");
         const blob = await response.blob();
 
-        return uploadImage(blob, userId);
+        return uploadImage(blob, projectId);
     } catch (error) {
         console.error("Error uploading image from URL:", error);
         throw error;
@@ -104,7 +104,7 @@ const compressImage = (file: Blob | File): Promise<Blob> => {
     });
 };
 
-export const uploadImage = async (file: Blob | File, userId: string): Promise<string> => {
+export const uploadImage = async (file: Blob | File, projectId: string): Promise<string> => {
     try {
         // 1. Compress/Optimize Image
         const compressedBlob = await compressImage(file);
@@ -113,7 +113,7 @@ export const uploadImage = async (file: Blob | File, userId: string): Promise<st
         const timestamp = Date.now();
         // Force .webp extension for consistency as we converted it
         const extension = 'webp';
-        const path = `users/${userId}/images/${timestamp}.${extension}`;
+        const path = `projects/${projectId}/images/${timestamp}.${extension}`;
         const storageRef = ref(storage, path);
 
         // 3. Upload with metadata
@@ -131,11 +131,11 @@ export const uploadImage = async (file: Blob | File, userId: string): Promise<st
     }
 };
 
-export const uploadVideo = async (file: File, userId: string): Promise<string> => {
+export const uploadVideo = async (file: File, projectId: string): Promise<string> => {
     try {
         const timestamp = Date.now();
         const extension = file.name.split('.').pop() || 'mp4';
-        const path = `users/${userId}/videos/${timestamp}.${extension}`;
+        const path = `projects/${projectId}/videos/${timestamp}.${extension}`;
         const storageRef = ref(storage, path);
 
         const metadata = {
