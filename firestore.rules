@@ -6,10 +6,6 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isWithinSizeLimit() {
-      return request.resource.size < 1 * 1024 * 1024;
-    }
-
     function getProject(projectId) {
       return get(/databases/$(database)/documents/projects/$(projectId)).data;
     }
@@ -30,13 +26,13 @@ service cloud.firestore {
     match /projects/{projectId} {
       allow read: if isSignedIn() && isMember(projectId);
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isSignedIn() && canWrite(projectId) && isWithinSizeLimit();
+      allow update: if isSignedIn() && canWrite(projectId);
       allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
 
       // Project subcollections (locations, scenes, characters, etc.)
       match /{collectionName}/{document=**} {
         allow read: if isSignedIn() && isMember(projectId);
-        allow write: if isSignedIn() && canWrite(projectId) && isWithinSizeLimit();
+        allow write: if isSignedIn() && canWrite(projectId);
       }
     }
 
