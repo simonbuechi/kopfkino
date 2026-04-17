@@ -3,27 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { storage } from '../services/storage';
 import type { Project, ProjectRole, Invitation } from '../types/types';
 import { ProjectContext } from './ProjectContextObject';
-
-type ProjectState = {
-    projects: Project[];
-    activeProjectId: string | null;
-    loading: boolean;
-};
-
-type ProjectAction =
-    | { type: 'SET_DATA'; payload: Partial<ProjectState> }
-    | { type: 'RESET' };
-
-const projectReducer = (state: ProjectState, action: ProjectAction): ProjectState => {
-    switch (action.type) {
-        case 'SET_DATA':
-            return { ...state, ...action.payload };
-        case 'RESET':
-            return { projects: [], activeProjectId: null, loading: false };
-        default:
-            return state;
-    }
-};
+import { projectReducer } from './reducers';
 
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user } = useAuth();

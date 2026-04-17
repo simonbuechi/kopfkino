@@ -18,6 +18,7 @@ import type {
     ProjectRole, ProjectMember, ProjectRef, Invitation,
 } from '../types/types';
 import type { User } from 'firebase/auth';
+import { byOrder, byCreatedAtDesc, byUpdatedAtDesc } from '../utils/sort';
 
 // ---------------------------------------------------------------------------
 // Collection name constants
@@ -70,7 +71,7 @@ export const storage = {
         const projectsMap = new Map<string, Project>();
 
         const notifyCallback = () => {
-            const projects = Array.from(projectsMap.values()).sort((a, b) => b.createdAt - a.createdAt);
+            const projects = Array.from(projectsMap.values()).sort(byCreatedAtDesc);
             callback(projects);
         };
 
@@ -239,7 +240,7 @@ export const storage = {
     subscribeToLocations: (projectId: string, callback: (locations: Location[]) => void): Unsubscribe => {
         return onSnapshot(query(getProjectCollection(projectId, COLLECTIONS.LOCATIONS)), (snapshot) => {
             const locations = snapshot.docs.map(d => d.data() as Location);
-            locations.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
+            locations.sort(byOrder);
             callback(locations);
         });
     },
@@ -253,7 +254,10 @@ export const storage = {
     },
 
     saveLocation: async (projectId: string, location: Location) => {
-        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.LOCATIONS, location.id), location);
+        const data = Object.fromEntries(
+            Object.entries(location).filter(([, v]) => v !== undefined)
+        ) as Location;
+        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.LOCATIONS, data.id), data);
     },
 
     deleteLocation: async (projectId: string, locationId: string) => {
@@ -273,7 +277,7 @@ export const storage = {
     subscribeToScenes: (projectId: string, callback: (scenes: Scene[]) => void): Unsubscribe => {
         return onSnapshot(query(getProjectCollection(projectId, COLLECTIONS.SCENES)), (snapshot) => {
             const scenes = snapshot.docs.map(d => d.data() as Scene);
-            scenes.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
+            scenes.sort(byOrder);
             callback(scenes);
         });
     },
@@ -307,7 +311,7 @@ export const storage = {
     subscribeToCharacters: (projectId: string, callback: (characters: Character[]) => void): Unsubscribe => {
         return onSnapshot(query(getProjectCollection(projectId, COLLECTIONS.CHARACTERS)), (snapshot) => {
             const characters = snapshot.docs.map(d => d.data() as Character);
-            characters.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
+            characters.sort(byOrder);
             callback(characters);
         });
     },
@@ -341,7 +345,7 @@ export const storage = {
     subscribeToSchedules: (projectId: string, callback: (schedules: Schedule[]) => void): Unsubscribe => {
         return onSnapshot(query(getProjectCollection(projectId, COLLECTIONS.SCHEDULES)), (snapshot) => {
             const schedules = snapshot.docs.map(d => d.data() as Schedule);
-            schedules.sort((a, b) => b.updatedAt - a.updatedAt);
+            schedules.sort(byUpdatedAtDesc);
             callback(schedules);
         });
     },
@@ -361,7 +365,7 @@ export const storage = {
     subscribeToAssets: (projectId: string, callback: (assets: Asset[]) => void): Unsubscribe => {
         return onSnapshot(query(getProjectCollection(projectId, COLLECTIONS.ASSETS)), (snapshot) => {
             const assets = snapshot.docs.map(d => d.data() as Asset);
-            assets.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
+            assets.sort(byOrder);
             callback(assets);
         });
     },
@@ -389,7 +393,7 @@ export const storage = {
     subscribeToPeople: (projectId: string, callback: (people: Person[]) => void): Unsubscribe => {
         return onSnapshot(query(getProjectCollection(projectId, COLLECTIONS.PEOPLE)), (snapshot) => {
             const people = snapshot.docs.map(d => d.data() as Person);
-            people.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
+            people.sort(byOrder);
             callback(people);
         });
     },
