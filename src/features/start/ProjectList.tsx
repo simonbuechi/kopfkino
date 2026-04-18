@@ -8,13 +8,7 @@ import { Plus, Trash2, Edit2, Play, MapPin, Users, Clapperboard, Film, Clock, Vi
 import { Button } from '../../components/ui/Button';
 import { ShareDialog } from './ShareDialog';
 import type { Project } from '../../types/types';
-
-
-const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.round(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-};
+import { formatTimeCode } from '../../utils/time';
 
 export const ProjectList: React.FC = () => {
     const { projects, createProject, deleteProject, activeProjectId } = useProjects();
@@ -279,7 +273,7 @@ export const ProjectList: React.FC = () => {
                                     </div>
                                     <div className="col-span-2 flex items-center gap-2 text-primary-600 dark:text-primary-400">
                                         <Clock size={16} />
-                                        <span>Total Length: {formatTime(projectStats.length)}</span>
+                                        <span>Total Length: {formatTimeCode(projectStats.length)}</span>
                                     </div>
                                 </div>
                             </div>

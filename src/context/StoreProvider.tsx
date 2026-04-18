@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useCallback } from 'react';
+import { useReducer, useEffect, useCallback, useMemo } from 'react';
 import type { Location, Scene, Shot, Person, Schedule, Asset, Character, Settings } from '../types/types';
 import { storage } from '../services/storage';
 import { useAuth } from '../hooks/useAuth';
@@ -14,7 +14,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
 
     const { locations, scenes, characters, schedules, assets, people, settings } = state;
 
-    const ok = () => canWrite(activeProjectId, activeProjectRole);
+    const canUserWrite = canWrite(activeProjectId, activeProjectRole);
 
     useEffect(() => {
         if (!user || !activeProjectId) {
@@ -44,175 +44,203 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     }, [user, activeProjectId]);
 
     // Locations
-    const addLocation = async (loc: Location) => {
-        if (!activeProjectId || !ok()) return;
+    const addLocation = useCallback(async (loc: Location) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.saveLocation(activeProjectId, loc);
-    };
-    const deleteLocation = async (id: string) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const deleteLocation = useCallback(async (id: string) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.deleteLocation(activeProjectId, id);
-    };
-    const replaceLocations = async (newLocations: Location[]) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const replaceLocations = useCallback(async (newLocations: Location[]) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.replaceAllLocations(activeProjectId, newLocations);
-    };
-    const reorderLocations = async (newOrder: Location[]) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const reorderLocations = useCallback(async (newOrder: Location[]) => {
+        if (!activeProjectId || !canUserWrite) return;
         dispatch({ type: 'SET_LOCATIONS', payload: newOrder });
         const locationsWithOrder = newOrder.map((loc, index) => ({ ...loc, order: index }));
         await storage.updateLocationOrders(activeProjectId, locationsWithOrder);
-    };
+    }, [activeProjectId, canUserWrite]);
 
     // Scenes
-    const addScene = async (scene: Scene) => {
-        if (!activeProjectId || !ok()) return;
+    const addScene = useCallback(async (scene: Scene) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.saveScene(activeProjectId, scene);
-    };
-    const deleteScene = async (id: string) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const deleteScene = useCallback(async (id: string) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.deleteScene(activeProjectId, id);
-    };
-    const replaceScenes = async (newScenes: Scene[]) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const replaceScenes = useCallback(async (newScenes: Scene[]) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.replaceAllScenes(activeProjectId, newScenes);
-    };
-    const reorderScenes = async (newOrder: Scene[]) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const reorderScenes = useCallback(async (newOrder: Scene[]) => {
+        if (!activeProjectId || !canUserWrite) return;
         dispatch({ type: 'SET_SCENES', payload: newOrder });
         const scenesWithOrder = newOrder.map((scene, index) => ({ ...scene, order: index }));
         await storage.updateSceneOrders(activeProjectId, scenesWithOrder);
-    };
+    }, [activeProjectId, canUserWrite]);
 
     // Shots — embedded in Scenes
-    const addShotToScene = async (sceneId: string, shot: Shot) => {
-        if (!activeProjectId || !ok()) return;
+    const addShotToScene = useCallback(async (sceneId: string, shot: Shot) => {
+        if (!activeProjectId || !canUserWrite) return;
         const scene = scenes.find(s => s.id === sceneId);
         if (!scene) return;
         const updatedScene = { ...scene, shots: [...(scene.shots || []), shot] };
         await storage.saveScene(activeProjectId, updatedScene);
-    };
-    const deleteShotFromScene = async (sceneId: string, shotId: string) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite, scenes]);
+
+    const deleteShotFromScene = useCallback(async (sceneId: string, shotId: string) => {
+        if (!activeProjectId || !canUserWrite) return;
         const scene = scenes.find(s => s.id === sceneId);
         if (!scene?.shots) return;
         const updatedScene = { ...scene, shots: scene.shots.filter(s => s.id !== shotId) };
         await storage.saveScene(activeProjectId, updatedScene);
-    };
-    const updateShotInScene = async (sceneId: string, shot: Shot) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite, scenes]);
+
+    const updateShotInScene = useCallback(async (sceneId: string, shot: Shot) => {
+        if (!activeProjectId || !canUserWrite) return;
         const scene = scenes.find(s => s.id === sceneId);
         if (!scene?.shots) return;
         const updatedScene = { ...scene, shots: scene.shots.map(s => s.id === shot.id ? shot : s) };
         await storage.saveScene(activeProjectId, updatedScene);
-    };
-    const reorderShotsInScene = async (sceneId: string, newShots: Shot[]) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite, scenes]);
+
+    const reorderShotsInScene = useCallback(async (sceneId: string, newShots: Shot[]) => {
+        if (!activeProjectId || !canUserWrite) return;
         const scene = scenes.find(s => s.id === sceneId);
         if (!scene) return;
         await storage.saveScene(activeProjectId, { ...scene, shots: newShots });
-    };
+    }, [activeProjectId, canUserWrite, scenes]);
 
     // Characters
-    const addCharacter = async (character: Character) => {
-        if (!activeProjectId || !ok()) return;
+    const addCharacter = useCallback(async (character: Character) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.saveCharacter(activeProjectId, character);
-    };
-    const deleteCharacter = async (id: string) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const deleteCharacter = useCallback(async (id: string) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.deleteCharacter(activeProjectId, id);
-    };
-    const updateCharacter = async (character: Character) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const updateCharacter = useCallback(async (character: Character) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.saveCharacter(activeProjectId, character);
-    };
-    const replaceCharacters = async (newCharacters: Character[]) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const replaceCharacters = useCallback(async (newCharacters: Character[]) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.replaceAllCharacters(activeProjectId, newCharacters);
-    };
-    const reorderCharacters = async (newOrder: Character[]) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const reorderCharacters = useCallback(async (newOrder: Character[]) => {
+        if (!activeProjectId || !canUserWrite) return;
         dispatch({ type: 'SET_CHARACTERS', payload: newOrder });
         const charactersWithOrder = newOrder.map((char, index) => ({ ...char, order: index }));
         await storage.updateCharacterOrders(activeProjectId, charactersWithOrder);
-    };
+    }, [activeProjectId, canUserWrite]);
 
     // Settings (user-scoped, always writable)
-    const updateSettings = async (newSettings: Settings) => {
+    const updateSettings = useCallback(async (newSettings: Settings) => {
         if (!user) return;
         await storage.saveSettings(user.uid, newSettings);
-    };
+    }, [user]);
 
     // Schedules
-    const addSchedule = async (schedule: Schedule) => {
-        if (!activeProjectId || !ok()) return;
+    const addSchedule = useCallback(async (schedule: Schedule) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.saveSchedule(activeProjectId, schedule);
-    };
-    const deleteSchedule = async (id: string) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const deleteSchedule = useCallback(async (id: string) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.deleteSchedule(activeProjectId, id);
-    };
-    const updateSchedule = async (schedule: Schedule) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const updateSchedule = useCallback(async (schedule: Schedule) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.saveSchedule(activeProjectId, schedule);
-    };
+    }, [activeProjectId, canUserWrite]);
 
     // Assets
-    const addAsset = async (asset: Asset) => {
-        if (!activeProjectId || !ok()) return;
+    const addAsset = useCallback(async (asset: Asset) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.saveAsset(activeProjectId, asset);
-    };
-    const deleteAsset = async (id: string) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const deleteAsset = useCallback(async (id: string) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.deleteAsset(activeProjectId, id);
-    };
-    const updateAsset = async (asset: Asset) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const updateAsset = useCallback(async (asset: Asset) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.saveAsset(activeProjectId, asset);
-    };
-    const reorderAssets = async (newOrder: Asset[]) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const reorderAssets = useCallback(async (newOrder: Asset[]) => {
+        if (!activeProjectId || !canUserWrite) return;
         dispatch({ type: 'SET_ASSETS', payload: newOrder });
         const assetsWithOrder = newOrder.map((asset, index) => ({ ...asset, order: index }));
         await storage.updateAssetOrders(activeProjectId, assetsWithOrder);
-    };
+    }, [activeProjectId, canUserWrite]);
 
     // People
-    const addPerson = async (person: Person) => {
-        if (!activeProjectId || !ok()) return;
+    const addPerson = useCallback(async (person: Person) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.savePerson(activeProjectId, person);
-    };
-    const deletePerson = async (id: string) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const deletePerson = useCallback(async (id: string) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.deletePerson(activeProjectId, id);
-    };
-    const updatePerson = async (person: Person) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const updatePerson = useCallback(async (person: Person) => {
+        if (!activeProjectId || !canUserWrite) return;
         await storage.savePerson(activeProjectId, person);
-    };
-    const reorderPeople = async (newOrder: Person[]) => {
-        if (!activeProjectId || !ok()) return;
+    }, [activeProjectId, canUserWrite]);
+
+    const reorderPeople = useCallback(async (newOrder: Person[]) => {
+        if (!activeProjectId || !canUserWrite) return;
         dispatch({ type: 'SET_PEOPLE', payload: newOrder });
         const peopleWithOrder = newOrder.map((person, index) => ({ ...person, order: index }));
         await storage.updatePersonOrders(activeProjectId, peopleWithOrder);
-    };
+    }, [activeProjectId, canUserWrite]);
 
-    const refresh = useCallback(() => {
-        console.log("Refresh called, but store is real-time now.");
-    }, []);
+    const contextValue = useMemo(() => ({
+        locations, scenes, characters, schedules, assets, people, settings,
+        addLocation, deleteLocation, replaceLocations, reorderLocations,
+        addScene, deleteScene, replaceScenes, reorderScenes,
+        addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene,
+        addCharacter, deleteCharacter, updateCharacter, replaceCharacters, reorderCharacters,
+        updateSettings,
+        addSchedule, deleteSchedule, updateSchedule,
+        addAsset, deleteAsset, updateAsset, reorderAssets,
+        addPerson, deletePerson, updatePerson, reorderPeople,
+    }), [
+        locations, scenes, characters, schedules, assets, people, settings,
+        addLocation, deleteLocation, replaceLocations, reorderLocations,
+        addScene, deleteScene, replaceScenes, reorderScenes,
+        addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene,
+        addCharacter, deleteCharacter, updateCharacter, replaceCharacters, reorderCharacters,
+        updateSettings,
+        addSchedule, deleteSchedule, updateSchedule,
+        addAsset, deleteAsset, updateAsset, reorderAssets,
+        addPerson, deletePerson, updatePerson, reorderPeople,
+    ]);
 
     return (
-        <StoreContext.Provider value={{
-            locations, scenes, characters, schedules, assets, people, settings,
-            addLocation, deleteLocation, replaceLocations, reorderLocations,
-            addScene, deleteScene, replaceScenes, reorderScenes,
-            addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene,
-            addCharacter, deleteCharacter, updateCharacter, replaceCharacters, reorderCharacters,
-            updateSettings,
-            addSchedule, deleteSchedule, updateSchedule,
-            addAsset, deleteAsset, updateAsset, reorderAssets,
-            addPerson, deletePerson, updatePerson, reorderPeople,
-            refresh,
-        }}>
+        <StoreContext.Provider value={contextValue}>
             {children}
         </StoreContext.Provider>
     );

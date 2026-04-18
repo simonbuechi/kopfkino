@@ -3,15 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { MapPin, Users, Clapperboard, Video, ExternalLink, Plus, Eye } from 'lucide-react';
 import { useProjects } from '../../hooks/useProjects';
-
-const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.round(seconds % 60);
-    if (minutes > 0) {
-        return `${minutes}m ${remainingSeconds}s`;
-    }
-    return `${remainingSeconds}s`;
-};
+import { formatTime } from '../../utils/time';
 
 export const ProjectDashboard: React.FC = () => {
     const { locations, scenes, characters } = useStore();

@@ -14,19 +14,15 @@ import type { Character } from '../../types/types';
 import {
     DndContext,
     closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
 } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import {
     arrayMove,
     SortableContext,
-    sortableKeyboardCoordinates,
     useSortable,
     rectSortingStrategy
 } from '@dnd-kit/sortable';
+import { useDnDSensors } from '../../hooks/useDnDSensors';
 import { CSS } from '@dnd-kit/utilities';
 
 // Sortable Item Component
@@ -186,12 +182,7 @@ export const CharacterList: React.FC = () => {
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
 
-    const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
+    const sensors = useDnDSensors();
 
     const handleImportClick = () => {
         if (confirm('WARNING: Importing a CSV file will PERMANENTLY DELETE all existing characters. Do you want to proceed?')) {

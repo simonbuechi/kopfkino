@@ -11,19 +11,15 @@ import type { Person } from '../../types/types';
 import {
     DndContext,
     closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
 } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import {
     arrayMove,
     SortableContext,
-    sortableKeyboardCoordinates,
     useSortable,
     rectSortingStrategy
 } from '@dnd-kit/sortable';
+import { useDnDSensors } from '../../hooks/useDnDSensors';
 import { CSS } from '@dnd-kit/utilities';
 
 // Sortable Item Component
@@ -164,12 +160,7 @@ export const PersonList: React.FC = () => {
     const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
 
-    const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
+    const sensors = useDnDSensors();
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;

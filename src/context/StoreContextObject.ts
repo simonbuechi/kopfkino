@@ -38,7 +38,6 @@ export interface StoreContextType {
     deletePerson: (id: string) => Promise<void>;
     updatePerson: (person: Person) => Promise<void>;
     reorderPeople: (newOrder: Person[]) => Promise<void>;
-    refresh: () => void;
 }
 
 export const StoreContext = createContext<StoreContextType | undefined>(undefined);

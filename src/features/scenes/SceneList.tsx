@@ -1,7 +1,8 @@
-import React, { useRef, type ChangeEvent, useState } from 'react';
+import React, { useRef, type ChangeEvent, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
+import { formatTime } from '../../utils/time';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Clapperboard, Plus, MapPin, Upload, Download, LayoutList, GripVertical, AlignJustify, Users, Timer, Film } from 'lucide-react';
@@ -9,19 +10,15 @@ import type { Scene } from '../../types/types';
 import {
     DndContext,
     closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
     type DragEndEvent
 } from '@dnd-kit/core';
 import {
     arrayMove,
     SortableContext,
-    sortableKeyboardCoordinates,
     useSortable,
     verticalListSortingStrategy
 } from '@dnd-kit/sortable';
+import { useDnDSensors } from '../../hooks/useDnDSensors';
 import { CSS } from '@dnd-kit/utilities';
 
 interface SortableSceneItemProps {
@@ -100,15 +97,7 @@ const SortableSceneItem = ({ scene, viewMode, getLocationName, getCharacterNames
                                 </div>
                                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">
                                     <Timer size={12} />
-                                    {(() => {
-                                        const totalSeconds = scene.shots?.reduce((acc, shot) => acc + (shot.length || 0), 0) || 0;
-                                        const minutes = Math.floor(totalSeconds / 60);
-                                        const seconds = totalSeconds % 60;
-                                        if (minutes > 0) {
-                                            return `${minutes}m ${seconds}s`;
-                                        }
-                                        return `${seconds}s`;
-                                    })()}
+                                    {formatTime(scene.shots?.reduce((acc, shot) => acc + (shot.length || 0), 0) || 0)}
                                 </div>
                             </div>
                             <p className="text-primary-500 dark:text-primary-400 text-sm line-clamp-2">
@@ -129,21 +118,16 @@ export const SceneList: React.FC = () => {
     const sceneFileInputRef = useRef<HTMLInputElement>(null);
     const [viewMode, setViewMode] = useState<'slim' | 'expanded'>('expanded');
 
-    const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
+    const sensors = useDnDSensors();
 
-    const getLocationName = (id: string) => {
+    const getLocationName = useCallback((id: string) => {
         return locations.find(l => l.id === id)?.name || 'Unknown Location';
-    };
+    }, [locations]);
 
-    const getCharacterNames = (ids?: string[]) => {
+    const getCharacterNames = useCallback((ids?: string[]) => {
         if (!ids || ids.length === 0) return [];
         return ids.map(id => characters.find(c => c.id === id)?.name).filter(Boolean) as string[];
-    };
+    }, [characters]);
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;

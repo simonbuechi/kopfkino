@@ -11,19 +11,15 @@ import type { Shot } from '../../types/types';
 import {
     DndContext,
     closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
     type DragEndEvent
 } from '@dnd-kit/core';
 import {
     arrayMove,
     SortableContext,
-    sortableKeyboardCoordinates,
     useSortable,
     verticalListSortingStrategy
 } from '@dnd-kit/sortable';
+import { useDnDSensors } from '../../hooks/useDnDSensors';
 import { CSS } from '@dnd-kit/utilities';
 
 interface ShotsListProps {
@@ -419,12 +415,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
 
     const [imageModal, setImageModal] = useState<{ url: string; alt: string } | null>(null);
 
-    const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
+    const sensors = useDnDSensors();
 
     // Close modal on ESC key
     React.useEffect(() => {
