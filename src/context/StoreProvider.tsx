@@ -1,5 +1,5 @@
 import { useReducer, useEffect, useCallback, useMemo } from 'react';
-import type { Location, Scene, Shot, Person, Schedule, Asset, Character, Settings } from '../types/types';
+import type { Location, Scene, Shot, Person, Schedule, Asset, Character, Settings, Script } from '../types/types';
 import { storage } from '../services/storage';
 import { useAuth } from '../hooks/useAuth';
 import { useProjects } from '../hooks/useProjects';
@@ -12,7 +12,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     const { activeProjectId, activeProjectRole } = useProjects();
     const [state, dispatch] = useReducer(storeReducer, storeInitialState);
 
-    const { locations, scenes, characters, schedules, assets, people, settings } = state;
+    const { locations, scenes, characters, schedules, assets, people, settings, script } = state;
 
     const canUserWrite = canWrite(activeProjectId, activeProjectRole);
 
@@ -31,6 +31,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         const unsubSettings = storage.subscribeToSettings(user.uid, (data) => {
             dispatch({ type: 'SET_SETTINGS', payload: data || DEFAULT_SETTINGS });
         });
+        const unsubScript = storage.subscribeToScript(activeProjectId, (payload) => dispatch({ type: 'SET_SCRIPT', payload }));
 
         return () => {
             unsubLocations();
@@ -40,6 +41,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
             unsubAssets();
             unsubPeople();
             unsubSettings();
+            unsubScript();
         };
     }, [user, activeProjectId]);
 
@@ -217,8 +219,20 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         await storage.updatePersonOrders(activeProjectId, peopleWithOrder);
     }, [activeProjectId, canUserWrite]);
 
+    // Script
+    const saveScript = useCallback(async (content: string) => {
+        if (!activeProjectId || !canUserWrite) return;
+        const scriptData: Script = { projectId: activeProjectId, content, updatedAt: Date.now() };
+        await storage.saveScript(activeProjectId, scriptData);
+    }, [activeProjectId, canUserWrite]);
+
+    const setScriptFrozen = useCallback(async (frozen: boolean) => {
+        if (!activeProjectId || !canUserWrite) return;
+        await storage.setScriptFrozen(activeProjectId, frozen);
+    }, [activeProjectId, canUserWrite]);
+
     const contextValue = useMemo(() => ({
-        locations, scenes, characters, schedules, assets, people, settings,
+        locations, scenes, characters, schedules, assets, people, settings, script,
         addLocation, deleteLocation, replaceLocations, reorderLocations,
         addScene, deleteScene, replaceScenes, reorderScenes,
         addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene,
@@ -227,8 +241,9 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         addSchedule, deleteSchedule, updateSchedule,
         addAsset, deleteAsset, updateAsset, reorderAssets,
         addPerson, deletePerson, updatePerson, reorderPeople,
+        saveScript, setScriptFrozen,
     }), [
-        locations, scenes, characters, schedules, assets, people, settings,
+        locations, scenes, characters, schedules, assets, people, settings, script,
         addLocation, deleteLocation, replaceLocations, reorderLocations,
         addScene, deleteScene, replaceScenes, reorderScenes,
         addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene,
@@ -237,6 +252,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         addSchedule, deleteSchedule, updateSchedule,
         addAsset, deleteAsset, updateAsset, reorderAssets,
         addPerson, deletePerson, updatePerson, reorderPeople,
+        saveScript, setScriptFrozen,
     ]);
 
     return (

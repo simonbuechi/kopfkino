@@ -152,3 +152,10 @@ export interface Person {
     order?: number;
 }
 
+export interface Script {
+    projectId: string;
+    content: string;
+    updatedAt: number;
+    frozen?: boolean;
+}
+

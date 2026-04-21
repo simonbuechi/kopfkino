@@ -14,7 +14,7 @@ import {
 import type { Unsubscribe } from 'firebase/firestore';
 import { db } from './firebase';
 import type {
-    Location, Scene, Settings, Character, Project, Schedule, Asset, Person,
+    Location, Scene, Settings, Character, Project, Schedule, Asset, Person, Script,
     ProjectRole, ProjectMember, ProjectRef, Invitation,
 } from '../types/types';
 import type { User } from 'firebase/auth';
@@ -32,6 +32,7 @@ const COLLECTIONS = {
     SCHEDULES: 'schedules',
     ASSETS: 'assets',
     PEOPLE: 'people',
+    SCRIPT: 'script',
     PROJECT_REFS: 'projectRefs',
     INVITATIONS: 'invitations',
     USERS: 'users',
@@ -458,6 +459,27 @@ export const storage = {
         }
 
         return stats;
+    },
+
+    // -------------------------------------------------------------------------
+    // Script (one per project)
+    // -------------------------------------------------------------------------
+
+    subscribeToScript: (projectId: string, callback: (script: Script | null) => void): Unsubscribe => {
+        const scriptDoc = doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCRIPT, 'main');
+        return onSnapshot(scriptDoc, (snap) => {
+            callback(snap.exists() ? (snap.data() as Script) : null);
+        });
+    },
+
+    saveScript: async (projectId: string, script: Script) => {
+        const scriptDoc = doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCRIPT, 'main');
+        await setDoc(scriptDoc, script);
+    },
+
+    setScriptFrozen: async (projectId: string, frozen: boolean) => {
+        const scriptDoc = doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCRIPT, 'main');
+        await setDoc(scriptDoc, { frozen }, { merge: true });
     },
 
 };

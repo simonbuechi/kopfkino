@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { Location, Scene, Shot, Settings, Character, Schedule, Asset, Person } from '../types/types';
+import type { Location, Scene, Shot, Settings, Character, Schedule, Asset, Person, Script } from '../types/types';
 
 export interface StoreContextType {
     locations: Location[];
@@ -9,6 +9,7 @@ export interface StoreContextType {
     assets: Asset[];
     people: Person[];
     settings: Settings;
+    script: Script | null;
     addLocation: (loc: Location) => Promise<void>;
     deleteLocation: (id: string) => Promise<void>;
     replaceLocations: (locations: Location[]) => Promise<void>;
@@ -38,6 +39,8 @@ export interface StoreContextType {
     deletePerson: (id: string) => Promise<void>;
     updatePerson: (person: Person) => Promise<void>;
     reorderPeople: (newOrder: Person[]) => Promise<void>;
+    saveScript: (content: string) => Promise<void>;
+    setScriptFrozen: (frozen: boolean) => Promise<void>;
 }
 
 export const StoreContext = createContext<StoreContextType | undefined>(undefined);

@@ -1,4 +1,4 @@
-import type { Location, Scene, Character, Schedule, Asset, Person, Settings, Project } from '../types/types';
+import type { Location, Scene, Character, Schedule, Asset, Person, Settings, Project, Script } from '../types/types';
 
 // ---------------------------------------------------------------------------
 // Store reducer
@@ -12,6 +12,7 @@ export type StoreState = {
     assets: Asset[];
     people: Person[];
     settings: Settings;
+    script: Script | null;
 };
 
 export type StoreAction =
@@ -22,6 +23,7 @@ export type StoreAction =
     | { type: 'SET_ASSETS'; payload: Asset[] }
     | { type: 'SET_PEOPLE'; payload: Person[] }
     | { type: 'SET_SETTINGS'; payload: Settings }
+    | { type: 'SET_SCRIPT'; payload: Script | null }
     | { type: 'RESET' };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -37,6 +39,7 @@ export const storeInitialState: StoreState = {
     assets: [],
     people: [],
     settings: DEFAULT_SETTINGS,
+    script: null,
 };
 
 export function storeReducer(state: StoreState, action: StoreAction): StoreState {
@@ -48,6 +51,7 @@ export function storeReducer(state: StoreState, action: StoreAction): StoreState
         case 'SET_ASSETS': return { ...state, assets: action.payload };
         case 'SET_PEOPLE': return { ...state, people: action.payload };
         case 'SET_SETTINGS': return { ...state, settings: action.payload };
+        case 'SET_SCRIPT': return { ...state, script: action.payload };
         case 'RESET': return storeInitialState;
         default: return state;
     }
