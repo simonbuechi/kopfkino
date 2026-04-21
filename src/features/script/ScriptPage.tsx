@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import jsPDF from 'jspdf';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { Link } from 'react-router-dom';
-import { FileText, Lock, Unlock, User, MapPin, Clapperboard, ChevronDown, ChevronRight, Code, BookOpen, Info, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { FileText, Lock, Unlock, User, MapPin, Clapperboard, ChevronDown, ChevronRight, Code, BookOpen, Info, X, CheckCircle, AlertCircle, Download } from 'lucide-react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { Button } from '../../components/ui/Button';
 import type { Character, Location } from '../../types/types';
@@ -136,6 +137,146 @@ const LINE_INDENT: Partial<Record<LineType, { paddingLeft?: string; paddingRight
     centered:      { textAlign: 'center' },
 };
 
+// ---------------------------------------------------------------------------
+// PDF / Print export
+// ---------------------------------------------------------------------------
+
+function cleanLine(raw: string, type: LineType): string {
+    const t = raw.trim();
+    switch (type) {
+        case 'scene-heading': return t.startsWith('.')  ? t.slice(1).trim() : t;
+        case 'transition':    return t.startsWith('>')  ? t.slice(1).trim() : t;
+        case 'character':     return t.startsWith('@')  ? t.slice(1).trim() : t;
+        case 'action':        return t.startsWith('!')  ? t.slice(1).trim() : t;
+        case 'centered':      return t.replace(/^>\s*/, '').replace(/\s*<$/, '');
+        case 'synopsis':      return t.replace(/^=\s+/, '');
+        case 'section':       return t.replace(/^#+\s*/, '');
+        default:              return raw;
+    }
+}
+
+function generateScreenplayPdf(text: string, title: string): jsPDF {
+    // Page geometry (points; 72 pt = 1 inch)
+    // WGA/industry standard: left 1.5in (binding), all others 1in
+    const PW = 612, PH = 792;
+    const ML = 108, MR = 72, MT = 72, MB = 72;
+    const TW = PW - ML - MR; // 432 pt = 6in text area
+    const LH = 12;            // 12 pt line height = 6 lines/inch (Courier standard)
+    const FS = 12;
+
+    type Spec = { l?: number; r?: number; align?: 'left' | 'right' | 'center' };
+    const SPECS: Partial<Record<LineType, Spec>> = {
+        'scene-heading': {},
+        'action':        {},
+        'character':     { l: 158 },
+        'dialogue':      { l: 72,  r: 108 },
+        'parenthetical': { l: 115, r: 144 },
+        'transition':    { align: 'right' },
+        'centered':      { align: 'center' },
+        'section':       {},
+        'synopsis':      {},
+    };
+
+    const lines = text.split('\n');
+    const types = classifyLines(text);
+
+    let bodyStart = 0;
+    const titleMap = new Map<string, string>();
+    for (let i = 0; i < lines.length; i++) {
+        if (types[i] === 'title') {
+            const m = lines[i].match(/^([^:]+):\s*(.*)$/);
+            if (m) titleMap.set(m[1].trim().toLowerCase(), m[2].trim());
+            bodyStart = i + 1;
+        } else if (types[i] === 'blank' && bodyStart > 0) {
+            bodyStart = i + 1;
+        } else {
+            break;
+        }
+    }
+
+    const scriptTitle  = titleMap.get('title') ?? title;
+    const author       = titleMap.get('author') ?? titleMap.get('written by') ?? titleMap.get('by') ?? '';
+    const hasTitlePage = titleMap.size > 0;
+    const contactKeys  = [...titleMap.keys()].filter(k => !['title', 'author', 'written by', 'by'].includes(k));
+
+    const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'letter' });
+
+    let scriptPage = hasTitlePage ? 0 : 1;
+    let y = MT + FS;
+
+    const writePageNum = () => {
+        if (scriptPage > 1) {
+            doc.setFont('courier', 'normal');
+            doc.setFontSize(FS);
+            doc.text(scriptPage + '.', PW - MR, MT - 10, { align: 'right' });
+        }
+    };
+
+    const nextPage = () => {
+        doc.addPage();
+        scriptPage++;
+        y = MT + FS;
+        writePageNum();
+    };
+
+    const ensureRoom = (n: number) => {
+        if (y + LH * n > PH - MB) nextPage();
+    };
+
+    if (hasTitlePage) {
+        const mid = PH / 2;
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(14);
+        doc.text(scriptTitle.toUpperCase(), PW / 2, mid - 14, { align: 'center' });
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(FS);
+        doc.text('Written by', PW / 2, mid + 6, { align: 'center' });
+        if (author) doc.text(author, PW / 2, mid + 20, { align: 'center' });
+        if (contactKeys.length > 0) {
+            doc.setFontSize(11);
+            let cy = PH - MB - contactKeys.length * 16;
+            contactKeys.forEach(k => {
+                doc.text(titleMap.get(k) ?? '', ML, cy);
+                cy += 16;
+            });
+        }
+        doc.addPage();
+        scriptPage = 1;
+        y = MT + FS;
+    }
+
+    for (let i = bodyStart; i < lines.length; i++) {
+        const type = types[i] ?? 'action';
+        if (type === 'note' || type === 'title') continue;
+        if (type === 'blank') {
+            if (y <= PH - MB) y += LH; else nextPage();
+            continue;
+        }
+        const spec  = SPECS[type] ?? {};
+        const l     = spec.l ?? 0;
+        const r     = spec.r ?? 0;
+        const align = spec.align ?? 'left';
+        const bold  = type === 'scene-heading' || type === 'character';
+        if (type === 'scene-heading' || type === 'character') ensureRoom(3);
+        doc.setFont('courier', bold ? 'bold' : 'normal');
+        doc.setFontSize(FS);
+        const content = cleanLine(lines[i], type);
+        const wrapped = doc.splitTextToSize(content || ' ', TW - l - r) as string[];
+        for (const wline of wrapped) {
+            if (y > PH - MB) nextPage();
+            if (align === 'right') {
+                doc.text(wline, PW - MR, y, { align: 'right' });
+            } else if (align === 'center') {
+                doc.text(wline, PW / 2, y, { align: 'center' });
+            } else {
+                doc.text(wline, ML + l, y);
+            }
+            y += LH;
+        }
+    }
+
+    return doc;
+}
 function applyLineStyle(el: HTMLElement, type: LineType) {
     el.className = LINE_CLASS[type];
     el.style.paddingLeft = '';
@@ -473,7 +614,7 @@ const ScriptSidebar: React.FC<ScriptSidebarProps> = ({
 
 export const ScriptPage: React.FC = () => {
     const { script, saveScript, setScriptFrozen, characters: storeCharacters, locations: storeLocations } = useStore();
-    const { activeProjectId } = useProjects();
+    const { activeProjectId, activeProject } = useProjects();
     const [draft, setDraft] = useState('');
     const [saving, setSaving] = useState(false);
     const [confirmFreezeOpen, setConfirmFreezeOpen] = useState(false);
@@ -544,18 +685,50 @@ export const ScriptPage: React.FC = () => {
     const isEmpty = !draft.trim();
     const { characters, locations, scenes } = useMemo(() => extractScriptInfo(draft), [draft]);
 
+    const filename = activeProject?.name ?? 'script';
+
+    const handleDownloadFountain = () => {
+        const blob = new Blob([draft], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filename}.fountain`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleDownloadPdf = () => {
+        generateScreenplayPdf(draft, filename).save(filename + '.pdf');
+    };
+
     return (
         <div className="w-full">
             {/* Toolbar */}
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-3xl font-bold text-primary-900 dark:text-white">Script</h2>
                 <div className="flex items-center gap-3">
+                    <Tooltip label="Download script PDF">
+                        <button
+                            onClick={handleDownloadPdf}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border border-primary-300 dark:border-primary-600 text-primary-700 dark:text-primary-200 bg-white dark:bg-primary-800 hover:bg-primary-50 dark:hover:bg-primary-700 hover:border-primary-400 dark:hover:border-primary-500 transition-colors shadow-sm"
+                        >
+                            <Download size={14} />.pdf
+                        </button>
+                    </Tooltip>
+                    <Tooltip label="Download Fountain File">
+                        <button
+                            onClick={handleDownloadFountain}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border border-primary-300 dark:border-primary-600 text-primary-700 dark:text-primary-200 bg-white dark:bg-primary-800 hover:bg-primary-50 dark:hover:bg-primary-700 hover:border-primary-400 dark:hover:border-primary-500 transition-colors shadow-sm"
+                        >
+                            <Download size={14} />.fountain
+                        </button>
+                    </Tooltip>
                     <Tooltip label="Syntax How To">
                         <button
                             onClick={() => setHowtoOpen(true)}
-                            className="p-1.5 rounded-md text-primary-400 hover:text-primary-700 dark:hover:text-primary-200 hover:bg-primary-100 dark:hover:bg-primary-800 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border border-primary-300 dark:border-primary-600 text-primary-700 dark:text-primary-200 bg-white dark:bg-primary-800 hover:bg-primary-50 dark:hover:bg-primary-700 hover:border-primary-400 dark:hover:border-primary-500 transition-colors shadow-sm"
                         >
-                            <Info size={18} />
+                            <Info size={14} />Info
                         </button>
                     </Tooltip>
                     {frozen && (
@@ -587,13 +760,17 @@ export const ScriptPage: React.FC = () => {
                         </Tooltip>
                     </div>
                     {frozen ? (
-                        <Button size="sm" variant="secondary" onClick={handleUnfreeze}>
-                            <Unlock size={14} /> Unfreeze
-                        </Button>
+                        <Tooltip label="Make script editable">
+                            <Button size="sm" variant="secondary" onClick={handleUnfreeze}>
+                                <Unlock size={14} /> Unfreeze
+                            </Button>
+                        </Tooltip>
                     ) : (
-                        <Button size="sm" variant="secondary" onClick={() => setConfirmFreezeOpen(true)}>
-                            <Lock size={14} /> Freeze
-                        </Button>
+                        <Tooltip label="Make script uneditable">
+                            <Button size="sm" variant="secondary" onClick={() => setConfirmFreezeOpen(true)}>
+                                <Lock size={14} /> Freeze
+                            </Button>
+                        </Tooltip>
                     )}
                 </div>
             </div>

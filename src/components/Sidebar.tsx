@@ -52,6 +52,10 @@ export const Sidebar: React.FC = () => {
                             <LayoutDashboard size={20} className="shrink-0" />
                             {!isCollapsed && <span>Dashboard</span>}
                         </NavLink>
+                        <NavLink to={`/project/${activeProjectId}/script`} className={linkClass} title={isCollapsed ? "Script" : undefined}>
+                            <ScrollText size={20} className="shrink-0" />
+                            {!isCollapsed && <span>Script</span>}
+                        </NavLink>
                         <NavLink to={`/project/${activeProjectId}/locations`} className={linkClass} title={isCollapsed ? "Locations" : undefined}>
                             <MapPin size={20} className="shrink-0" />
                             {!isCollapsed && <span>Locations</span>}
@@ -75,10 +79,6 @@ export const Sidebar: React.FC = () => {
                         <NavLink to={`/project/${activeProjectId}/people`} className={linkClass} title={isCollapsed ? "People" : undefined}>
                             <Users size={20} className="shrink-0" />
                             {!isCollapsed && <span>People</span>}
-                        </NavLink>
-                        <NavLink to={`/project/${activeProjectId}/script`} className={linkClass} title={isCollapsed ? "Script" : undefined}>
-                            <ScrollText size={20} className="shrink-0" />
-                            {!isCollapsed && <span>Script</span>}
                         </NavLink>
                     </>
                 )}
