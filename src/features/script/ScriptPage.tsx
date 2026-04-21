@@ -497,7 +497,7 @@ const SidebarSection: React.FC<SidebarSectionProps> = ({ icon, title, items, isO
         >
             <span className="text-primary-500 dark:text-primary-400">{icon}</span>
             <h3 className="text-sm font-bold text-primary-800 dark:text-primary-200">{title}</h3>
-            <span className="ml-auto text-xs text-primary-400 font-medium">{items.length}</span>
+            <span className="ml-auto text-xs text-primary-400 font-semibold">{items.length}</span>
             {isOpen
                 ? <ChevronDown size={14} className="text-primary-400 group-hover:text-primary-600 dark:group-hover:text-primary-300 shrink-0 transition-colors" />
                 : <ChevronRight size={14} className="text-primary-400 group-hover:text-primary-600 dark:group-hover:text-primary-300 shrink-0 transition-colors" />}
@@ -524,14 +524,14 @@ const SidebarSection: React.FC<SidebarSectionProps> = ({ icon, title, items, isO
                                 {href ? (
                                     <Link
                                         to={href}
-                                        className="flex items-center gap-2.5 px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 text-primary-900 dark:text-white hover:bg-primary-100 dark:hover:bg-primary-900"
+                                        className="flex items-center gap-2.5 px-3 py-1 rounded-lg text-sm font-semibold transition-all duration-200 text-primary-900 dark:text-white hover:bg-primary-100 dark:hover:bg-primary-900"
                                         title={item}
                                     >
                                         {row}
                                     </Link>
                                 ) : (
                                     <div
-                                        className="flex items-center gap-2.5 px-3 py-1 rounded-lg text-sm font-medium text-primary-500 dark:text-primary-400"
+                                        className="flex items-center gap-2.5 px-3 py-1 rounded-lg text-sm font-semibold text-primary-500 dark:text-primary-400"
                                         title={item}
                                     >
                                         {row}
@@ -708,31 +708,22 @@ export const ScriptPage: React.FC = () => {
                 <h2 className="text-3xl font-bold text-primary-900 dark:text-white">Script</h2>
                 <div className="flex items-center gap-3">
                     <Tooltip label="Download script PDF">
-                        <button
-                            onClick={handleDownloadPdf}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border border-primary-300 dark:border-primary-600 text-primary-700 dark:text-primary-200 bg-white dark:bg-primary-800 hover:bg-primary-50 dark:hover:bg-primary-700 hover:border-primary-400 dark:hover:border-primary-500 transition-colors shadow-sm"
-                        >
+                        <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
                             <Download size={14} />.pdf
-                        </button>
+                        </Button>
                     </Tooltip>
                     <Tooltip label="Download Fountain File">
-                        <button
-                            onClick={handleDownloadFountain}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border border-primary-300 dark:border-primary-600 text-primary-700 dark:text-primary-200 bg-white dark:bg-primary-800 hover:bg-primary-50 dark:hover:bg-primary-700 hover:border-primary-400 dark:hover:border-primary-500 transition-colors shadow-sm"
-                        >
+                        <Button variant="outline" size="sm" onClick={handleDownloadFountain}>
                             <Download size={14} />.fountain
-                        </button>
+                        </Button>
                     </Tooltip>
                     <Tooltip label="Syntax How To">
-                        <button
-                            onClick={() => setHowtoOpen(true)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border border-primary-300 dark:border-primary-600 text-primary-700 dark:text-primary-200 bg-white dark:bg-primary-800 hover:bg-primary-50 dark:hover:bg-primary-700 hover:border-primary-400 dark:hover:border-primary-500 transition-colors shadow-sm"
-                        >
+                        <Button variant="outline" size="sm" onClick={() => setHowtoOpen(true)}>
                             <Info size={14} />Info
-                        </button>
+                        </Button>
                     </Tooltip>
                     {frozen && (
-                        <span className="text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                        <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
                             <Lock size={12} /> Frozen — read only
                         </span>
                     )}
@@ -761,13 +752,13 @@ export const ScriptPage: React.FC = () => {
                     </div>
                     {frozen ? (
                         <Tooltip label="Make script editable">
-                            <Button size="sm" variant="secondary" onClick={handleUnfreeze}>
+                            <Button size="sm" variant="outline" onClick={handleUnfreeze}>
                                 <Unlock size={14} /> Unfreeze
                             </Button>
                         </Tooltip>
                     ) : (
                         <Tooltip label="Make script uneditable">
-                            <Button size="sm" variant="secondary" onClick={() => setConfirmFreezeOpen(true)}>
+                            <Button size="sm" variant="outline" onClick={() => setConfirmFreezeOpen(true)}>
                                 <Lock size={14} /> Freeze
                             </Button>
                         </Tooltip>
@@ -843,12 +834,14 @@ export const ScriptPage: React.FC = () => {
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
                 <div className="fixed inset-0 flex items-center justify-center p-4">
                     <DialogPanel className="relative w-full h-full rounded-2xl overflow-auto shadow-2xl bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800">
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => setHowtoOpen(false)}
-                            className="absolute top-3 right-3 p-1.5 rounded-md text-primary-400 hover:text-primary-900 dark:hover:text-white hover:bg-primary-100 dark:hover:bg-primary-800 transition-colors z-10"
+                            className="absolute top-3 right-3 z-10"
                         >
                             <X size={18} />
-                        </button>
+                        </Button>
                         <img
                             src="/assets/fountain-howto.webp"
                             alt="Fountain notation guide"

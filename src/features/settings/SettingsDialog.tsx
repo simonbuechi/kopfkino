@@ -49,15 +49,15 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                         <Dialog.Title className="text-xl font-semibold text-primary-900 dark:text-white">
                             Image Generation Settings
                         </Dialog.Title>
-                        <button onClick={onClose} className="text-primary-500 hover:text-primary-700 dark:hover:text-primary-300">
-                            <X size={20} />
-                        </button>
+                        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+                            <X size={18} />
+                        </Button>
                     </div>
 
                     <div className="space-y-6">
                         {/* API Key */}
                         <div>
-                            <label className="block text-sm font-medium text-primary-700 dark:text-primary-300 mb-2">
+                            <label className="block text-sm font-semibold text-primary-700 dark:text-primary-300 mb-2">
                                 <span className="flex items-center gap-1.5"><Key size={14} /> API Key</span>
                             </label>
                             <input
@@ -72,11 +72,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
 
                         {/* Aspect Ratio */}
                         <div>
-                            <label className="block text-sm font-medium text-primary-700 dark:text-primary-300 mb-2">AspectRatio</label>
+                            <label className="block text-sm font-semibold text-primary-700 dark:text-primary-300 mb-2">AspectRatio</label>
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => handleAspectRatioChange('16:9')}
-                                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium border transition-colors ${localSettings.aspectRatio === '16:9'
+                                    className={`flex-1 py-2 px-3 rounded-md text-sm font-semibold border transition-colors ${localSettings.aspectRatio === '16:9'
                                         ? 'bg-primary-100 border-primary-300 text-primary-700 dark:bg-primary-800/50 dark:border-primary-600 dark:text-primary-300'
                                         : 'bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-800'
                                         }`}
@@ -85,7 +85,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                                 </button>
                                 <button
                                     onClick={() => handleAspectRatioChange('1:1')}
-                                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium border transition-colors ${localSettings.aspectRatio === '1:1'
+                                    className={`flex-1 py-2 px-3 rounded-md text-sm font-semibold border transition-colors ${localSettings.aspectRatio === '1:1'
                                         ? 'bg-primary-100 border-primary-300 text-primary-700 dark:bg-primary-800/50 dark:border-primary-600 dark:text-primary-300'
                                         : 'bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-800'
                                         }`}
@@ -97,7 +97,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
 
                         {/* Seed */}
                         <div>
-                            <label className="block text-sm font-medium text-primary-700 dark:text-primary-300 mb-2">Seed</label>
+                            <label className="block text-sm font-semibold text-primary-700 dark:text-primary-300 mb-2">Seed</label>
                             <div className="flex items-center gap-2 mb-3">
                                 <input
                                     type="checkbox"

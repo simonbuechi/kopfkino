@@ -105,7 +105,7 @@ const SortableShotItem = ({
                     <div className="font-medium text-primary-900 dark:text-primary-100 flex-1 truncate select-none flex items-center gap-2">
                         {shot.name}
                         {(shot.length && shot.length > 0) ? (
-                            <span className="text-xs text-primary-400 font-normal">({shot.length}s)</span>
+                            <span className="text-xs text-primary-400 font-semibold">({shot.length}s)</span>
                         ) : null}
                         {shot.audio && <Volume2 size={12} className="text-primary-400" />}
                     </div>
@@ -186,7 +186,7 @@ const SortableShotItem = ({
                         <div className="flex items-center gap-2">
                             <h3 className="font-bold text-primary-900 dark:text-white leading-tight truncate" title={shot.name}>{shot.name}</h3>
                             {(shot.length && shot.length > 0) ? (
-                                <span className="text-xs px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-800 text-primary-500 font-medium">
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-800 text-primary-500 font-semibold">
                                     {shot.length}s
                                 </span>
                             ) : null}
@@ -324,7 +324,7 @@ const SortableShotItem = ({
                             <div className="flex items-center gap-2">
                                 <h3 className="font-bold text-primary-900 dark:text-white leading-tight truncate" title={shot.name}>{shot.name}</h3>
                                 {(shot.length && shot.length > 0) ? (
-                                    <span className="text-xs px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-800 text-primary-500 font-medium">
+                                    <span className="text-xs px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-800 text-primary-500 font-semibold">
                                         {shot.length}s
                                     </span>
                                 ) : null}

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, Trash2, ArrowLeft, Save, Clock } from 'lucide-react';
 import { useStore } from '../../hooks/useStore';
 import type { Schedule, ScheduleItem, ScheduleItemType, SpecialItemType } from '../../types/types';
+import { Button } from '../../components/ui/Button';
 
 export const ScheduleForm: React.FC = () => {
     const { projectId, scheduleId } = useParams<{ projectId: string; scheduleId: string }>();
@@ -120,24 +121,16 @@ export const ScheduleForm: React.FC = () => {
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
-                    <button
-                        type="button"
-                        onClick={() => navigate(-1)}
-                        className="p-2 hover:bg-primary-100 dark:hover:bg-primary-800 rounded-full transition-colors text-primary-600 dark:text-primary-400"
-                    >
-                        <ArrowLeft size={24} />
-                    </button>
+                    <Button variant="ghost" size="icon" type="button" onClick={() => navigate(-1)} aria-label="Go back">
+                        <ArrowLeft size={20} />
+                    </Button>
                     <h1 className="text-2xl font-bold text-primary-900 dark:text-white">
                         {scheduleId ? 'Edit Schedule' : 'Add New Schedule'}
                     </h1>
                 </div>
-                <button
-                    type="submit"
-                    className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-colors font-medium shadow-sm"
-                >
-                    <Save size={20} />
-                    Save Schedule
-                </button>
+                <Button type="submit">
+                    <Save size={18} /> Save Schedule
+                </Button>
             </div>
 
             <div className="space-y-6">
@@ -145,7 +138,7 @@ export const ScheduleForm: React.FC = () => {
                 <div className="bg-white dark:bg-primary-900 p-6 rounded-xl border border-primary-200 dark:border-primary-800 shadow-sm">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-primary-700 dark:text-primary-300 mb-2">
+                            <label className="block text-sm font-semibold text-primary-700 dark:text-primary-300 mb-2">
                                 Schedule Name
                             </label>
                             <input
@@ -158,7 +151,7 @@ export const ScheduleForm: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-primary-700 dark:text-primary-300 mb-2">
+                            <label className="block text-sm font-semibold text-primary-700 dark:text-primary-300 mb-2">
                                 Date
                             </label>
                             <input
@@ -171,7 +164,7 @@ export const ScheduleForm: React.FC = () => {
                         </div>
                     </div>
                     <div className="mt-6">
-                        <label className="block text-sm font-medium text-primary-700 dark:text-primary-300 mb-2">
+                        <label className="block text-sm font-semibold text-primary-700 dark:text-primary-300 mb-2">
                             Notes
                         </label>
                         <textarea
@@ -193,7 +186,7 @@ export const ScheduleForm: React.FC = () => {
                         <button
                             type="button"
                             onClick={handleAddItem}
-                            className="text-sm flex items-center gap-1 text-primary-600 hover:text-primary-700 font-medium"
+                            className="text-sm flex items-center gap-1 text-primary-600 hover:text-primary-700 font-semibold"
                         >
                             <Plus size={16} />
                             Add Item
@@ -298,13 +291,9 @@ export const ScheduleForm: React.FC = () => {
             </div>
             
             <div className="mt-8 pt-8 border-t border-primary-200 dark:border-primary-800 flex justify-end">
-                <button
-                    type="submit"
-                    className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-xl transition-colors font-semibold shadow-lg shadow-primary-500/20"
-                >
-                    <Save size={20} />
-                    {scheduleId ? 'Update Schedule' : 'Create Schedule'}
-                </button>
+                <Button type="submit" size="lg">
+                    <Save size={18} /> {scheduleId ? 'Update Schedule' : 'Create Schedule'}
+                </Button>
             </div>
         </form>
     );

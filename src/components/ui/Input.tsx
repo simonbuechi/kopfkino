@@ -6,15 +6,26 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     error?: string;
 }
 
+const inputBase = clsx(
+    "bg-white dark:bg-primary-950 border border-primary-300 dark:border-primary-700 rounded-lg px-3 py-2",
+    "text-sm text-primary-900 dark:text-primary-100 placeholder:text-primary-400 dark:placeholder:text-primary-600",
+    "focus:outline-none focus:ring-2 focus:ring-primary-600/20 dark:focus:ring-primary-400/20 focus:border-primary-600 dark:focus:border-primary-400",
+    "transition-colors w-full"
+);
+
 export const Input: React.FC<InputProps> = ({ label, error, className, id, ...props }) => {
     return (
-        <div className="flex flex-col gap-2 w-full">
-            {label && <label htmlFor={id} className="text-sm font-medium text-primary-500 dark:text-primary-400">{label}</label>}
+        <div className="flex flex-col gap-1.5 w-full">
+            {label && (
+                <label htmlFor={id} className="text-sm font-semibold text-primary-700 dark:text-primary-300">
+                    {label}
+                </label>
+            )}
             <input
                 id={id}
                 className={clsx(
-                    "bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 rounded-lg px-3 py-2 text-sm text-primary-900 dark:text-primary-100 placeholder:text-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-950/10 dark:focus:ring-white/10 focus:border-primary-950 dark:focus:border-primary-800 transition-colors w-full",
-                    error && "border-danger-500 focus:border-danger-500 focus:ring-danger-500/10",
+                    inputBase,
+                    error && "border-danger-500 focus:border-danger-500 focus:ring-danger-500/20",
                     className
                 )}
                 {...props}
@@ -31,13 +42,18 @@ interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 
 export const TextArea: React.FC<TextAreaProps> = ({ label, error, className, id, ...props }) => {
     return (
-        <div className="flex flex-col gap-2 w-full">
-            {label && <label htmlFor={id} className="text-sm font-medium text-primary-500 dark:text-primary-400">{label}</label>}
+        <div className="flex flex-col gap-1.5 w-full">
+            {label && (
+                <label htmlFor={id} className="text-sm font-semibold text-primary-700 dark:text-primary-300">
+                    {label}
+                </label>
+            )}
             <textarea
                 id={id}
                 className={clsx(
-                    "bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 rounded-lg px-3 py-2 text-sm text-primary-900 dark:text-primary-100 placeholder:text-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-950/10 dark:focus:ring-white/10 focus:border-primary-950 dark:focus:border-primary-800 transition-colors w-full min-h-[100px] resize-y",
-                    error && "border-danger-500 focus:border-danger-500 focus:ring-danger-500/10",
+                    inputBase,
+                    "min-h-[100px] resize-y",
+                    error && "border-danger-500 focus:border-danger-500 focus:ring-danger-500/20",
                     className
                 )}
                 {...props}

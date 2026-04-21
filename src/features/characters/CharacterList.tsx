@@ -73,7 +73,7 @@ const SortableCharacterCard = ({
                 <div className="p-4 flex flex-col gap-2 flex-1">
                     <h3 className="text-lg font-semibold text-primary-900 dark:text-white pointer-events-none select-none">{character.name}</h3>
                     {character.type && (
-                        <span className="w-fit px-2 py-0.5 rounded text-xs font-medium bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-400 capitalize pointer-events-none select-none">
+                        <span className="w-fit px-2 py-0.5 rounded text-xs font-semibold bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-400 capitalize pointer-events-none select-none">
                             {character.type}
                         </span>
                     )}
@@ -142,7 +142,7 @@ const SortableCharacterListItem = ({
                         </Button>
                         <h3 className="font-medium text-primary-900 dark:text-white truncate select-none">{character.name}</h3>
                         {character.type && (
-                            <span className="shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-400 capitalize pointer-events-none select-none">
+                            <span className="shrink-0 px-2 py-0.5 rounded text-xs font-semibold bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-400 capitalize pointer-events-none select-none">
                                 {character.type}
                             </span>
                         )}
@@ -319,11 +319,11 @@ export const CharacterList: React.FC = () => {
                         className="hidden"
                         onChange={handleFileChange}
                     />
-                    <Button onClick={handleImportClick} size="sm" disabled title="Import disabled">
+                    <Button onClick={handleImportClick} size="sm" variant="secondary" disabled title="Import disabled">
                         <Upload size={16} />
                         Import CSV
                     </Button>
-                    <Button onClick={handleExportClick} size="sm">
+                    <Button onClick={handleExportClick} size="sm" variant="secondary">
                         <Download size={16} />
                         Export CSV
                     </Button>

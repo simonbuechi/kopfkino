@@ -191,7 +191,7 @@ export const SceneDetail: React.FC = () => {
                                                         </div>
                                                     )}
                                                 </div>
-                                                <p className="text-sm font-medium text-primary-900 dark:text-primary-100 truncate flex-1">{char.name}</p>
+                                                <p className="text-sm font-semibold text-primary-900 dark:text-primary-100 truncate flex-1">{char.name}</p>
                                                 <div
                                                     className="absolute inset-0 cursor-pointer rounded-lg"
                                                     onClick={() => navigate(`/characters`)}

@@ -55,7 +55,7 @@ const SortableAssetCard = ({
                     <div className="flex items-start justify-between gap-2">
                         <div className="flex flex-col gap-1">
                             <h3 className="text-lg font-semibold text-primary-900 dark:text-white pointer-events-none select-none">{asset.name}</h3>
-                            <span className="text-xs text-primary-400 font-medium uppercase tracking-wider">{asset.owner}</span>
+                            <span className="text-xs text-primary-400 font-semibold uppercase tracking-wider">{asset.owner}</span>
                         </div>
                         {asset.type && (
                             <span className="shrink-0 px-2 py-0.5 rounded text-xs font-bold bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-300 pointer-events-none select-none">

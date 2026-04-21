@@ -6,6 +6,12 @@ import icon from '../assets/icon.webp';
 import clsx from 'clsx';
 import { version } from '../../package.json';
 
+const SectionLabel: React.FC<{ label: string; collapsed: boolean }> = ({ label, collapsed }) => (
+    collapsed
+        ? <div className="my-2 border-t border-primary-200 dark:border-primary-800 mx-1" />
+        : <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-primary-400 dark:text-primary-600 select-none">{label}</p>
+);
+
 export const Sidebar: React.FC = () => {
     const { activeProjectId } = useProjects();
     const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -18,7 +24,7 @@ export const Sidebar: React.FC = () => {
     }, [isCollapsed]);
 
     const linkClass = ({ isActive }: { isActive: boolean }) => clsx(
-        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 overflow-hidden whitespace-nowrap",
+        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 overflow-hidden whitespace-nowrap",
         isActive
             ? "bg-white dark:bg-primary-900 text-primary-900 dark:text-white shadow-sm ring-1 ring-primary-200 dark:ring-primary-800"
             : "text-primary-500 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900 hover:text-primary-900 dark:hover:text-primary-100",
@@ -38,7 +44,7 @@ export const Sidebar: React.FC = () => {
                         <img src={icon} alt="Kopfkino Logo" className="w-full h-full object-contain" />
                     </div>
                     {!isCollapsed && (
-                        <span className="font-semibold text-primary-900 dark:text-white tracking-tight overflow-hidden whitespace-nowrap animate-in fade-in duration-300">
+                        <span className="text-xl font-bold text-primary-900 dark:text-white tracking-tight overflow-hidden whitespace-nowrap animate-in fade-in duration-300">
                             Kopfkino
                         </span>
                     )}
@@ -52,9 +58,17 @@ export const Sidebar: React.FC = () => {
                             <LayoutDashboard size={20} className="shrink-0" />
                             {!isCollapsed && <span>Dashboard</span>}
                         </NavLink>
+
+                        <SectionLabel label="Writing" collapsed={isCollapsed} />
                         <NavLink to={`/project/${activeProjectId}/script`} className={linkClass} title={isCollapsed ? "Script" : undefined}>
                             <ScrollText size={20} className="shrink-0" />
                             {!isCollapsed && <span>Script</span>}
+                        </NavLink>
+
+                        <SectionLabel label="Creative" collapsed={isCollapsed} />
+                        <NavLink to={`/project/${activeProjectId}/characters`} className={linkClass} title={isCollapsed ? "Characters" : undefined}>
+                            <User size={20} className="shrink-0" />
+                            {!isCollapsed && <span>Characters</span>}
                         </NavLink>
                         <NavLink to={`/project/${activeProjectId}/locations`} className={linkClass} title={isCollapsed ? "Locations" : undefined}>
                             <MapPin size={20} className="shrink-0" />
@@ -64,21 +78,19 @@ export const Sidebar: React.FC = () => {
                             <Clapperboard size={20} className="shrink-0" />
                             {!isCollapsed && <span>Scenes</span>}
                         </NavLink>
-                        <NavLink to={`/project/${activeProjectId}/characters`} className={linkClass} title={isCollapsed ? "Characters" : undefined}>
-                            <User size={20} className="shrink-0" />
-                            {!isCollapsed && <span>Characters</span>}
-                        </NavLink>
-                        <NavLink to={`/project/${activeProjectId}/scheduling`} className={linkClass} title={isCollapsed ? "Scheduling" : undefined}>
-                            <Calendar size={20} className="shrink-0" />
-                            {!isCollapsed && <span>Scheduling</span>}
+
+                        <SectionLabel label="Manage" collapsed={isCollapsed} />
+                        <NavLink to={`/project/${activeProjectId}/people`} className={linkClass} title={isCollapsed ? "People" : undefined}>
+                            <Users size={20} className="shrink-0" />
+                            {!isCollapsed && <span>People</span>}
                         </NavLink>
                         <NavLink to={`/project/${activeProjectId}/assets`} className={linkClass} title={isCollapsed ? "Assets" : undefined}>
                             <Package size={20} className="shrink-0" />
                             {!isCollapsed && <span>Assets</span>}
                         </NavLink>
-                        <NavLink to={`/project/${activeProjectId}/people`} className={linkClass} title={isCollapsed ? "People" : undefined}>
-                            <Users size={20} className="shrink-0" />
-                            {!isCollapsed && <span>People</span>}
+                        <NavLink to={`/project/${activeProjectId}/scheduling`} className={linkClass} title={isCollapsed ? "Scheduling" : undefined}>
+                            <Calendar size={20} className="shrink-0" />
+                            {!isCollapsed && <span>Scheduling</span>}
                         </NavLink>
                     </>
                 )}
@@ -93,7 +105,7 @@ export const Sidebar: React.FC = () => {
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
                     className={clsx(
-                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 w-full",
+                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 w-full",
                         "text-primary-500 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900 hover:text-primary-900 dark:hover:text-primary-100",
                         isCollapsed ? "justify-center px-2" : ""
                     )}

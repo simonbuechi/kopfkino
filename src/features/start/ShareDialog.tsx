@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { X, UserPlus, Crown, Pencil, Eye, Trash2, ArrowRightLeft, Clock } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../hooks/useAuth';
 import { useProjects } from '../../hooks/useProjects';
 import { storage } from '../../services/storage';
@@ -122,12 +123,9 @@ export const ShareDialog: React.FC<Props> = ({ project, onClose }) => {
                         <DialogTitle className="font-semibold text-zinc-900 dark:text-zinc-100">
                             Manage members &mdash; {project.name}
                         </DialogTitle>
-                        <button
-                            onClick={onClose}
-                            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                        >
+                        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
                             <X size={18} />
-                        </button>
+                        </Button>
                     </div>
 
                     <div className="px-6 py-4 space-y-6 max-h-[70vh] overflow-y-auto">
@@ -148,9 +146,9 @@ export const ShareDialog: React.FC<Props> = ({ project, onClose }) => {
                                                 {(member.displayName || member.email || '?')[0]}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                                                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                                                     {member.displayName || member.email}
-                                                    {isMe && <span className="ml-1.5 text-xs font-normal text-zinc-400">(you)</span>}
+                                                    {isMe && <span className="ml-1.5 text-xs font-semibold text-zinc-400">(you)</span>}
                                                 </p>
                                                 <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{member.email}</p>
                                             </div>
@@ -241,7 +239,7 @@ export const ShareDialog: React.FC<Props> = ({ project, onClose }) => {
                                     <button
                                         type="submit"
                                         disabled={inviting || !inviteEmail.trim()}
-                                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-zinc-200 dark:bg-zinc-100 text-zinc-900 hover:bg-zinc-300 dark:hover:bg-zinc-200 disabled:opacity-50 transition-colors shrink-0"
+                                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg bg-zinc-200 dark:bg-zinc-100 text-zinc-900 hover:bg-zinc-300 dark:hover:bg-zinc-200 disabled:opacity-50 transition-colors shrink-0"
                                     >
                                         <UserPlus size={14} />
                                         {inviting ? 'Sending…' : 'Invite'}
@@ -280,7 +278,7 @@ export const ShareDialog: React.FC<Props> = ({ project, onClose }) => {
                                     <button
                                         onClick={handleTransfer}
                                         disabled={!transferTargetId || transferring}
-                                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-800 disabled:opacity-50 transition-colors shrink-0"
+                                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-800 disabled:opacity-50 transition-colors shrink-0"
                                     >
                                         <ArrowRightLeft size={14} />
                                         {transferring ? 'Transferring…' : 'Transfer'}

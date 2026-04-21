@@ -192,7 +192,7 @@ export const PersonDetail: React.FC = () => {
             <div>
                 <Link
                     to=".."
-                    className="inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none hover:bg-primary-100 dark:hover:bg-primary-800 text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100 h-8 px-3 text-sm -ml-3 gap-2"
+                    className="inline-flex items-center gap-2 h-8 px-3 -ml-3 text-sm font-semibold rounded-lg transition-colors text-primary-500 hover:text-primary-900 hover:bg-primary-50 dark:text-primary-400 dark:hover:text-primary-100 dark:hover:bg-primary-900/60"
                 >
                     <ArrowLeft size={16} /> Back to People
                 </Link>
@@ -215,12 +215,12 @@ export const PersonDetail: React.FC = () => {
                         </span>
                     )}
                     {saveStatus === 'saved' && (
-                        <span className="text-green-600 dark:text-green-400 text-sm flex items-center gap-1 font-medium transition-opacity duration-500">
+                        <span className="text-green-600 dark:text-green-400 text-sm flex items-center gap-1 font-semibold transition-opacity duration-500">
                             Saved
                         </span>
                     )}
                     {saveStatus === 'error' && (
-                        <span className="text-danger-600 text-sm font-medium">
+                        <span className="text-danger-600 text-sm font-semibold">
                             Error saving
                         </span>
                     )}
@@ -244,7 +244,7 @@ export const PersonDetail: React.FC = () => {
                             <select
                                 value={type}
                                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'type', value: e.target.value as PersonType })}
-                                className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm appearance-none font-medium text-primary-700 dark:text-primary-300"
+                                className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm appearance-none font-semibold text-primary-700 dark:text-primary-300"
                             >
                                 <option value="Actor">Actor</option>
                                 <option value="Crew">Crew</option>

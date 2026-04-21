@@ -68,7 +68,7 @@ export const ProjectDashboard: React.FC = () => {
                         href={activeProject.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-primary-100 dark:bg-primary-800 text-primary-700 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-700 transition-colors border border-primary-200 dark:border-primary-700"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-primary-100 dark:bg-primary-800 text-primary-700 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-700 transition-colors border border-primary-200 dark:border-primary-700"
                     >
                         <ExternalLink size={14} />
                         {activeProject.url.replace(/^https?:\/\//, '')}
@@ -81,7 +81,7 @@ export const ProjectDashboard: React.FC = () => {
                     <div key={stat.label} className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 rounded-xl p-4 flex flex-col shadow-sm group">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-sm font-medium text-primary-500 dark:text-primary-400 mb-1">
+                                <p className="text-sm font-semibold text-primary-500 dark:text-primary-400 mb-1">
                                     {stat.label}
                                 </p>
                                 <div>
@@ -89,7 +89,7 @@ export const ProjectDashboard: React.FC = () => {
                                         {stat.count}
                                     </p>
                                     {stat.subCount && (
-                                        <p className="text-xs font-medium text-primary-400 dark:text-primary-500 mt-1">
+                                        <p className="text-xs font-semibold text-primary-400 dark:text-primary-500 mt-1">
                                             {stat.subCount}
                                         </p>
                                     )}
@@ -102,7 +102,7 @@ export const ProjectDashboard: React.FC = () => {
                         {stat.action && activeProjectRole !== 'viewer' ? (
                             <button
                                 onClick={() => navigate(stat.action!.path)}
-                                className="flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-md bg-primary-50 dark:bg-primary-800/50 hover:bg-primary-100 dark:hover:bg-primary-800 text-sm font-medium text-primary-600 dark:text-primary-300 transition-colors border border-primary-200 dark:border-primary-700 mt-auto"
+                                className="flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-md bg-primary-50 dark:bg-primary-800/50 hover:bg-primary-100 dark:hover:bg-primary-800 text-sm font-semibold text-primary-600 dark:text-primary-300 transition-colors border border-primary-200 dark:border-primary-700 mt-auto"
                             >
                                 <Plus size={16} />
                                 {stat.action.label}

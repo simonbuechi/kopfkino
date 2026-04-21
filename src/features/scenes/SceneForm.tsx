@@ -83,7 +83,7 @@ export const SceneForm: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col gap-2 w-full">
-                    <label htmlFor="locationId" className="text-sm font-medium text-primary-500 dark:text-primary-400">Location</label>
+                    <label htmlFor="locationId" className="text-sm font-semibold text-primary-500 dark:text-primary-400">Location</label>
                     <select
                         id="locationId"
                         name="locationId"
@@ -102,7 +102,7 @@ export const SceneForm: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col gap-2 w-full">
-                    <label className="text-sm font-medium text-primary-500 dark:text-primary-400">Characters</label>
+                    <label className="text-sm font-semibold text-primary-500 dark:text-primary-400">Characters</label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                         {characters.map(char => {
                             const isSelected = formData.characters?.includes(char.id);
@@ -127,7 +127,7 @@ export const SceneForm: React.FC = () => {
                                         )}
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-sm font-medium truncate text-primary-900 dark:text-primary-100">{char.name}</p>
+                                        <p className="text-sm font-semibold truncate text-primary-900 dark:text-primary-100">{char.name}</p>
                                     </div>
                                 </div>
                             );

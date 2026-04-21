@@ -249,7 +249,7 @@ export const CharacterDetail: React.FC = () => {
             <div>
                 <Link
                     to=".."
-                    className="inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none hover:bg-primary-100 dark:hover:bg-primary-800 text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100 h-8 px-3 text-sm -ml-3 gap-2"
+                    className="inline-flex items-center gap-2 h-8 px-3 -ml-3 text-sm font-semibold rounded-lg transition-colors text-primary-500 hover:text-primary-900 hover:bg-primary-50 dark:text-primary-400 dark:hover:text-primary-100 dark:hover:bg-primary-900/60"
                 >
                     <ArrowLeft size={16} /> Back to Characters
                 </Link>
@@ -266,12 +266,12 @@ export const CharacterDetail: React.FC = () => {
                                 </span>
                             )}
                             {saveStatus === 'saved' && (
-                                <span className="text-green-600 dark:text-green-400 text-sm flex items-center gap-1 font-medium transition-opacity duration-500">
+                                <span className="text-green-600 dark:text-green-400 text-sm flex items-center gap-1 font-semibold transition-opacity duration-500">
                                     Saved
                                 </span>
                             )}
                             {saveStatus === 'error' && (
-                                <span className="text-danger-600 text-sm font-medium">
+                                <span className="text-danger-600 text-sm font-semibold">
                                     Error saving
                                 </span>
                             )}
@@ -326,7 +326,7 @@ export const CharacterDetail: React.FC = () => {
 
                     <div className="w-full md:w-2/3 flex flex-col gap-6">
                         <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-primary-900 dark:text-primary-300">Name</label>
+                            <label className="text-sm font-semibold text-primary-900 dark:text-primary-300">Name</label>
                             <input
                                 type="text"
                                 value={name}
@@ -337,7 +337,7 @@ export const CharacterDetail: React.FC = () => {
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-primary-900 dark:text-primary-300">Type</label>
+                            <label className="text-sm font-semibold text-primary-900 dark:text-primary-300">Type</label>
                             <select
                                 value={type || ''}
                                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'type', value: (e.target.value as CharacterType) || undefined })}
@@ -352,7 +352,7 @@ export const CharacterDetail: React.FC = () => {
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-primary-900 dark:text-primary-300">Description</label>
+                            <label className="text-sm font-semibold text-primary-900 dark:text-primary-300">Description</label>
                             <textarea
                                 value={description}
                                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })}
@@ -362,7 +362,7 @@ export const CharacterDetail: React.FC = () => {
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-primary-900 dark:text-primary-300">Notes / Comments</label>
+                            <label className="text-sm font-semibold text-primary-900 dark:text-primary-300">Notes / Comments</label>
                             <textarea
                                 value={comment}
                                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'comment', value: e.target.value })}

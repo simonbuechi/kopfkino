@@ -10,14 +10,11 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Inter', 'sans-serif'],
+                sans: ['CabinetGrotesk', 'sans-serif'],
             },
             colors: {
                 primary: colors.slate,
-                accent: {
-                    DEFAULT: colors.fuchsia[500],
-                    hover: colors.fuchsia[600],
-                },
+                secondary: colors.rose,
                 danger: colors.red,
             }
         },

@@ -79,13 +79,13 @@ export const AuthPage = () => {
                 <div className="flex rounded-xl overflow-hidden border border-primary-800">
                     <button
                         onClick={() => { setMode('login'); setError(''); }}
-                        className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === 'login' ? 'bg-primary-100 text-primary-950' : 'bg-primary-900 text-primary-400 hover:text-primary-200'}`}
+                        className={`flex-1 py-2 text-sm font-semibold transition-colors ${mode === 'login' ? 'bg-primary-100 text-primary-950' : 'bg-primary-900 text-primary-400 hover:text-primary-200'}`}
                     >
                         Sign In
                     </button>
                     <button
                         onClick={() => { setMode('register'); setError(''); }}
-                        className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === 'register' ? 'bg-primary-100 text-primary-950' : 'bg-primary-900 text-primary-400 hover:text-primary-200'}`}
+                        className={`flex-1 py-2 text-sm font-semibold transition-colors ${mode === 'register' ? 'bg-primary-100 text-primary-950' : 'bg-primary-900 text-primary-400 hover:text-primary-200'}`}
                     >
                         Register
                     </button>

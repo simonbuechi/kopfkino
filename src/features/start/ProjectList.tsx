@@ -107,7 +107,7 @@ export const ProjectList: React.FC = () => {
                     </h3>
                     <form onSubmit={editingId ? handleUpdate : handleCreate} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-primary-700 dark:text-primary-300 mb-1">
+                            <label className="block text-sm font-semibold text-primary-700 dark:text-primary-300 mb-1">
                                 Project Name
                             </label>
                             <input
@@ -120,7 +120,7 @@ export const ProjectList: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-primary-700 dark:text-primary-300 mb-1">
+                            <label className="block text-sm font-semibold text-primary-700 dark:text-primary-300 mb-1">
                                 Description
                             </label>
                             <textarea
@@ -132,7 +132,7 @@ export const ProjectList: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-primary-700 dark:text-primary-300 mb-1">
+                            <label className="block text-sm font-semibold text-primary-700 dark:text-primary-300 mb-1">
                                 Project URL
                             </label>
                             <input
@@ -246,7 +246,7 @@ export const ProjectList: React.FC = () => {
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={(e) => e.stopPropagation()}
-                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-200 hover:bg-primary-200 dark:hover:bg-primary-700 transition-colors border border-primary-200 dark:border-primary-700 max-w-full truncate"
+                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-200 hover:bg-primary-200 dark:hover:bg-primary-700 transition-colors border border-primary-200 dark:border-primary-700 max-w-full truncate"
                                         >
                                             <ExternalLink size={12} className="shrink-0" />
                                             <span className="truncate">{project.url.replace(/^https?:\/\//, '')}</span>

@@ -25,7 +25,7 @@ const LoadingFallback = () => (
   <div className="flex h-[calc(100vh-3.5rem)] w-full items-center justify-center bg-primary-50/50 dark:bg-primary-950/50">
     <div className="flex flex-col items-center gap-2">
       <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
-      <p className="text-sm font-medium text-primary-600 dark:text-primary-400">Loading scene...</p>
+      <p className="text-sm font-semibold text-primary-600 dark:text-primary-400">Loading scene...</p>
     </div>
   </div>
 );

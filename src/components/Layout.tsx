@@ -5,6 +5,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../hooks/useAuth';
 import { useProjects } from '../hooks/useProjects';
 import { Sun, Moon, Settings as SettingsIcon, LogOut, Clapperboard, ArrowRightLeft } from 'lucide-react';
+import { Button } from './ui/Button';
 import { SettingsDialog } from '../features/settings/SettingsDialog';
 
 export const Layout: React.FC = () => {
@@ -56,30 +57,17 @@ export const Layout: React.FC = () => {
                             </div>
                         )}
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={signOut}
-                            className="p-2 rounded-md hover:bg-primary-100 dark:hover:bg-primary-800 text-primary-500 dark:text-primary-400 transition-colors"
-                            aria-label="Sign Out"
-                            title="Sign Out"
-                        >
+                    <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign Out" title="Sign Out">
                             <LogOut size={18} />
-                        </button>
-                        <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1"></div>
-                        <button
-                            onClick={() => setIsSettingsOpen(true)}
-                            className="p-2 rounded-md hover:bg-primary-100 dark:hover:bg-primary-800 text-primary-500 dark:text-primary-400 transition-colors"
-                            aria-label="Settings"
-                        >
+                        </Button>
+                        <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1" />
+                        <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)} aria-label="Settings">
                             <SettingsIcon size={18} />
-                        </button>
-                        <button
-                            onClick={toggleTheme}
-                            className="p-2 rounded-md hover:bg-primary-100 dark:hover:bg-primary-800 text-primary-500 dark:text-primary-400 transition-colors"
-                            aria-label="Toggle Theme"
-                        >
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle Theme">
                             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-                        </button>
+                        </Button>
                     </div>
                 </header>
                 <div className="flex-1 overflow-y-auto p-8">
