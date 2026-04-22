@@ -1,10 +1,21 @@
-import React, { useReducer, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { Input, TextArea } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import toast from 'react-hot-toast';
 import type { Location } from '../../types/types';
+
+const EMPTY_LOCATION = (projectId: string): Location => ({
+    id: crypto.randomUUID(),
+    projectId,
+    name: '',
+    description: '',
+    geolocation: '',
+    comment: '',
+    thumbnailUrl: '',
+});
 
 export const LocationForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -12,35 +23,31 @@ export const LocationForm: React.FC = () => {
     const { locations, addLocation } = useStore();
     const { activeProjectId } = useProjects();
 
-    const [formData, dispatch] = useReducer((state: Location, action: { type: 'SET'; payload: Partial<Location> } | { type: 'RESET'; payload: Location }) => {
-        if (action.type === 'RESET') return action.payload;
-        return { ...state, ...action.payload };
-    }, {
-        id: crypto.randomUUID(),
-        projectId: activeProjectId || '',
-        name: '',
-        description: '',
-        geolocation: '',
-        comment: '',
-        thumbnailUrl: '',
-    });
+    const [formData, setFormData] = useState<Location>(() => EMPTY_LOCATION(activeProjectId || ''));
 
     useEffect(() => {
         if (id) {
             const existing = locations.find((l) => l.id === id);
-            if (existing) {
-                dispatch({ type: 'RESET', payload: existing });
-            }
+            if (existing) setFormData(existing);
         }
     }, [id, locations]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        dispatch({ type: 'SET', payload: { [name]: value } });
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (formData.thumbnailUrl) {
+            try {
+                const proto = new URL(formData.thumbnailUrl).protocol;
+                if (proto !== 'https:' && proto !== 'http:') throw new Error();
+            } catch {
+                toast.error('Thumbnail URL must start with http:// or https://');
+                return;
+            }
+        }
         addLocation(formData);
         navigate('..');
     };
@@ -80,7 +87,6 @@ export const LocationForm: React.FC = () => {
                     rows={2}
                     placeholder="Notes about lighting, access, etc."
                 />
-                {/* Placeholder for real file upload or URL */}
                 <Input
                     name="thumbnailUrl"
                     label="Thumbnail URL"

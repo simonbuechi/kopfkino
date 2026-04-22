@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useProjects } from '../hooks/useProjects';
 import { MapPin, Clapperboard, User, ChevronLeft, ChevronRight, LayoutDashboard, Calendar, Package, Users, ScrollText } from 'lucide-react';
@@ -23,13 +23,13 @@ export const Sidebar: React.FC = () => {
         localStorage.setItem('sidebar-collapsed', String(isCollapsed));
     }, [isCollapsed]);
 
-    const linkClass = ({ isActive }: { isActive: boolean }) => clsx(
+    const linkClass = useCallback(({ isActive }: { isActive: boolean }) => clsx(
         "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 overflow-hidden whitespace-nowrap",
         isActive
             ? "bg-white dark:bg-primary-900 text-primary-900 dark:text-white shadow-sm ring-1 ring-primary-200 dark:ring-primary-800"
             : "text-primary-500 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900 hover:text-primary-900 dark:hover:text-primary-100",
         isCollapsed && "justify-center px-2"
-    );
+    ), [isCollapsed]);
 
     return (
         <aside

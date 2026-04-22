@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Edit, Trash2, Plus, Image as ImageIcon, Loader2, GripVertical, List, Grid, Download, Timer, Film, Volume2 } from 'lucide-react';
-
-import { uploadFile, uploadVideo, downloadImage, deleteFileFromUrl } from '../../services/storageService';
+import toast from 'react-hot-toast';
+import { uploadFile, uploadVideo, downloadImage, deleteFileByPath } from '../../services/storageService';
 import type { Shot } from '../../types/types';
 import {
     DndContext,
@@ -21,6 +21,7 @@ import {
 } from '@dnd-kit/sortable';
 import { useDnDSensors } from '../../hooks/useDnDSensors';
 import { CSS } from '@dnd-kit/utilities';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 interface ShotsListProps {
     sceneId: string;
@@ -79,7 +80,7 @@ const SortableShotItem = ({
         if (file) {
             // Check file size (10MB limit)
             if (file.size > 10 * 1024 * 1024) {
-                alert("Video file size must be less than 10MB.");
+                toast.error('Video file size must be less than 10MB.');
                 return;
             }
             onUploadVideo(shot, file);
@@ -416,6 +417,18 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
     const [imageModal, setImageModal] = useState<{ url: string; alt: string } | null>(null);
 
     const sensors = useDnDSensors();
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    const virtualizer = useVirtualizer({
+        count: shots.length,
+        getScrollElement: () => scrollRef.current,
+        estimateSize: () => viewMode === 'slim' ? 64 : viewMode === 'detailed' ? 168 : 400,
+        overscan: 8,
+    });
+
+    useEffect(() => {
+        scrollRef.current?.scrollTo(0, 0);
+    }, [viewMode]);
 
     // Close modal on ESC key
     React.useEffect(() => {
@@ -436,13 +449,14 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
 
     const handleUploadImage = async (shot: Shot, file: File) => {
         if (!user) return;
+        const targetSceneId = sceneId;
         setUploadingId(shot.id);
         try {
             const url = await uploadFile(file, user.uid);
-            await updateShotInScene(sceneId, { ...shot, imageUrl: url });
+            await updateShotInScene(targetSceneId, { ...shot, imageUrl: url });
         } catch (error) {
             console.error("Upload failed", error);
-            alert("Failed to upload image.");
+            toast.error('Failed to upload image.');
         } finally {
             setUploadingId(null);
         }
@@ -450,13 +464,14 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
 
     const handleUploadVideo = async (shot: Shot, file: File) => {
         if (!user) return;
+        const targetSceneId = sceneId;
         setUploadingId(shot.id);
         try {
             const url = await uploadVideo(file, user.uid);
-            await updateShotInScene(sceneId, { ...shot, videoUrl: url });
+            await updateShotInScene(targetSceneId, { ...shot, videoUrl: url });
         } catch (error) {
             console.error("Video upload failed", error);
-            alert("Failed to upload video.");
+            toast.error('Failed to upload video.');
         } finally {
             setUploadingId(null);
         }
@@ -467,11 +482,12 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
 
         // Optimistic update: remove from UI first (or wait? let's wait to be safe)
         try {
-            await deleteFileFromUrl(shot.videoUrl);
+            const deleted = await deleteFileByPath(shot.videoUrl);
+            if (!deleted) throw new Error('Storage deletion failed');
             await updateShotInScene(sceneId, { ...shot, videoUrl: undefined });
         } catch (error) {
             console.error("Failed to delete video", error);
-            alert("Failed to delete video.");
+            toast.error('Failed to delete video.');
         }
     };
 
@@ -555,32 +571,53 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}
             >
-                <div className={`flex flex-col gap-${viewMode === 'preview' ? '6' : '3'}`}>
-                    {shots.length === 0 ? (
-                        <p className="text-primary-500 italic">No shots yet.</p>
-                    ) : (
-                        <SortableContext
-                            items={shots.map(s => s.id)}
-                            strategy={verticalListSortingStrategy}
+                {shots.length === 0 ? (
+                    <p className="text-primary-500 italic">No shots yet.</p>
+                ) : (
+                    <SortableContext
+                        items={shots.map(s => s.id)}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        <div
+                            ref={scrollRef}
+                            className="overflow-y-auto"
+                            style={{ height: 'calc(100vh - 20rem)', minHeight: '300px' }}
                         >
-                            {shots.map((shot) => (
-                                <SortableShotItem
-                                    key={shot.id}
-                                    shot={shot}
-                                    onUploadImage={handleUploadImage}
-                                    onUploadVideo={handleUploadVideo}
-                                    onDelete={handleDelete}
-                                    onRemoveVideo={handleRemoveVideo}
-                                    onEdit={(id) => navigate(`shots/${id}/edit`)}
-                                    isUploading={uploadingId === shot.id}
-                                    viewMode={viewMode}
-                                    onImageClick={(url, alt) => setImageModal({ url, alt })}
-                                />
-                            ))}
-                        </SortableContext >
-                    )}
-                </div >
-            </DndContext >
+                            <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+                                {virtualizer.getVirtualItems().map(virtualRow => {
+                                    const shot = shots[virtualRow.index];
+                                    return (
+                                        <div
+                                            key={virtualRow.key}
+                                            data-index={virtualRow.index}
+                                            ref={virtualizer.measureElement}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                transform: `translateY(${virtualRow.start}px)`,
+                                                width: '100%',
+                                                paddingBottom: viewMode === 'preview' ? '24px' : '12px',
+                                            }}
+                                        >
+                                            <SortableShotItem
+                                                shot={shot}
+                                                onUploadImage={handleUploadImage}
+                                                onUploadVideo={handleUploadVideo}
+                                                onDelete={handleDelete}
+                                                onRemoveVideo={handleRemoveVideo}
+                                                onEdit={(id) => navigate(`shots/${id}/edit`)}
+                                                isUploading={uploadingId === shot.id}
+                                                viewMode={viewMode}
+                                                onImageClick={(url, alt) => setImageModal({ url, alt })}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </SortableContext>
+                )}
+            </DndContext>
 
             {/* Full Screen Image Modal */}
             {imageModal && (

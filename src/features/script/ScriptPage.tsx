@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import jsPDF from 'jspdf';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
+import { useDebounce } from '../../hooks/useDebounce';
 import { Link } from 'react-router-dom';
 import { FileText, Lock, Unlock, User, MapPin, Clapperboard, ChevronDown, ChevronRight, Code, BookOpen, Info, X, CheckCircle, AlertCircle, Download } from 'lucide-react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
@@ -683,7 +684,8 @@ export const ScriptPage: React.FC = () => {
     };
 
     const isEmpty = !draft.trim();
-    const { characters, locations, scenes } = useMemo(() => extractScriptInfo(draft), [draft]);
+    const debouncedDraft = useDebounce(draft, 500);
+    const { characters, locations, scenes } = useMemo(() => extractScriptInfo(debouncedDraft), [debouncedDraft]);
 
     const filename = activeProject?.name ?? 'script';
 

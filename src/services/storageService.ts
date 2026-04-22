@@ -21,16 +21,21 @@ export const getImageCount = async (projectId: string): Promise<number> => {
     }
 };
 
+const MAX_IMAGE_BYTES = 50 * 1024 * 1024;
+
 export const uploadImageFromUrl = async (url: string, projectId: string): Promise<string> => {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:') throw new Error('Only HTTPS image URLs are allowed');
+
     try {
-        // 1. Fetch the image blob
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch image");
+        const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+        if (!response.ok) throw new Error('Failed to fetch image');
         const blob = await response.blob();
+        if (blob.size > MAX_IMAGE_BYTES) throw new Error('Image exceeds 50 MB limit');
 
         return uploadImage(blob, projectId);
     } catch (error) {
-        console.error("Error uploading image from URL:", error);
+        console.error('Error uploading image from URL:', error);
         throw error;
     }
 };
@@ -155,18 +160,18 @@ export const uploadVideo = async (file: File, projectId: string): Promise<string
 // but preferred to use uploadImage or uploadVideo explicitly.
 export const uploadFile = uploadImage;
 
-export const deleteFileFromUrl = async (downloadUrl: string) => {
+export const deleteFileByPath = async (storagePath: string): Promise<boolean> => {
     try {
-        const storageRef = ref(storage, downloadUrl);
+        const storageRef = ref(storage, storagePath);
         await deleteObject(storageRef);
+        return true;
     } catch (error) {
         console.error("Error deleting file:", error);
-        // Don't throw, just log. 
+        return false;
     }
 };
 
-// Alias for backward compatibility
-export const deleteImageFromUrl = deleteFileFromUrl;
+export const deleteImageFromUrl = deleteFileByPath;
 
 export const downloadFile = async (url: string, filename: string) => {
     try {

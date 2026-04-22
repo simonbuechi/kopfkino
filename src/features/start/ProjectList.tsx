@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useProjects } from '../../hooks/useProjects';
 import { useAuth } from '../../hooks/useAuth';
@@ -43,9 +44,16 @@ export const ProjectList: React.FC = () => {
         return { ...otherStats, [activeProjectId]: activeStats };
     }, [otherStats, activeProjectId, activeStats]);
 
+    const isSafeUrl = useCallback((val: string) => {
+        if (!val) return true;
+        try { return new URL(val).protocol.startsWith('http'); }
+        catch { return false; }
+    }, []);
+
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim()) return;
+        if (!isSafeUrl(url)) { toast.error('Project URL must start with http:// or https://'); return; }
         await createProject(name, desc, url);
         setIsCreating(false);
         setName('');
@@ -64,6 +72,7 @@ export const ProjectList: React.FC = () => {
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim() || !user || !editingId) return;
+        if (!isSafeUrl(url)) { toast.error('Project URL must start with http:// or https://'); return; }
         const project = projects.find(p => p.id === editingId);
         if (project) {
             const updated = { ...project, name, description: desc, url, updatedAt: Date.now() };
@@ -240,7 +249,7 @@ export const ProjectList: React.FC = () => {
                                 </p>
 
                                 <div className="h-8 mb-6">
-                                    {project.url && (
+                                    {project.url && isSafeUrl(project.url) && (
                                         <a
                                             href={project.url}
                                             target="_blank"

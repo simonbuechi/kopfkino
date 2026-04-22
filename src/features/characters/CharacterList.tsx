@@ -1,7 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
+import { useCSVImportExport } from '../../hooks/useCSVImportExport';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { User, Plus, Upload, Download, Edit, Trash2 } from 'lucide-react';
@@ -20,10 +21,12 @@ import {
     arrayMove,
     SortableContext,
     useSortable,
-    rectSortingStrategy
+    rectSortingStrategy,
+    verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useDnDSensors } from '../../hooks/useDnDSensors';
 import { CSS } from '@dnd-kit/utilities';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 // Sortable Item Component
 const SortableCharacterCard = ({
@@ -178,115 +181,47 @@ export const CharacterList: React.FC = () => {
     const { characters, replaceCharacters, reorderCharacters, deleteCharacter } = useStore();
     const { activeProjectId } = useProjects();
     const navigate = useNavigate();
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
 
     const sensors = useDnDSensors();
+    const scrollRef = useRef<HTMLDivElement>(null);
 
-    const handleImportClick = () => {
-        if (confirm('WARNING: Importing a CSV file will PERMANENTLY DELETE all existing characters. Do you want to proceed?')) {
-            fileInputRef.current?.click();
-        }
-    };
+    const slimVirtualizer = useVirtualizer({
+        count: characters.length,
+        getScrollElement: () => scrollRef.current,
+        estimateSize: () => 58,
+        overscan: 8,
+    });
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
+    useEffect(() => {
+        if (viewMode === 'slim') scrollRef.current?.scrollTo(0, 0);
+    }, [viewMode]);
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const text = e.target?.result as string;
-            if (!text) return;
-
-            try {
-                const lines = text.split('\n');
-                const newCharacters: Character[] = [];
-                let startIndex = 0;
-                // Simple heuristic to skip header if present
-                if (lines[0].toLowerCase().includes('name')) {
-                    startIndex = 1;
-                }
-
-                for (let i = startIndex; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (!line) continue;
-                    // Standard CSV parsing (handling basic cases)
-                    const parts = line.split(',');
-                    // Note: This simple split breaks on commas in fields.
-                    // For a robust app, a proper CSV parser is recommended.
-                    // Reusing the logic from LocationList for consistency.
-
-                    if (parts.length < 2) continue;
-                    const name = parts[0]?.trim();
-                    const description = parts[1]?.trim() || '';
-                    const comment = parts[2]?.trim();
-                    const imageUrl = parts[3]?.trim();
-
-                    if (name) {
-                        const newChar: Character = {
-                            id: crypto.randomUUID(),
-                            projectId: activeProjectId || '',
-                            name,
-                            description,
-                        };
-                        if (comment) newChar.comment = comment;
-                        if (imageUrl) newChar.imageUrl = imageUrl;
-
-                        newCharacters.push(newChar);
-                    }
-                }
-
-                if (newCharacters.length > 0) {
-                    replaceCharacters(newCharacters);
-                    alert(`Successfully imported ${newCharacters.length} characters.`);
-                } else {
-                    alert("No valid characters found in CSV.");
-                }
-            } catch (error) {
-                console.error("Import failed:", error);
-                alert("Failed to parse CSV file.");
-            }
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        };
-        reader.readAsText(file);
-    };
-
-    const handleExportClick = () => {
-        if (characters.length === 0) {
-            alert("No characters to export.");
-            return;
-        }
-
-        const headers = ["Name", "Description", "Comment", "Image URL"];
-        const csvContent = [
-            headers.join(','),
-            ...characters.map(char => {
-                const row = [
-                    char.name,
-                    char.description,
-                    char.comment || '',
-                    char.imageUrl || ''
-                ];
-                return row.map(field => {
-                    const stringField = String(field);
-                    if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
-                        return `"${stringField.replace(/"/g, '""')}"`;
-                    }
-                    return stringField;
-                }).join(',');
-            })
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `kopfkino_characters_${new Date().toISOString().slice(0, 10)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
+    const { fileInputRef, handleImportClick, handleFileChange, handleExportClick } = useCSVImportExport<Character>({
+        items: characters,
+        replaceItems: replaceCharacters,
+        columns: [
+            { header: 'Name', getValue: c => c.name },
+            { header: 'Description', getValue: c => c.description },
+            { header: 'Comment', getValue: c => c.comment || '' },
+            { header: 'Image URL', getValue: c => c.imageUrl || '' },
+        ],
+        buildItem: (row) => {
+            const name = row['name'];
+            if (!name) return null;
+            return {
+                id: crypto.randomUUID(),
+                projectId: activeProjectId || '',
+                name,
+                description: row['description'] || '',
+                comment: row['comment'] || undefined,
+                imageUrl: row['image url'] || undefined,
+            };
+        },
+        entityName: 'character',
+        filename: `kopfkino_characters_${new Date().toISOString().slice(0, 10)}.csv`,
+    });
 
     const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this character?')) {
@@ -344,32 +279,53 @@ export const CharacterList: React.FC = () => {
                 ) : (
                     <SortableContext
                         items={characters.map(c => c.id)}
-                        strategy={rectSortingStrategy}
+                        strategy={viewMode === 'slim' ? verticalListSortingStrategy : rectSortingStrategy}
                     >
-                        <div className={
-                            viewMode === 'expanded'
-                                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-                                : "flex flex-col gap-2"
-                        }>
-                            {characters.map((character) => (
-                                viewMode === 'expanded' ? (
+                        {viewMode === 'expanded' ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {characters.map((character) => (
                                     <SortableCharacterCard
-                                        key={character.id}
+                                        key={`card-${character.id}`}
                                         character={character}
                                         onClickImage={setFullscreenImage}
                                         onEdit={navigate}
                                     />
-                                ) : (
-                                    <SortableCharacterListItem
-                                        key={character.id}
-                                        character={character}
-                                        onEdit={navigate}
-                                        onDelete={handleDelete}
-                                        onClickImage={setFullscreenImage}
-                                    />
-                                )
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div
+                                ref={scrollRef}
+                                className="overflow-y-auto"
+                                style={{ height: 'calc(100vh - 18rem)', minHeight: '300px' }}
+                            >
+                                <div style={{ height: slimVirtualizer.getTotalSize(), position: 'relative' }}>
+                                    {slimVirtualizer.getVirtualItems().map(virtualRow => {
+                                        const character = characters[virtualRow.index];
+                                        return (
+                                            <div
+                                                key={virtualRow.key}
+                                                data-index={virtualRow.index}
+                                                ref={slimVirtualizer.measureElement}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    transform: `translateY(${virtualRow.start}px)`,
+                                                    width: '100%',
+                                                    paddingBottom: '8px',
+                                                }}
+                                            >
+                                                <SortableCharacterListItem
+                                                    character={character}
+                                                    onEdit={navigate}
+                                                    onDelete={handleDelete}
+                                                    onClickImage={setFullscreenImage}
+                                                />
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </SortableContext>
                 )}
             </DndContext>

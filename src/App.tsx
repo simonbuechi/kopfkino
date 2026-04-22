@@ -7,6 +7,7 @@ import { useAuth } from './hooks/useAuth';
 import { ProjectProvider } from './context/ProjectContext';
 import { StoreProvider } from './context/StoreProvider';
 import { Loader2 } from 'lucide-react';
+import { Toaster } from 'react-hot-toast';
 
 // Lazy load feature pages
 const LocationsPage = lazy(() => import('./features/locations').then(m => ({ default: m.LocationsPage })));
@@ -85,6 +86,7 @@ function App() {
           </StoreProvider>
         </ProjectProvider>
       </AuthProvider>
+      <Toaster position="bottom-right" />
     </ThemeProvider>
   );
 }

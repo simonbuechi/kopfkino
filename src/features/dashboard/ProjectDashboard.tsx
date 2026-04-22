@@ -63,7 +63,7 @@ export const ProjectDashboard: React.FC = () => {
                 <p className="text-primary-500 dark:text-primary-400 max-w-2xl mb-4">
                     {activeProject?.description || 'Overview and statistics'}
                 </p>
-                {activeProject?.url && (
+                {activeProject?.url && /^https?:\/\//i.test(activeProject.url) && (
                     <a
                         href={activeProject.url}
                         target="_blank"

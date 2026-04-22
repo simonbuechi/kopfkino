@@ -44,12 +44,16 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         let invitationsUnsub: (() => void) | null = null;
 
         // Auto-accept any pending invitations for this user's email
+        const processingIds = new Set<string>();
         if (user.email) {
             invitationsUnsub = storage.subscribeToInvitations(user.email, async (invitations: Invitation[]) => {
                 for (const inv of invitations) {
+                    if (processingIds.has(inv.id)) continue;
+                    processingIds.add(inv.id);
                     try {
                         await storage.acceptInvitation(inv, user);
                     } catch (e) {
+                        processingIds.delete(inv.id);
                         console.error('Failed to accept invitation', e);
                     }
                 }

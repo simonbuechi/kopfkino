@@ -8,8 +8,8 @@ import {
     writeBatch,
     where,
     getDocs,
-    getDoc,
     updateDoc,
+    deleteField,
 } from 'firebase/firestore';
 import type { Unsubscribe } from 'firebase/firestore';
 import { db } from './firebase';
@@ -212,15 +212,10 @@ export const storage = {
 
     removeMember: async (projectId: string, targetUserId: string) => {
         const projectDocRef = doc(db, COLLECTIONS.PROJECTS, projectId);
-        // Remove the member map entry by setting it to deleteField() equivalent
-        const projectSnap = await getDoc(projectDocRef);
-        if (projectSnap.exists()) {
-            const data = projectSnap.data() as Project;
-            const members = { ...data.members };
-            delete members[targetUserId];
-            await updateDoc(projectDocRef, { members });
-        }
-        await deleteDoc(getProjectRefDoc(targetUserId, projectId));
+        const batch = writeBatch(db);
+        batch.update(projectDocRef, { [`members.${targetUserId}`]: deleteField() });
+        batch.delete(getProjectRefDoc(targetUserId, projectId));
+        await batch.commit();
     },
 
     transferOwnership: async (projectId: string, currentOwnerId: string, newOwnerId: string) => {
@@ -266,9 +261,14 @@ export const storage = {
     },
 
     replaceAllLocations: async (projectId: string, locations: Location[]) => {
-        for (const loc of locations) {
-            await storage.saveLocation(projectId, loc);
+        const batch = writeBatch(db);
+        for (const location of locations) {
+            const data = Object.fromEntries(
+                Object.entries(location).filter(([, v]) => v !== undefined)
+            ) as Location;
+            batch.set(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.LOCATIONS, data.id), data);
         }
+        await batch.commit();
     },
 
     // -------------------------------------------------------------------------
@@ -300,9 +300,11 @@ export const storage = {
     },
 
     replaceAllScenes: async (projectId: string, scenes: Scene[]) => {
+        const batch = writeBatch(db);
         for (const scene of scenes) {
-            await storage.saveScene(projectId, scene);
+            batch.set(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCENES, scene.id), scene);
         }
+        await batch.commit();
     },
 
     // -------------------------------------------------------------------------
@@ -334,9 +336,11 @@ export const storage = {
     },
 
     replaceAllCharacters: async (projectId: string, characters: Character[]) => {
-        for (const char of characters) {
-            await storage.saveCharacter(projectId, char);
+        const batch = writeBatch(db);
+        for (const character of characters) {
+            batch.set(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.CHARACTERS, character.id), character);
         }
+        await batch.commit();
     },
 
     // -------------------------------------------------------------------------
@@ -434,31 +438,26 @@ export const storage = {
     // -------------------------------------------------------------------------
 
     getAllProjectStats: async (userId: string) => {
-        const stats: Record<string, { locations: number; scenes: number; shots: number; characters: number; length: number }> = {};
-
-        // Get all project refs for this user
         const refsSnap = await getDocs(getUserCollection(userId, COLLECTIONS.PROJECT_REFS));
         const projectIds = refsSnap.docs.map(d => d.id);
 
-        for (const projectId of projectIds) {
-            stats[projectId] = { locations: 0, scenes: 0, shots: 0, characters: 0, length: 0 };
-
-            const locsSnap = await getDocs(getProjectCollection(projectId, COLLECTIONS.LOCATIONS));
-            stats[projectId].locations = locsSnap.size;
-
-            const charsSnap = await getDocs(getProjectCollection(projectId, COLLECTIONS.CHARACTERS));
-            stats[projectId].characters = charsSnap.size;
-
-            const scenesSnap = await getDocs(getProjectCollection(projectId, COLLECTIONS.SCENES));
-            stats[projectId].scenes = scenesSnap.size;
+        const results = await Promise.all(projectIds.map(async (projectId) => {
+            const [locsSnap, charsSnap, scenesSnap] = await Promise.all([
+                getDocs(getProjectCollection(projectId, COLLECTIONS.LOCATIONS)),
+                getDocs(getProjectCollection(projectId, COLLECTIONS.CHARACTERS)),
+                getDocs(getProjectCollection(projectId, COLLECTIONS.SCENES)),
+            ]);
+            let shots = 0;
+            let length = 0;
             scenesSnap.docs.forEach(d => {
                 const scene = d.data() as Scene;
-                stats[projectId].shots += (scene.shots?.length ?? 0);
-                stats[projectId].length += (scene.shots ?? []).reduce((acc, s) => acc + (s.length ?? 0), 0);
+                shots += scene.shots?.length ?? 0;
+                length += (scene.shots ?? []).reduce((acc, s) => acc + (s.length ?? 0), 0);
             });
-        }
+            return [projectId, { locations: locsSnap.size, characters: charsSnap.size, scenes: scenesSnap.size, shots, length }] as const;
+        }));
 
-        return stats;
+        return Object.fromEntries(results);
     },
 
     // -------------------------------------------------------------------------

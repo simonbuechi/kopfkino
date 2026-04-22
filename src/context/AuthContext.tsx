@@ -39,6 +39,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const signOut = async () => {
         await firebaseSignOut(auth);
+        localStorage.removeItem('activeProjectId');
+        localStorage.removeItem('sidebar-collapsed');
     };
 
     return (

@@ -1,43 +1,45 @@
 import React, { useReducer, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
+import { useProjects } from '../../hooks/useProjects';
 import { Button } from '../../components/ui/Button';
-import { MapPin, Trash2, ArrowLeft, Sparkles, Loader2, X, Upload, Star } from 'lucide-react';
-import { generateImage } from '../../services/ai';
-import { uploadImageFromUrl, deleteImageFromUrl, uploadFile } from '../../services/storageService';
+import { MapPin, Trash2, ArrowLeft, ImageIcon, Loader2, X, Upload, Star } from 'lucide-react';
+import { deleteImageFromUrl, uploadFile } from '../../services/storageService';
 import { useAuth } from '../../hooks/useAuth';
 import { useDebounce } from '../../hooks/useDebounce';
+import toast from 'react-hot-toast';
 import type { Location, LocationType } from '../../types/types';
+
+interface LocationState {
+    name: string;
+    description: string;
+    geolocation: string;
+    comment: string;
+    images: string[];
+    thumbnailUrl: string;
+    type?: LocationType;
+    isDirty: boolean;
+    saveStatus: 'saved' | 'saving' | 'error' | null;
+}
+
+type LocationAction =
+    | { type: 'SET_FIELD'; field: string; value: string | number | boolean | string[] | undefined }
+    | { type: 'SET_MULTIPLE'; payload: Partial<LocationState> }
+    | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
+    | { type: 'SAVED' }
+    | { type: 'SYNC'; payload: Partial<LocationState> }
+    | { type: 'MARK_CLEAN' };
 
 export const LocationDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { locations, deleteLocation, addLocation, scenes, settings } = useStore();
+    const { locations, deleteLocation, addLocation, scenes } = useStore();
     const { user } = useAuth();
+    const { activeProjectId } = useProjects();
 
     // Derived state
     const location = locations.find((l) => l.id === id);
     const associatedScenes = scenes.filter(s => s.locationId === id);
-
-    interface LocationState {
-        name: string;
-        description: string;
-        geolocation: string;
-        comment: string;
-        images: string[];
-        thumbnailUrl: string;
-        type?: LocationType;
-        isDirty: boolean;
-        saveStatus: 'saved' | 'saving' | 'error' | null;
-    }
-
-    type LocationAction = 
-        | { type: 'SET_FIELD'; field: string; value: string | number | boolean | string[] | undefined }
-        | { type: 'SET_MULTIPLE'; payload: Partial<LocationState> }
-        | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
-        | { type: 'SAVED' }
-        | { type: 'SYNC'; payload: Partial<LocationState> }
-        | { type: 'MARK_CLEAN' };
 
     // Local state for editing using a reducer
     const [state, dispatch] = useReducer((state: LocationState, action: LocationAction): LocationState => {
@@ -71,7 +73,6 @@ export const LocationDetail: React.FC = () => {
 
     const { name, description, geolocation, comment, images, thumbnailUrl, type, isDirty, saveStatus } = state;
 
-    const [isGenerating, setIsGenerating] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
 
     const debouncedName = useDebounce(name, 1000);
@@ -214,54 +215,6 @@ export const LocationDetail: React.FC = () => {
         }
     };
 
-    const handleGenerateImage = async () => {
-        if (!user) return;
-        if (!settings.aiApiKey) {
-            alert('Please set your API Key in Settings before generating images.');
-            return;
-        }
-        setIsGenerating(true);
-        const prompt = `Cinematic location concept art: ${name}. 
-        Description: ${description}. 
-        Geolocation/Context: ${geolocation}. 
-        Mood: Atmospheric, high detail, photorealistic, 8k.`;
-
-        // Determine dimensions based on aspect ratio setting
-        let width = 1024;
-        let height = 1024;
-        if (settings.aspectRatio === '16:9') {
-            width = 1280;
-            height = 720;
-        }
-
-        const options = {
-            width,
-            height,
-            seed: settings.useRandomSeed ? undefined : settings.customSeed
-        };
-
-        try {
-            // 1. Generate (External URL)
-            const tempUrl = await generateImage(prompt, settings.aiApiKey, options);
-
-            // 2. Upload to Firebase Storage
-            const permanentUrl = await uploadImageFromUrl(tempUrl, user.uid);
-
-            // 3. Update Local State (Effect will trigger save)
-            const updatedImages = [...images, permanentUrl].slice(0, 4);
-            dispatch({ type: 'SET_MULTIPLE', payload: { 
-                images: updatedImages,
-                thumbnailUrl: thumbnailUrl || permanentUrl
-            }});
-
-        } catch (error) {
-            console.error("Failed to generate or upload image", error);
-            alert("Failed to generate image. Ensure popups are allowed if Auth is pending, or check console.");
-        } finally {
-            setIsGenerating(false);
-        }
-    };
-
     const handleDeleteImage = async (imageUrl: string) => {
         if (confirm('Delete this image?')) {
             // 1. Update Local State (Effect will trigger save)
@@ -282,12 +235,12 @@ export const LocationDetail: React.FC = () => {
 
     const onFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (!file || !user) return;
+        if (!file || !user || !activeProjectId) return;
 
         setIsUploading(true);
         try {
             // 1. Upload to Firebase Storage
-            const permanentUrl = await uploadFile(file, user.uid);
+            const permanentUrl = await uploadFile(file, activeProjectId);
 
             // 2. Update Local State (Effect will trigger save)
             const updatedImages = [...images, permanentUrl].slice(0, 4);
@@ -298,7 +251,7 @@ export const LocationDetail: React.FC = () => {
 
         } catch (error) {
             console.error("Failed to upload image", error);
-            alert("Failed to upload image.");
+            toast.error('Failed to upload image.');
         } finally {
             setIsUploading(false);
             // Reset input so valid file can be selected again if needed
@@ -344,24 +297,15 @@ export const LocationDetail: React.FC = () => {
                         </span>
                     )}
                     <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1"></div>
-                    <Button 
-                        onClick={handleImageUploadClick} 
-                        disabled={isUploading || isGenerating || images.length >= 4} 
-                        size="sm" 
+                    <Button
+                        onClick={handleImageUploadClick}
+                        disabled={isUploading || images.length >= 4}
+                        size="sm"
                         variant="secondary"
                         title={images.length >= 4 ? "Maximum 4 images allowed" : "Upload Image"}
                     >
                         {isUploading ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
                         {isUploading ? 'Uploading...' : 'Upload Image'}
-                    </Button>
-                    <Button 
-                        onClick={handleGenerateImage} 
-                        disabled={images.length >= 4} 
-                        size="sm"
-                        title={images.length >= 4 ? "Maximum 4 images allowed" : "Generate Image"}
-                    >
-                        <Sparkles size={16} />
-                        Generate Image
                     </Button>
                     <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1"></div>
                     <Button variant="danger" onClick={handleDelete} size="sm">
@@ -426,8 +370,8 @@ export const LocationDetail: React.FC = () => {
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-12 text-primary-400 border border-dashed border-primary-200 dark:border-primary-800 rounded-xl bg-primary-50/50 dark:bg-primary-900/50">
-                                    <Sparkles size={24} className="mb-2 opacity-20" />
-                                    <p className="italic">No images generated yet.</p>
+                                    <ImageIcon size={24} className="mb-2 opacity-20" />
+                                    <p className="italic">No images yet.</p>
                                 </div>
                             )
                         )}

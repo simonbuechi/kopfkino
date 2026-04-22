@@ -8,6 +8,7 @@ import { ImageModal } from '../../components/ui/ImageModal';
 import { useAuth } from '../../hooks/useAuth';
 import type { Character, CharacterType } from '../../types/types';
 import { useDebounce } from '../../hooks/useDebounce';
+import toast from 'react-hot-toast';
 import { uploadFile, deleteImageFromUrl } from '../../services/storageService';
 
 export const CharacterDetail: React.FC = () => {
@@ -199,7 +200,7 @@ export const CharacterDetail: React.FC = () => {
             navigate('..');
         } catch (error) {
             console.error("Failed to save character", error);
-            alert("Failed to save character.");
+            toast.error('Failed to save character.');
         } finally {
             setIsSaving(false);
         }
@@ -223,7 +224,7 @@ export const CharacterDetail: React.FC = () => {
         } catch (error: unknown) {
             console.error("Failed to upload image", error);
             const message = error instanceof Error ? error.message : 'Unknown error';
-            alert(`Failed to upload image: ${message}`);
+            toast.error(`Failed to upload image: ${message}`);
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';

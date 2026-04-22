@@ -37,14 +37,16 @@ vi.mock('../hooks/useAuth', () => ({
     useAuth: () => ({ user: { uid: 'user-1', email: 'test@test.com' } }),
 }));
 
+vi.mock('../hooks/useProjects', () => ({
+    useProjects: () => ({ activeProjectId: 'proj-1', activeProjectRole: 'owner' }),
+}));
+
 vi.mock('react-router-dom', async (importOriginal) => {
     const actual = await importOriginal<typeof import('react-router-dom')>();
     return { ...actual, useNavigate: () => vi.fn() };
 });
 
-vi.mock('../services/ai', () => ({ generateImage: vi.fn() }));
 vi.mock('../services/storageService', () => ({
-    uploadImageFromUrl: vi.fn(),
     deleteImageFromUrl: vi.fn(),
     uploadFile: vi.fn(),
 }));

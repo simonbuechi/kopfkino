@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
@@ -10,6 +10,7 @@ import { DragHandle } from '../../components/ui/DragHandle';
 import { ImageModal } from '../../components/ui/ImageModal';
 import { EmptyState } from '../../components/ui/EmptyState';
 import type { Location } from '../../types/types';
+import { useCSVImportExport } from '../../hooks/useCSVImportExport';
 import {
     DndContext,
     closestCenter,
@@ -19,10 +20,12 @@ import {
     arrayMove,
     SortableContext,
     useSortable,
-    rectSortingStrategy
+    rectSortingStrategy,
+    verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useDnDSensors } from '../../hooks/useDnDSensors';
 import { CSS } from '@dnd-kit/utilities';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 // Sortable Item Component
 const SortableLocationCard = ({
@@ -147,107 +150,47 @@ export const LocationList: React.FC = () => {
     const { locations, replaceLocations, reorderLocations } = useStore();
     const { activeProjectId } = useProjects();
     const navigate = useNavigate();
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
 
     const sensors = useDnDSensors();
+    const scrollRef = useRef<HTMLDivElement>(null);
 
-    const handleImportClick = () => {
-        if (confirm('WARNING: Importing a CSV file will PERMANENTLY DELETE all existing locations. Do you want to proceed?')) {
-            fileInputRef.current?.click();
-        }
-    };
+    const slimVirtualizer = useVirtualizer({
+        count: locations.length,
+        getScrollElement: () => scrollRef.current,
+        estimateSize: () => 58,
+        overscan: 8,
+    });
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
+    useEffect(() => {
+        if (viewMode === 'slim') scrollRef.current?.scrollTo(0, 0);
+    }, [viewMode]);
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const text = e.target?.result as string;
-            if (!text) return;
-
-            try {
-                const lines = text.split('\n');
-                const newLocations: Location[] = [];
-                let startIndex = 0;
-                if (lines[0].toLowerCase().includes('name')) {
-                    startIndex = 1;
-                }
-
-                for (let i = startIndex; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (!line) continue;
-                    const parts = line.split(',');
-                    if (parts.length < 2) continue;
-                    const name = parts[0]?.trim();
-                    const description = parts[1]?.trim() || '';
-                    const geolocation = parts[2]?.trim();
-                    const comment = parts[3]?.trim();
-
-                    if (name) {
-                        newLocations.push({
-                            id: crypto.randomUUID(),
-                            projectId: activeProjectId || '',
-                            name,
-                            description,
-                            geolocation: geolocation || undefined,
-                            comment: comment || undefined,
-                        });
-                    }
-                }
-
-                if (newLocations.length > 0) {
-                    replaceLocations(newLocations);
-                    alert(`Successfully imported ${newLocations.length} locations.`);
-                } else {
-                    alert("No valid locations found in CSV.");
-                }
-            } catch (error) {
-                console.error("Import failed:", error);
-                alert("Failed to parse CSV file.");
-            }
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        };
-        reader.readAsText(file);
-    };
-
-    const handleExportClick = () => {
-        if (locations.length === 0) {
-            alert("No locations to export.");
-            return;
-        }
-
-        const headers = ["Name", "Description", "Geolocation", "Comment"];
-        const csvContent = [
-            headers.join(','),
-            ...locations.map(loc => {
-                const row = [
-                    loc.name,
-                    loc.description,
-                    loc.geolocation || '',
-                    loc.comment || ''
-                ];
-                return row.map(field => {
-                    const stringField = String(field);
-                    if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
-                        return `"${stringField.replace(/"/g, '""')}"`;
-                    }
-                    return stringField;
-                }).join(',');
-            })
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `kopfkino_locations_${new Date().toISOString().slice(0, 10)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
+    const { fileInputRef, handleImportClick, handleFileChange, handleExportClick } = useCSVImportExport<Location>({
+        items: locations,
+        replaceItems: replaceLocations,
+        columns: [
+            { header: 'Name', getValue: l => l.name },
+            { header: 'Description', getValue: l => l.description },
+            { header: 'Geolocation', getValue: l => l.geolocation || '' },
+            { header: 'Comment', getValue: l => l.comment || '' },
+        ],
+        buildItem: (row) => {
+            const name = row['name'];
+            if (!name) return null;
+            return {
+                id: crypto.randomUUID(),
+                projectId: activeProjectId || '',
+                name,
+                description: row['description'] || '',
+                geolocation: row['geolocation'] || undefined,
+                comment: row['comment'] || undefined,
+            };
+        },
+        entityName: 'location',
+        filename: `kopfkino_locations_${new Date().toISOString().slice(0, 10)}.csv`,
+    });
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
@@ -299,30 +242,51 @@ export const LocationList: React.FC = () => {
                 ) : (
                     <SortableContext
                         items={locations.map(l => l.id)}
-                        strategy={rectSortingStrategy}
+                        strategy={viewMode === 'slim' ? verticalListSortingStrategy : rectSortingStrategy}
                     >
-                        <div className={
-                            viewMode === 'expanded'
-                                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                                : "flex flex-col gap-2"
-                        }>
-                            {locations.map((location) => (
-                                viewMode === 'expanded' ? (
+                        {viewMode === 'expanded' ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {locations.map((location) => (
                                     <SortableLocationCard
-                                        key={location.id}
+                                        key={`card-${location.id}`}
                                         location={location}
                                         onClickImage={setFullscreenImage}
                                         onNavigate={navigate}
                                     />
-                                ) : (
-                                    <SortableLocationListItem
-                                        key={location.id}
-                                        location={location}
-                                        onNavigate={navigate}
-                                    />
-                                )
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div
+                                ref={scrollRef}
+                                className="overflow-y-auto"
+                                style={{ height: 'calc(100vh - 18rem)', minHeight: '300px' }}
+                            >
+                                <div style={{ height: slimVirtualizer.getTotalSize(), position: 'relative' }}>
+                                    {slimVirtualizer.getVirtualItems().map(virtualRow => {
+                                        const location = locations[virtualRow.index];
+                                        return (
+                                            <div
+                                                key={virtualRow.key}
+                                                data-index={virtualRow.index}
+                                                ref={slimVirtualizer.measureElement}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    transform: `translateY(${virtualRow.start}px)`,
+                                                    width: '100%',
+                                                    paddingBottom: '8px',
+                                                }}
+                                            >
+                                                <SortableLocationListItem
+                                                    location={location}
+                                                    onNavigate={navigate}
+                                                />
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </SortableContext>
                 )}
             </DndContext>

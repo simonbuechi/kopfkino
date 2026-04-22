@@ -1,7 +1,8 @@
-import React, { useRef, type ChangeEvent, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
+import { useCSVImportExport } from '../../hooks/useCSVImportExport';
 import { formatTime } from '../../utils/time';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -20,6 +21,7 @@ import {
 } from '@dnd-kit/sortable';
 import { useDnDSensors } from '../../hooks/useDnDSensors';
 import { CSS } from '@dnd-kit/utilities';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 interface SortableSceneItemProps {
     scene: Scene;
@@ -29,7 +31,7 @@ interface SortableSceneItemProps {
     onClick: () => void;
 }
 
-const SortableSceneItem = ({ scene, viewMode, getLocationName, getCharacterNames, onClick }: SortableSceneItemProps) => {
+const SortableSceneItem = React.memo(({ scene, viewMode, getLocationName, getCharacterNames, onClick }: SortableSceneItemProps) => {
     const {
         attributes,
         listeners,
@@ -109,16 +111,27 @@ const SortableSceneItem = ({ scene, viewMode, getLocationName, getCharacterNames
             </Card>
         </div>
     );
-};
+});
 
 export const SceneList: React.FC = () => {
     const { scenes, locations, characters, replaceScenes, reorderScenes } = useStore();
     const { activeProjectId } = useProjects();
     const navigate = useNavigate();
-    const sceneFileInputRef = useRef<HTMLInputElement>(null);
     const [viewMode, setViewMode] = useState<'slim' | 'expanded'>('expanded');
 
     const sensors = useDnDSensors();
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    const virtualizer = useVirtualizer({
+        count: scenes.length,
+        getScrollElement: () => scrollRef.current,
+        estimateSize: () => viewMode === 'slim' ? 66 : 132,
+        overscan: 8,
+    });
+
+    useEffect(() => {
+        scrollRef.current?.scrollTo(0, 0);
+    }, [viewMode]);
 
     const getLocationName = useCallback((id: string) => {
         return locations.find(l => l.id === id)?.name || 'Unknown Location';
@@ -141,83 +154,29 @@ export const SceneList: React.FC = () => {
         }
     };
 
-    // --- SCENES IMPORT/EXPORT ---
-    const handleImportScenesClick = () => {
-        if (confirm('WARNING: Importing Scenes will PERMANENTLY DELETE all existing scenes. Proceed?')) {
-            sceneFileInputRef.current?.click();
-        }
-    };
-
-    const handleSceneFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const text = e.target?.result as string;
-            if (!text) return;
-            try {
-                const lines = text.split('\n');
-                const newScenes: Scene[] = [];
-                let startIndex = 0;
-                if (lines[0].toLowerCase().includes('number')) startIndex = 1;
-
-                for (let i = startIndex; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (!line) continue;
-                    const parts = line.split(',');
-                    if (parts.length < 2) continue;
-
-                    newScenes.push({
-                        id: crypto.randomUUID(),
-                        projectId: activeProjectId || '',
-                        number: parts[0]?.trim() || '',
-                        name: parts[1]?.trim() || 'Untitled',
-                        description: parts[2]?.trim() || '',
-                        comment: parts[3]?.trim(),
-                        locationId: parts[4]?.trim() || '',
-                        order: i // Maintain import order
-                    });
-                }
-                if (newScenes.length > 0) {
-                    replaceScenes(newScenes);
-                    alert(`Imported ${newScenes.length} scenes.`);
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Failed to parse scenes CSV.');
-            }
-            if (sceneFileInputRef.current) sceneFileInputRef.current.value = '';
-        };
-        reader.readAsText(file);
-    };
-
-    const handleExportScenes = () => {
-        if (scenes.length === 0) return alert('No scenes to export.');
-        const headers = ["Number", "Name", "Description", "Comment", "LocationId"];
-        const csv = [
-            headers.join(','),
-            ...scenes.map(s => [
-                s.number,
-                `"${s.name.replace(/"/g, '""')}"`,
-                `"${s.description.replace(/"/g, '""')}"`,
-                `"${(s.comment || '').replace(/"/g, '""')}"`,
-                s.locationId
-            ].join(','))
-        ].join('\n');
-        downloadCsv(csv, 'kopfkino_scenes.csv');
-    };
-
-
-    const downloadCsv = (content: string, filename: string) => {
-        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
+    const { fileInputRef: sceneFileInputRef, handleImportClick: handleImportScenesClick, handleFileChange: handleSceneFileChange, handleExportClick: handleExportScenes } = useCSVImportExport<Scene>({
+        items: scenes,
+        replaceItems: replaceScenes,
+        columns: [
+            { header: 'Number', getValue: s => s.number },
+            { header: 'Name', getValue: s => s.name },
+            { header: 'Description', getValue: s => s.description },
+            { header: 'Comment', getValue: s => s.comment || '' },
+            { header: 'LocationId', getValue: s => s.locationId },
+        ],
+        buildItem: (row, ) => ({
+            id: crypto.randomUUID(),
+            projectId: activeProjectId || '',
+            number: row['number'] || '',
+            name: row['name'] || 'Untitled',
+            description: row['description'] || '',
+            comment: row['comment'] || undefined,
+            locationId: row['locationid'] || '',
+            order: 0,
+        }),
+        entityName: 'scene',
+        filename: 'kopfkino_scenes.csv',
+    });
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
@@ -273,17 +232,38 @@ export const SceneList: React.FC = () => {
                         items={scenes.map(s => s.id)}
                         strategy={verticalListSortingStrategy}
                     >
-                        <div className="flex flex-col gap-4">
-                            {scenes.map((scene) => (
-                                <SortableSceneItem
-                                    key={scene.id}
-                                    scene={scene}
-                                    viewMode={viewMode}
-                                    getLocationName={getLocationName}
-                                    getCharacterNames={getCharacterNames}
-                                    onClick={() => navigate(scene.id)}
-                                />
-                            ))}
+                        <div
+                            ref={scrollRef}
+                            className="overflow-y-auto"
+                            style={{ height: 'calc(100vh - 18rem)', minHeight: '300px' }}
+                        >
+                            <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+                                {virtualizer.getVirtualItems().map(virtualRow => {
+                                    const scene = scenes[virtualRow.index];
+                                    return (
+                                        <div
+                                            key={virtualRow.key}
+                                            data-index={virtualRow.index}
+                                            ref={virtualizer.measureElement}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                transform: `translateY(${virtualRow.start}px)`,
+                                                width: '100%',
+                                                paddingBottom: '16px',
+                                            }}
+                                        >
+                                            <SortableSceneItem
+                                                scene={scene}
+                                                viewMode={viewMode}
+                                                getLocationName={getLocationName}
+                                                getCharacterNames={getCharacterNames}
+                                                onClick={() => navigate(scene.id)}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </SortableContext>
                 </DndContext>
