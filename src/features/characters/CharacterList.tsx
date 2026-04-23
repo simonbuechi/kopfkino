@@ -16,15 +16,13 @@ import {
     DndContext,
     closestCenter,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
 import {
-    arrayMove,
     SortableContext,
     useSortable,
     rectSortingStrategy,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { useDnDSensors } from '../../hooks/useDnDSensors';
+import { useSortableList } from '../../hooks/useSortableList';
 import { CSS } from '@dnd-kit/utilities';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
@@ -184,7 +182,7 @@ export const CharacterList: React.FC = () => {
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
 
-    const sensors = useDnDSensors();
+    const { sensors, handleDragEnd } = useSortableList(characters, reorderCharacters);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const slimVirtualizer = useVirtualizer({
@@ -226,18 +224,6 @@ export const CharacterList: React.FC = () => {
     const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this character?')) {
             await deleteCharacter(id);
-        }
-    };
-
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
-
-        if (active.id !== over?.id) {
-            const oldIndex = characters.findIndex((char) => char.id === active.id);
-            const newIndex = characters.findIndex((char) => char.id === over?.id);
-
-            const newOrder = arrayMove(characters, oldIndex, newIndex);
-            reorderCharacters(newOrder);
         }
     };
 

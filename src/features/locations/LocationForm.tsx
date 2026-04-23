@@ -20,7 +20,7 @@ const EMPTY_LOCATION = (projectId: string): Location => ({
 export const LocationForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { locations, addLocation } = useStore();
+    const { locations, saveLocation } = useStore();
     const { activeProjectId } = useProjects();
 
     const [formData, setFormData] = useState<Location>(() => EMPTY_LOCATION(activeProjectId || ''));
@@ -48,7 +48,7 @@ export const LocationForm: React.FC = () => {
                 return;
             }
         }
-        addLocation(formData);
+        saveLocation(formData);
         navigate('..');
     };
 

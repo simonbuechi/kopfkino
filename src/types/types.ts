@@ -130,7 +130,7 @@ export interface Asset {
     name: string;
     description: string;
     type: AssetType;
-    owner: string;
+    ownerId?: string;
     comment?: string;
     imageUrl?: string;
     order?: number;

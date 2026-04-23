@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useAutoSave } from '../../hooks/useAutoSave';
 import jsPDF from 'jspdf';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
@@ -622,7 +623,6 @@ export const ScriptPage: React.FC = () => {
     const [howtoOpen, setHowtoOpen] = useState(false);
     const [mode, setMode] = useState<'plain' | 'formatted'>('formatted');
     const [sidebarWidth, setSidebarWidth] = useState(280);
-    const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isResizing = useRef(false);
     const resizeStartX = useRef(0);
     const resizeStartWidth = useRef(0);
@@ -667,11 +667,12 @@ export const ScriptPage: React.FC = () => {
         setSaving(false);
     }, [saveScript]);
 
+    const scheduleAutoSave = useAutoSave(persistSave, AUTOSAVE_DELAY);
+
     const handleChange = (value: string) => {
         if (frozen) return;
         setDraft(value);
-        if (autosaveRef.current) clearTimeout(autosaveRef.current);
-        autosaveRef.current = setTimeout(() => persistSave(value), AUTOSAVE_DELAY);
+        scheduleAutoSave(value);
     };
 
     const handleFreezeConfirm = async () => {

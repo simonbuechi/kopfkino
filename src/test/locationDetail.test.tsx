@@ -8,7 +8,7 @@ import { DEFAULT_SETTINGS } from '../context/reducers';
 // Mocks
 // ---------------------------------------------------------------------------
 
-const mockAddLocation = vi.fn();
+const mockSaveLocation = vi.fn();
 const mockDeleteLocation = vi.fn();
 
 const BASE_LOCATION: Location = {
@@ -28,7 +28,7 @@ vi.mock('../hooks/useStore', () => ({
         locations: [BASE_LOCATION],
         scenes: [],
         settings: DEFAULT_SETTINGS,
-        addLocation: mockAddLocation,
+        saveLocation: mockSaveLocation,
         deleteLocation: mockDeleteLocation,
     }),
 }));
@@ -82,7 +82,7 @@ async function advanceAndFlush(ms: number) {
 describe('LocationDetail', () => {
     beforeEach(() => {
         vi.useFakeTimers();
-        mockAddLocation.mockResolvedValue(undefined);
+        mockSaveLocation.mockResolvedValue(undefined);
         mockDeleteLocation.mockResolvedValue(undefined);
     });
 
@@ -111,25 +111,25 @@ describe('LocationDetail', () => {
 
     // --- Auto-save debounce ---
 
-    it('does not call addLocation before the 1 second debounce', async () => {
+    it('does not call saveLocation before the 1 second debounce', async () => {
         renderDetail();
         const nameInput = screen.getByDisplayValue('Rooftop');
         fireEvent.change(nameInput, { target: { value: 'Warehouse' } });
 
         await advanceAndFlush(900);
 
-        expect(mockAddLocation).not.toHaveBeenCalled();
+        expect(mockSaveLocation).not.toHaveBeenCalled();
     });
 
-    it('calls addLocation after the 1 second debounce when name changes', async () => {
+    it('calls saveLocation after the 1 second debounce when name changes', async () => {
         renderDetail();
         const nameInput = screen.getByDisplayValue('Rooftop');
         fireEvent.change(nameInput, { target: { value: 'Warehouse' } });
 
         await advanceAndFlush(1100);
 
-        expect(mockAddLocation).toHaveBeenCalledOnce();
-        expect(mockAddLocation).toHaveBeenCalledWith(
+        expect(mockSaveLocation).toHaveBeenCalledOnce();
+        expect(mockSaveLocation).toHaveBeenCalledWith(
             expect.objectContaining({ name: 'Warehouse' })
         );
     });
@@ -144,8 +144,8 @@ describe('LocationDetail', () => {
         expect(screen.getByText(/^saved$/i)).toBeInTheDocument();
     });
 
-    it('shows "Error saving" when addLocation throws', async () => {
-        mockAddLocation.mockRejectedValue(new Error('permission-denied'));
+    it('shows "Error saving" when saveLocation throws', async () => {
+        mockSaveLocation.mockRejectedValue(new Error('permission-denied'));
         renderDetail();
         const nameInput = screen.getByDisplayValue('Rooftop');
         fireEvent.change(nameInput, { target: { value: 'Warehouse' } });
@@ -155,14 +155,14 @@ describe('LocationDetail', () => {
         expect(screen.getByText(/error saving/i)).toBeInTheDocument();
     });
 
-    it('does not call addLocation when name is empty', async () => {
+    it('does not call saveLocation when name is empty', async () => {
         renderDetail();
         const nameInput = screen.getByDisplayValue('Rooftop');
         fireEvent.change(nameInput, { target: { value: '' } });
 
         await advanceAndFlush(1100);
 
-        expect(mockAddLocation).not.toHaveBeenCalled();
+        expect(mockSaveLocation).not.toHaveBeenCalled();
     });
 
     it('debounce resets on each change — only one save for rapid changes', async () => {
@@ -176,24 +176,24 @@ describe('LocationDetail', () => {
         await advanceAndFlush(500);
 
         // Only 500ms since last change — no save yet
-        expect(mockAddLocation).not.toHaveBeenCalled();
+        expect(mockSaveLocation).not.toHaveBeenCalled();
 
         await advanceAndFlush(600);
 
-        expect(mockAddLocation).toHaveBeenCalledOnce();
-        expect(mockAddLocation).toHaveBeenCalledWith(
+        expect(mockSaveLocation).toHaveBeenCalledOnce();
+        expect(mockSaveLocation).toHaveBeenCalledWith(
             expect.objectContaining({ name: 'Name B' })
         );
     });
 
-    it('passes the full location object to addLocation', async () => {
+    it('passes the full location object to saveLocation', async () => {
         renderDetail();
         const descInput = screen.getByDisplayValue('A city rooftop');
         fireEvent.change(descInput, { target: { value: 'New description' } });
 
         await advanceAndFlush(1100);
 
-        expect(mockAddLocation).toHaveBeenCalledWith(
+        expect(mockSaveLocation).toHaveBeenCalledWith(
             expect.objectContaining({
                 id: 'loc-1',
                 projectId: 'proj-1',

@@ -1,19 +1,18 @@
-import React, { useReducer, useEffect, useRef } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
-import { Trash2, ArrowLeft, Loader2 } from 'lucide-react';
+import { Trash2, ArrowLeft, Loader2, Save } from 'lucide-react';
 import { useProjects } from '../../hooks/useProjects';
-import { useDebounce } from '../../hooks/useDebounce';
 import type { Asset, AssetType } from '../../types/types';
+import { User } from 'lucide-react';
 
 export const AssetDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { assets, deleteAsset, addAsset, updateAsset } = useStore();
+    const { assets, deleteAsset, addAsset, updateAsset, people } = useStore();
     const { activeProjectId } = useProjects();
 
-    // Derived state
     const existingAsset = assets.find((a) => a.id === id);
     const isNew = !id || id === 'new';
 
@@ -21,148 +20,96 @@ export const AssetDetail: React.FC = () => {
         name: string;
         description: string;
         type: AssetType;
-        owner: string;
+        ownerId: string;
         comment: string;
         isDirty: boolean;
         saveStatus: 'saved' | 'saving' | 'error' | null;
     }
 
-    type AssetAction = 
-        | { type: 'SET_FIELD'; field: string; value: string | number | boolean | string[] | undefined | AssetType }
-        | { type: 'SET_MULTIPLE'; payload: Partial<AssetState> }
+    type AssetAction =
+        | { type: 'SET_FIELD'; field: string; value: string | AssetType }
         | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
         | { type: 'SAVED' }
-        | { type: 'SYNC'; payload: Partial<AssetState> }
+        | { type: 'SYNC'; payload: Omit<AssetState, 'isDirty' | 'saveStatus'> }
         | { type: 'RESET' };
 
-    // Local state for editing using a reducer
     const [state, dispatch] = useReducer((state: AssetState, action: AssetAction): AssetState => {
         switch (action.type) {
             case 'SET_FIELD':
                 return { ...state, [action.field]: action.value, isDirty: true, saveStatus: null };
-            case 'SET_MULTIPLE':
-                return { ...state, ...action.payload, isDirty: true, saveStatus: null };
             case 'SET_STATUS':
                 return { ...state, saveStatus: action.status };
             case 'SAVED':
                 return { ...state, saveStatus: 'saved', isDirty: false };
             case 'SYNC':
-                return { ...state, ...action.payload, isDirty: false };
+                return { ...state, ...action.payload, isDirty: false, saveStatus: null };
             case 'RESET':
                 return {
-                    name: '',
-                    description: '',
-                    type: 'Other' as AssetType,
-                    owner: '',
-                    comment: '',
-                    isDirty: false,
-                    saveStatus: null
+                    name: '', description: '', type: 'Other' as AssetType,
+                    ownerId: '', comment: '',
+                    isDirty: false, saveStatus: null
                 };
             default:
                 return state;
         }
     }, {
-        name: '',
-        description: '',
-        type: 'Other' as AssetType,
-        owner: '',
-        comment: '',
-        isDirty: false,
-        saveStatus: null
+        name: '', description: '', type: 'Other' as AssetType,
+        ownerId: '', comment: '',
+        isDirty: false, saveStatus: null
     });
 
-    const { name, description, type, owner, comment, isDirty, saveStatus } = state;
+    const { name, description, type, ownerId, comment, isDirty, saveStatus } = state;
 
-    const debouncedName = useDebounce(name, 1000);
-    const debouncedDescription = useDebounce(description, 1000);
-    const debouncedOwner = useDebounce(owner, 1000);
-    const debouncedComment = useDebounce(comment, 1000);
-
-    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    // Initial load and sync
     useEffect(() => {
         if (existingAsset) {
-            const payload = {
-                name: existingAsset.name,
-                description: existingAsset.description,
-                type: existingAsset.type,
-                owner: existingAsset.owner,
-                comment: existingAsset.comment || ''
-            };
-
-            const needsSync = 
-                payload.name !== name ||
-                payload.description !== description ||
-                payload.type !== type ||
-                payload.owner !== owner ||
-                payload.comment !== comment;
-
-            if (needsSync && !isDirty) {
-                dispatch({ type: 'SYNC', payload });
-            }
+            dispatch({
+                type: 'SYNC', payload: {
+                    name: existingAsset.name,
+                    description: existingAsset.description,
+                    type: existingAsset.type,
+                    ownerId: existingAsset.ownerId ?? '',
+                    comment: existingAsset.comment || ''
+                }
+            });
         } else if (isNew) {
             dispatch({ type: 'RESET' });
         }
-    }, [existingAsset, isNew, name, description, type, owner, comment, isDirty]);
-
-    // Handle initial creation for "new" route
-    useEffect(() => {
-        if (isNew && debouncedName.trim() && activeProjectId) {
-            const createAsset = async () => {
-                const newId = crypto.randomUUID();
-                const newAsset: Asset = {
-                    id: newId,
-                    projectId: activeProjectId,
-                    name: name,
-                    description: description,
-                    type: type,
-                    owner: owner,
-                    comment: comment,
-                };
-                await addAsset(newAsset);
-                navigate(`../${newId}`, { replace: true });
-            };
-            createAsset();
-        }
-    }, [debouncedName, isNew, activeProjectId, addAsset, navigate, name, description, type, owner, comment]);
-
-    // Auto-save effect for existing assets
-    useEffect(() => {
-        if (isNew || !existingAsset || !isDirty) return;
-        if (!debouncedName.trim()) return;
-
-        const save = async () => {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-            dispatch({ type: 'SET_STATUS', status: 'saving' });
-
-            try {
-                const updatedAsset: Asset = {
-                    ...existingAsset,
-                    name: debouncedName,
-                    description: debouncedDescription,
-                    type: type,
-                    owner: debouncedOwner,
-                    comment: debouncedComment,
-                };
-
-                await updateAsset(updatedAsset);
-                dispatch({ type: 'SAVED' });
-                saveTimeoutRef.current = setTimeout(() => {
-                    dispatch({ type: 'SET_STATUS', status: null });
-                }, 2000);
-            } catch (error) {
-                console.error("Auto-save failed", error);
-                dispatch({ type: 'SET_STATUS', status: 'error' });
-            }
-        };
-
-        save();
-    }, [debouncedName, debouncedDescription, debouncedOwner, debouncedComment, type, existingAsset, isNew, isDirty, updateAsset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
 
     if (!existingAsset && !isNew) {
         return <div className="p-8">Asset not found</div>;
     }
+
+    const handleSave = async () => {
+        if (!name.trim()) return;
+        dispatch({ type: 'SET_STATUS', status: 'saving' });
+        try {
+            if (isNew) {
+                if (!activeProjectId) return;
+                const newId = crypto.randomUUID();
+                const newAsset: Asset = {
+                    id: newId, projectId: activeProjectId,
+                    name, description, type, comment,
+                    ...(ownerId ? { ownerId } : {})
+                };
+                await addAsset(newAsset);
+                dispatch({ type: 'SAVED' });
+                navigate(`../${newId}`, { replace: true });
+            } else if (existingAsset) {
+                const { ownerId: _old, ...base } = existingAsset;
+                const updatedAsset: Asset = {
+                    ...base, name, description, type, comment,
+                    ...(ownerId ? { ownerId } : {})
+                };
+                await updateAsset(updatedAsset);
+                dispatch({ type: 'SAVED' });
+            }
+        } catch (error) {
+            console.error('Save failed', error);
+            dispatch({ type: 'SET_STATUS', status: 'error' });
+        }
+    };
 
     const handleDelete = () => {
         if (confirm('Are you sure you want to delete this asset?')) {
@@ -199,7 +146,7 @@ export const AssetDetail: React.FC = () => {
                         </span>
                     )}
                     {saveStatus === 'saved' && (
-                        <span className="text-green-600 dark:text-green-400 text-sm flex items-center gap-1 font-semibold transition-opacity duration-500">
+                        <span className="text-green-600 dark:text-green-400 text-sm font-semibold">
                             Saved
                         </span>
                     )}
@@ -208,6 +155,13 @@ export const AssetDetail: React.FC = () => {
                             Error saving
                         </span>
                     )}
+                    <Button
+                        onClick={handleSave}
+                        disabled={!isDirty || !name.trim() || saveStatus === 'saving'}
+                        size="sm"
+                    >
+                        <Save size={16} /> Save
+                    </Button>
                     {!isNew && (
                         <>
                             <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1"></div>
@@ -238,15 +192,21 @@ export const AssetDetail: React.FC = () => {
 
                     <section className="flex flex-col gap-2">
                         <h3 className="font-semibold text-primary-900 dark:text-white">Owner</h3>
-                        <input
-                            type="text"
-                            value={owner}
-                            onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'owner', value: e.target.value })}
-                            className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-primary-400 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
-                            placeholder="Who owns this?"
-                        />
+                        <div className="relative">
+                            <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-400" />
+                            <select
+                                value={ownerId}
+                                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'ownerId', value: e.target.value })}
+                                className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-md pl-9 pr-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm appearance-none text-primary-700 dark:text-primary-300"
+                            >
+                                <option value="">— No owner —</option>
+                                {people.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </section>
-                    
+
                     <section className="flex flex-col gap-2">
                         <h3 className="font-semibold text-primary-900 dark:text-white">Internal Notes</h3>
                         <textarea

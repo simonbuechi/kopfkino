@@ -1,12 +1,12 @@
-import React, { useReducer, useEffect, useRef, useState } from 'react';
+import React, { useReducer, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { Button } from '../../components/ui/Button';
 import { MapPin, Trash2, ArrowLeft, ImageIcon, Loader2, X, Upload, Star } from 'lucide-react';
 import { deleteImageFromUrl, uploadFile } from '../../services/storageService';
-import { useAuth } from '../../hooks/useAuth';
 import { useDebounce } from '../../hooks/useDebounce';
+import { useFileUpload } from '../../hooks/useFileUpload';
 import toast from 'react-hot-toast';
 import type { Location, LocationType } from '../../types/types';
 
@@ -33,8 +33,7 @@ type LocationAction =
 export const LocationDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { locations, deleteLocation, addLocation, scenes } = useStore();
-    const { user } = useAuth();
+    const { locations, deleteLocation, saveLocation, scenes } = useStore();
     const { activeProjectId } = useProjects();
 
     // Derived state
@@ -73,14 +72,8 @@ export const LocationDetail: React.FC = () => {
 
     const { name, description, geolocation, comment, images, thumbnailUrl, type, isDirty, saveStatus } = state;
 
-    const [isUploading, setIsUploading] = useState(false);
+    const debouncedTextKey = useDebounce(`${name}|${description}|${geolocation}|${comment}`, 1000);
 
-    const debouncedName = useDebounce(name, 1000);
-    const debouncedDescription = useDebounce(description, 1000);
-    const debouncedGeolocation = useDebounce(geolocation, 1000);
-    const debouncedComment = useDebounce(comment, 1000);
-
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const latestStateRef = useRef(state);
 
@@ -136,27 +129,29 @@ export const LocationDetail: React.FC = () => {
     // Auto-save effect
     useEffect(() => {
         if (!location || !isDirty) return;
-        if (!debouncedName.trim()) return;
+
+        const { name: n, description: d, geolocation: g, comment: c } = latestStateRef.current;
+        if (!n.trim()) return;
 
         const save = async () => {
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
             dispatch({ type: 'SET_STATUS', status: 'saving' });
 
             try {
+                const s = latestStateRef.current;
                 const locationData: Location = {
                     ...location,
-                    name: debouncedName,
-                    description: debouncedDescription,
-                    geolocation: debouncedGeolocation,
-                    comment: debouncedComment,
-                    images: images,
-                    thumbnailUrl: thumbnailUrl,
-                    type: type,
+                    name: s.name,
+                    description: s.description,
+                    geolocation: s.geolocation,
+                    comment: s.comment,
+                    images: s.images,
+                    thumbnailUrl: s.thumbnailUrl,
+                    type: s.type,
                 };
 
-                await addLocation(locationData);
+                await saveLocation(locationData);
 
-                // Check staleness
                 const current = latestStateRef.current;
                 const isStillMatches =
                     current.name === locationData.name &&
@@ -183,10 +178,10 @@ export const LocationDetail: React.FC = () => {
         };
 
         const hasChanged =
-            debouncedName !== location.name ||
-            debouncedDescription !== location.description ||
-            debouncedGeolocation !== (location.geolocation || '') ||
-            debouncedComment !== (location.comment || '') ||
+            n !== location.name ||
+            d !== location.description ||
+            g !== (location.geolocation || '') ||
+            c !== (location.comment || '') ||
             JSON.stringify(images) !== JSON.stringify(location.images || []) ||
             thumbnailUrl !== (location.thumbnailUrl || '') ||
             type !== location.type;
@@ -195,7 +190,7 @@ export const LocationDetail: React.FC = () => {
             save();
         }
 
-    }, [debouncedName, debouncedDescription, debouncedGeolocation, debouncedComment, images, thumbnailUrl, location, addLocation, isDirty, type]);
+    }, [debouncedTextKey, images, thumbnailUrl, location, saveLocation, isDirty, type]);
 
     // Cleanup timeout
     useEffect(() => {
@@ -229,35 +224,22 @@ export const LocationDetail: React.FC = () => {
         }
     };
 
-    const handleImageUploadClick = () => {
-        fileInputRef.current?.click();
-    };
-
-    const onFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file || !user || !activeProjectId) return;
-
-        setIsUploading(true);
-        try {
-            // 1. Upload to Firebase Storage
-            const permanentUrl = await uploadFile(file, activeProjectId);
-
-            // 2. Update Local State (Effect will trigger save)
-            const updatedImages = [...images, permanentUrl].slice(0, 4);
-            dispatch({ type: 'SET_MULTIPLE', payload: {
-                images: updatedImages,
-                thumbnailUrl: thumbnailUrl || permanentUrl
-            }});
-
-        } catch (error) {
-            console.error("Failed to upload image", error);
-            toast.error('Failed to upload image.');
-        } finally {
-            setIsUploading(false);
-            // Reset input so valid file can be selected again if needed
-            if (fileInputRef.current) fileInputRef.current.value = '';
+    const { fileInputRef, isUploading, handleClick: handleImageUploadClick, handleChange: onFileSelected } = useFileUpload(
+        async (file) => {
+            if (!activeProjectId) return;
+            try {
+                const permanentUrl = await uploadFile(file, activeProjectId);
+                const updatedImages = [...images, permanentUrl].slice(0, 4);
+                dispatch({ type: 'SET_MULTIPLE', payload: {
+                    images: updatedImages,
+                    thumbnailUrl: thumbnailUrl || permanentUrl
+                }});
+            } catch (error) {
+                console.error("Failed to upload image", error);
+                toast.error('Failed to upload image.');
+            }
         }
-    };
+    );
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto">

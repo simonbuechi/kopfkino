@@ -1,12 +1,21 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
-import { MapPin, Users, Clapperboard, Video, ExternalLink, Plus, Eye } from 'lucide-react';
+import { MapPin, Users, Clapperboard, Video, ExternalLink, Plus, Eye, FileText, ArrowRight } from 'lucide-react';
 import { useProjects } from '../../hooks/useProjects';
 import { formatTime } from '../../utils/time';
 
+const CHARS_PER_LINE = 60;
+const LINES_PER_PAGE = 55;
+
+function countScriptPages(content: string): number {
+    const chars = content.length;
+    const lines = Math.ceil(chars / CHARS_PER_LINE);
+    return Math.max(1, Math.ceil(lines / LINES_PER_PAGE));
+}
+
 export const ProjectDashboard: React.FC = () => {
-    const { locations, scenes, characters } = useStore();
+    const { locations, scenes, characters, script } = useStore();
     const { activeProject, activeProjectRole } = useProjects();
     const navigate = useNavigate();
 
@@ -112,6 +121,32 @@ export const ProjectDashboard: React.FC = () => {
                         )}
                     </div>
                 ))}
+
+                {script?.content?.trim() && (
+                    <div className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 rounded-xl p-4 flex flex-col shadow-sm">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <p className="text-sm font-semibold text-primary-500 dark:text-primary-400 mb-1">Script</p>
+                                <div>
+                                    <p className="text-2xl font-bold text-primary-900 dark:text-white leading-none">
+                                        {countScriptPages(script.content)}
+                                    </p>
+                                    <p className="text-xs font-semibold text-primary-400 dark:text-primary-500 mt-1">pages</p>
+                                </div>
+                            </div>
+                            <div className="p-3 rounded-lg text-primary-500 bg-primary-500/10">
+                                <FileText size={20} />
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => navigate('script')}
+                            className="flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-md bg-primary-50 dark:bg-primary-800/50 hover:bg-primary-100 dark:hover:bg-primary-800 text-sm font-semibold text-primary-600 dark:text-primary-300 transition-colors border border-primary-200 dark:border-primary-700 mt-auto"
+                        >
+                            <ArrowRight size={16} />
+                            Open script
+                        </button>
+                    </div>
+                )}
             </div>
 
         </div>

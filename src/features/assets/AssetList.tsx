@@ -7,27 +7,27 @@ import { Package, Plus, Edit } from 'lucide-react';
 import { ViewToggle } from '../../components/ui/ViewToggle';
 import { DragHandle } from '../../components/ui/DragHandle';
 import { EmptyState } from '../../components/ui/EmptyState';
-import type { Asset } from '../../types/types';
+import type { Asset, Person } from '../../types/types';
 import {
     DndContext,
     closestCenter,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
 import {
-    arrayMove,
     SortableContext,
     useSortable,
     rectSortingStrategy
 } from '@dnd-kit/sortable';
-import { useDnDSensors } from '../../hooks/useDnDSensors';
+import { useSortableList } from '../../hooks/useSortableList';
 import { CSS } from '@dnd-kit/utilities';
 
 // Sortable Item Component
 const SortableAssetCard = ({
     asset,
+    ownerName,
     onEdit
 }: {
     asset: Asset;
+    ownerName?: string;
     onEdit: (id: string) => void;
 }) => {
     const {
@@ -55,7 +55,7 @@ const SortableAssetCard = ({
                     <div className="flex items-start justify-between gap-2">
                         <div className="flex flex-col gap-1">
                             <h3 className="text-lg font-semibold text-primary-900 dark:text-white pointer-events-none select-none">{asset.name}</h3>
-                            <span className="text-xs text-primary-400 font-semibold uppercase tracking-wider">{asset.owner}</span>
+                            {ownerName && <span className="text-xs text-primary-400 font-semibold uppercase tracking-wider">{ownerName}</span>}
                         </div>
                         {asset.type && (
                             <span className="shrink-0 px-2 py-0.5 rounded text-xs font-bold bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-300 pointer-events-none select-none">
@@ -84,9 +84,11 @@ const SortableAssetCard = ({
 // Sortable List Item Component
 const SortableAssetListItem = ({
     asset,
+    ownerName,
     onEdit
 }: {
     asset: Asset;
+    ownerName?: string;
     onEdit: (id: string) => void;
 }) => {
     const {
@@ -120,7 +122,7 @@ const SortableAssetListItem = ({
                 <div className="flex-1 min-w-0 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <h3 className="font-medium text-primary-900 dark:text-white truncate select-none">{asset.name}</h3>
-                        <span className="text-xs text-primary-400 hidden sm:inline-block">— {asset.owner}</span>
+                        {ownerName && <span className="text-xs text-primary-400 hidden sm:inline-block">— {ownerName}</span>}
                         {asset.type && (
                             <span className="shrink-0 px-2 py-0.5 rounded text-xs font-bold bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-300 pointer-events-none select-none">
                                 {asset.type}
@@ -134,23 +136,12 @@ const SortableAssetListItem = ({
 };
 
 export const AssetList: React.FC = () => {
-    const { assets, reorderAssets } = useStore();
+    const { assets, reorderAssets, people } = useStore();
+    const peopleById = Object.fromEntries((people as Person[]).map((p) => [p.id, p.name]));
     const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
 
-    const sensors = useDnDSensors();
-
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
-
-        if (active.id !== over?.id) {
-            const oldIndex = assets.findIndex((a) => a.id === active.id);
-            const newIndex = assets.findIndex((a) => a.id === over?.id);
-
-            const newOrder = arrayMove(assets, oldIndex, newIndex);
-            reorderAssets(newOrder);
-        }
-    };
+    const { sensors, handleDragEnd } = useSortableList(assets, reorderAssets);
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
@@ -187,12 +178,14 @@ export const AssetList: React.FC = () => {
                                     <SortableAssetCard
                                         key={asset.id}
                                         asset={asset}
+                                        ownerName={asset.ownerId ? peopleById[asset.ownerId] : undefined}
                                         onEdit={navigate}
                                     />
                                 ) : (
                                     <SortableAssetListItem
                                         key={asset.id}
                                         asset={asset}
+                                        ownerName={asset.ownerId ? peopleById[asset.ownerId] : undefined}
                                         onEdit={navigate}
                                     />
                                 )

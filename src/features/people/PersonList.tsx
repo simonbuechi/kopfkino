@@ -12,14 +12,12 @@ import {
     DndContext,
     closestCenter,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
 import {
-    arrayMove,
     SortableContext,
     useSortable,
     rectSortingStrategy
 } from '@dnd-kit/sortable';
-import { useDnDSensors } from '../../hooks/useDnDSensors';
+import { useSortableList } from '../../hooks/useSortableList';
 import { CSS } from '@dnd-kit/utilities';
 
 // Sortable Item Component
@@ -160,19 +158,7 @@ export const PersonList: React.FC = () => {
     const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
 
-    const sensors = useDnDSensors();
-
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
-
-        if (active.id !== over?.id) {
-            const oldIndex = people.findIndex((p) => p.id === active.id);
-            const newIndex = people.findIndex((p) => p.id === over?.id);
-
-            const newOrder = arrayMove(people, oldIndex, newIndex);
-            reorderPeople(newOrder);
-        }
-    };
+    const { sensors, handleDragEnd } = useSortableList(people, reorderPeople);
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">

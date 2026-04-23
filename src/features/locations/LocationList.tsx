@@ -15,15 +15,13 @@ import {
     DndContext,
     closestCenter,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
 import {
-    arrayMove,
     SortableContext,
     useSortable,
     rectSortingStrategy,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { useDnDSensors } from '../../hooks/useDnDSensors';
+import { useSortableList } from '../../hooks/useSortableList';
 import { CSS } from '@dnd-kit/utilities';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
@@ -153,7 +151,7 @@ export const LocationList: React.FC = () => {
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
 
-    const sensors = useDnDSensors();
+    const { sensors, handleDragEnd } = useSortableList(locations, reorderLocations);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const slimVirtualizer = useVirtualizer({
@@ -191,18 +189,6 @@ export const LocationList: React.FC = () => {
         entityName: 'location',
         filename: `kopfkino_locations_${new Date().toISOString().slice(0, 10)}.csv`,
     });
-
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
-
-        if (active.id !== over?.id) {
-            const oldIndex = locations.findIndex((loc) => loc.id === active.id);
-            const newIndex = locations.findIndex((loc) => loc.id === over?.id);
-
-            const newOrder = arrayMove(locations, oldIndex, newIndex);
-            reorderLocations(newOrder);
-        }
-    };
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">

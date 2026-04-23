@@ -10,7 +10,7 @@ export interface StoreContextType {
     people: Person[];
     settings: Settings;
     script: Script | null;
-    addLocation: (loc: Location) => Promise<void>;
+    saveLocation: (loc: Location) => Promise<void>;
     deleteLocation: (id: string) => Promise<void>;
     replaceLocations: (locations: Location[]) => Promise<void>;
     reorderLocations: (newOrder: Location[]) => Promise<void>;

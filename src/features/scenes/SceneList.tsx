@@ -11,15 +11,13 @@ import type { Scene } from '../../types/types';
 import {
     DndContext,
     closestCenter,
-    type DragEndEvent
 } from '@dnd-kit/core';
 import {
-    arrayMove,
     SortableContext,
     useSortable,
     verticalListSortingStrategy
 } from '@dnd-kit/sortable';
-import { useDnDSensors } from '../../hooks/useDnDSensors';
+import { useSortableList } from '../../hooks/useSortableList';
 import { CSS } from '@dnd-kit/utilities';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
@@ -119,7 +117,7 @@ export const SceneList: React.FC = () => {
     const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<'slim' | 'expanded'>('expanded');
 
-    const sensors = useDnDSensors();
+    const { sensors, handleDragEnd } = useSortableList(scenes, reorderScenes);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const virtualizer = useVirtualizer({
@@ -141,18 +139,6 @@ export const SceneList: React.FC = () => {
         if (!ids || ids.length === 0) return [];
         return ids.map(id => characters.find(c => c.id === id)?.name).filter(Boolean) as string[];
     }, [characters]);
-
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
-
-        if (active.id !== over?.id) {
-            const oldIndex = scenes.findIndex((s) => s.id === active.id);
-            const newIndex = scenes.findIndex((s) => s.id === over?.id);
-
-            const newOrder = arrayMove(scenes, oldIndex, newIndex);
-            reorderScenes(newOrder);
-        }
-    };
 
     const { fileInputRef: sceneFileInputRef, handleImportClick: handleImportScenesClick, handleFileChange: handleSceneFileChange, handleExportClick: handleExportScenes } = useCSVImportExport<Scene>({
         items: scenes,

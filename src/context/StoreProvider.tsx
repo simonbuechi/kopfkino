@@ -47,7 +47,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     }, [user, activeProjectId]);
 
     // Locations
-    const addLocation = useCallback(async (loc: Location) => {
+    const saveLocation = useCallback(async (loc: Location) => {
         if (!activeProjectId) return;
         if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
         await storage.saveLocation(activeProjectId, loc);
@@ -264,7 +264,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
 
     const contextValue = useMemo(() => ({
         locations, scenes, characters, schedules, assets, people, settings, script,
-        addLocation, deleteLocation, replaceLocations, reorderLocations,
+        saveLocation, deleteLocation, replaceLocations, reorderLocations,
         addScene, deleteScene, replaceScenes, reorderScenes,
         addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene,
         addCharacter, deleteCharacter, updateCharacter, replaceCharacters, reorderCharacters,
@@ -275,7 +275,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         saveScript, setScriptFrozen,
     }), [
         locations, scenes, characters, schedules, assets, people, settings, script,
-        addLocation, deleteLocation, replaceLocations, reorderLocations,
+        saveLocation, deleteLocation, replaceLocations, reorderLocations,
         addScene, deleteScene, replaceScenes, reorderScenes,
         addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene,
         addCharacter, deleteCharacter, updateCharacter, replaceCharacters, reorderCharacters,

@@ -11,15 +11,13 @@ import type { Shot } from '../../types/types';
 import {
     DndContext,
     closestCenter,
-    type DragEndEvent
 } from '@dnd-kit/core';
 import {
-    arrayMove,
     SortableContext,
     useSortable,
     verticalListSortingStrategy
 } from '@dnd-kit/sortable';
-import { useDnDSensors } from '../../hooks/useDnDSensors';
+import { useSortableList } from '../../hooks/useSortableList';
 import { CSS } from '@dnd-kit/utilities';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
@@ -416,7 +414,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
 
     const [imageModal, setImageModal] = useState<{ url: string; alt: string } | null>(null);
 
-    const sensors = useDnDSensors();
+    const { sensors, handleDragEnd } = useSortableList(shots, (newOrder) => reorderShotsInScene(sceneId, newOrder));
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const virtualizer = useVirtualizer({
@@ -488,18 +486,6 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
         } catch (error) {
             console.error("Failed to delete video", error);
             toast.error('Failed to delete video.');
-        }
-    };
-
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
-
-        if (active.id !== over?.id) {
-            const oldIndex = shots.findIndex((s) => s.id === active.id);
-            const newIndex = shots.findIndex((s) => s.id === over?.id);
-
-            const newOrder = arrayMove(shots, oldIndex, newIndex);
-            reorderShotsInScene(sceneId, newOrder);
         }
     };
 

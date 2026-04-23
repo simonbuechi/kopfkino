@@ -1,10 +1,9 @@
-import React, { useReducer, useEffect, useRef } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
-import { Trash2, ArrowLeft, Loader2, Phone, Mail, Briefcase } from 'lucide-react';
+import { Trash2, ArrowLeft, Loader2, Phone, Mail, Briefcase, Save } from 'lucide-react';
 import { useProjects } from '../../hooks/useProjects';
-import { useDebounce } from '../../hooks/useDebounce';
 import type { Person, PersonType } from '../../types/types';
 
 export const PersonDetail: React.FC = () => {
@@ -13,7 +12,6 @@ export const PersonDetail: React.FC = () => {
     const { people, deletePerson, addPerson, updatePerson } = useStore();
     const { activeProjectId } = useProjects();
 
-    // Derived state
     const existingPerson = people.find((p) => p.id === id);
     const isNew = !id || id === 'new';
 
@@ -29,156 +27,89 @@ export const PersonDetail: React.FC = () => {
         saveStatus: 'saved' | 'saving' | 'error' | null;
     }
 
-    type PersonAction = 
-        | { type: 'SET_FIELD'; field: string; value: string | number | boolean | string[] | undefined | PersonType }
-        | { type: 'SET_MULTIPLE'; payload: Partial<PersonState> }
+    type PersonAction =
+        | { type: 'SET_FIELD'; field: string; value: string | PersonType }
         | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
         | { type: 'SAVED' }
-        | { type: 'SYNC'; payload: Partial<PersonState> }
+        | { type: 'SYNC'; payload: Omit<PersonState, 'isDirty' | 'saveStatus'> }
         | { type: 'RESET' };
 
-    // Local state for editing using a reducer
     const [state, dispatch] = useReducer((state: PersonState, action: PersonAction): PersonState => {
         switch (action.type) {
             case 'SET_FIELD':
                 return { ...state, [action.field]: action.value, isDirty: true, saveStatus: null };
-            case 'SET_MULTIPLE':
-                return { ...state, ...action.payload, isDirty: true, saveStatus: null };
             case 'SET_STATUS':
                 return { ...state, saveStatus: action.status };
             case 'SAVED':
                 return { ...state, saveStatus: 'saved', isDirty: false };
             case 'SYNC':
-                return { ...state, ...action.payload, isDirty: false };
+                return { ...state, ...action.payload, isDirty: false, saveStatus: null };
             case 'RESET':
                 return {
-                    name: '',
-                    description: '',
-                    type: 'Other' as PersonType,
-                    role: '',
-                    phone: '',
-                    email: '',
-                    comment: '',
-                    isDirty: false,
-                    saveStatus: null
+                    name: '', description: '', type: 'Other' as PersonType,
+                    role: '', phone: '', email: '', comment: '',
+                    isDirty: false, saveStatus: null
                 };
             default:
                 return state;
         }
     }, {
-        name: '',
-        description: '',
-        type: 'Other' as PersonType,
-        role: '',
-        phone: '',
-        email: '',
-        comment: '',
-        isDirty: false,
-        saveStatus: null
+        name: '', description: '', type: 'Other' as PersonType,
+        role: '', phone: '', email: '', comment: '',
+        isDirty: false, saveStatus: null
     });
 
     const { name, description, type, role, phone, email, comment, isDirty, saveStatus } = state;
 
-    const debouncedName = useDebounce(name, 1000);
-    const debouncedDescription = useDebounce(description, 1000);
-    const debouncedRole = useDebounce(role, 1000);
-    const debouncedPhone = useDebounce(phone, 1000);
-    const debouncedEmail = useDebounce(email, 1000);
-    const debouncedComment = useDebounce(comment, 1000);
-
-    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    // Initial load and sync
     useEffect(() => {
         if (existingPerson) {
-            const payload = {
-                name: existingPerson.name,
-                description: existingPerson.description,
-                type: existingPerson.type,
-                role: existingPerson.role,
-                phone: existingPerson.phone,
-                email: existingPerson.email,
-                comment: existingPerson.comment || ''
-            };
-
-            const needsSync = 
-                payload.name !== name ||
-                payload.description !== description ||
-                payload.type !== type ||
-                payload.role !== role ||
-                payload.phone !== phone ||
-                payload.email !== email ||
-                payload.comment !== comment;
-
-            if (needsSync && !isDirty) {
-                dispatch({ type: 'SYNC', payload });
-            }
+            dispatch({
+                type: 'SYNC', payload: {
+                    name: existingPerson.name,
+                    description: existingPerson.description,
+                    type: existingPerson.type,
+                    role: existingPerson.role,
+                    phone: existingPerson.phone,
+                    email: existingPerson.email,
+                    comment: existingPerson.comment || ''
+                }
+            });
         } else if (isNew) {
             dispatch({ type: 'RESET' });
         }
-    }, [existingPerson, isNew, name, description, type, role, phone, email, comment, isDirty]);
-
-    // Handle initial creation for "new" route
-    useEffect(() => {
-        if (isNew && debouncedName.trim() && activeProjectId) {
-            const createPerson = async () => {
-                const newId = crypto.randomUUID();
-                const newPerson: Person = {
-                    id: newId,
-                    projectId: activeProjectId,
-                    name: name,
-                    description: description,
-                    type: type,
-                    role: role,
-                    phone: phone,
-                    email: email,
-                    comment: comment,
-                };
-                await addPerson(newPerson);
-                navigate(`../${newId}`, { replace: true });
-            };
-            createPerson();
-        }
-    }, [debouncedName, isNew, activeProjectId, addPerson, navigate, name, description, type, role, phone, email, comment]);
-
-    // Auto-save effect for existing people
-    useEffect(() => {
-        if (isNew || !existingPerson || !isDirty) return;
-        if (!debouncedName.trim()) return;
-
-        const save = async () => {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-            dispatch({ type: 'SET_STATUS', status: 'saving' });
-
-            try {
-                const updatedPerson: Person = {
-                    ...existingPerson,
-                    name: debouncedName,
-                    description: debouncedDescription,
-                    type: type,
-                    role: debouncedRole,
-                    phone: debouncedPhone,
-                    email: debouncedEmail,
-                    comment: debouncedComment,
-                };
-
-                await updatePerson(updatedPerson);
-                dispatch({ type: 'SAVED' });
-                saveTimeoutRef.current = setTimeout(() => {
-                    dispatch({ type: 'SET_STATUS', status: null });
-                }, 2000);
-            } catch (error) {
-                console.error("Auto-save failed", error);
-                dispatch({ type: 'SET_STATUS', status: 'error' });
-            }
-        };
-
-        save();
-    }, [debouncedName, debouncedDescription, debouncedRole, debouncedPhone, debouncedEmail, debouncedComment, type, existingPerson, isNew, isDirty, updatePerson]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
 
     if (!existingPerson && !isNew) {
         return <div className="p-8">Person not found</div>;
     }
+
+    const handleSave = async () => {
+        if (!name.trim()) return;
+        dispatch({ type: 'SET_STATUS', status: 'saving' });
+        try {
+            if (isNew) {
+                if (!activeProjectId) return;
+                const newId = crypto.randomUUID();
+                const newPerson: Person = {
+                    id: newId, projectId: activeProjectId,
+                    name, description, type, role, phone, email, comment
+                };
+                await addPerson(newPerson);
+                dispatch({ type: 'SAVED' });
+                navigate(`../${newId}`, { replace: true });
+            } else if (existingPerson) {
+                const updatedPerson: Person = {
+                    ...existingPerson, name, description, type, role, phone, email, comment
+                };
+                await updatePerson(updatedPerson);
+                dispatch({ type: 'SAVED' });
+            }
+        } catch (error) {
+            console.error('Save failed', error);
+            dispatch({ type: 'SET_STATUS', status: 'error' });
+        }
+    };
 
     const handleDelete = () => {
         if (confirm('Are you sure you want to delete this person?')) {
@@ -215,7 +146,7 @@ export const PersonDetail: React.FC = () => {
                         </span>
                     )}
                     {saveStatus === 'saved' && (
-                        <span className="text-green-600 dark:text-green-400 text-sm flex items-center gap-1 font-semibold transition-opacity duration-500">
+                        <span className="text-green-600 dark:text-green-400 text-sm font-semibold">
                             Saved
                         </span>
                     )}
@@ -224,6 +155,13 @@ export const PersonDetail: React.FC = () => {
                             Error saving
                         </span>
                     )}
+                    <Button
+                        onClick={handleSave}
+                        disabled={!isDirty || !name.trim() || saveStatus === 'saving'}
+                        size="sm"
+                    >
+                        <Save size={16} /> Save
+                    </Button>
                     {!isNew && (
                         <>
                             <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1"></div>
@@ -294,7 +232,7 @@ export const PersonDetail: React.FC = () => {
                             </div>
                         </section>
                     </div>
-                    
+
                     <section className="flex flex-col gap-2">
                         <h3 className="font-semibold text-primary-900 dark:text-white">Internal Notes</h3>
                         <textarea
