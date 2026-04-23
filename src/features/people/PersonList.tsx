@@ -61,7 +61,7 @@ const SortablePersonCard = ({
                             </span>
                         )}
                     </div>
-                    
+
                     <div className="flex flex-col gap-1 my-3">
                         {person.email && (
                             <div className="flex items-center gap-2 text-xs text-primary-500">
@@ -80,11 +80,12 @@ const SortablePersonCard = ({
                     <p className="text-primary-500 text-sm line-clamp-2 mb-4 pointer-events-none select-none italic">
                         {person.description}
                     </p>
-                    
+
                     <div className="mt-auto pt-4 border-t border-primary-100 dark:border-primary-800 flex justify-end">
                         <Button
                             size="sm"
                             className="w-full"
+                            variant='secondary'
                             onClick={() => onEdit(person.id)}
                         >
                             <Edit size={14} />
@@ -128,8 +129,9 @@ const SortablePersonListItem = ({
 
                 <Button
                     size="sm"
+                    variant="secondary"
                     onClick={() => onEdit(person.id)}
-                    className="shrink-0 text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100"
+                    className="shrink-0"
                 >
                     <Edit size={14} /> Edit
                 </Button>

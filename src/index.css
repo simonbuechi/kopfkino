@@ -55,3 +55,19 @@
     @apply bg-primary-950 text-primary-100 antialiased font-sans;
   }
 }
+
+@layer utilities {
+  .btn-primary {
+    background: linear-gradient(45deg, #9123A6, #D7195F);
+  }
+  .btn-primary:hover {
+    background: linear-gradient(45deg, #7d1d91, #be1652);
+    opacity: 0.95;
+  }
+  .btn-primary:active {
+    background: linear-gradient(45deg, #6a1879, #a41347);
+  }
+  .btn-primary:disabled {
+    background: linear-gradient(45deg, #9123A6, #D7195F);
+  }
+}

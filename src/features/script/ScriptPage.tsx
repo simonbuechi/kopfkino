@@ -5,7 +5,7 @@ import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { useDebounce } from '../../hooks/useDebounce';
 import { Link } from 'react-router-dom';
-import { FileText, Lock, Unlock, User, MapPin, Clapperboard, ChevronDown, ChevronRight, Code, BookOpen, Info, X, CheckCircle, AlertCircle, Download } from 'lucide-react';
+import { FileText, Lock, Unlock, User, MapPin, Clapperboard, ChevronDown, ChevronRight, Code, BookOpen, Info, X, CheckCircle, AlertCircle, Download, BarChart2 } from 'lucide-react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { Button } from '../../components/ui/Button';
 import type { Character, Location } from '../../types/types';
@@ -466,6 +466,63 @@ function extractScriptInfo(text: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Script analysis
+// ---------------------------------------------------------------------------
+
+interface ScriptAnalysis {
+    dialog: number;
+    action: number;
+    other: number;
+    dialogByChar: { name: string; percent: number; lines: number }[];
+}
+
+function analyzeScript(text: string): ScriptAnalysis {
+    const lines = text.split('\n');
+    const types = classifyLines(text);
+
+    let dialogCount = 0;
+    let actionCount = 0;
+    let otherCount = 0;
+    const dialogByChar: Record<string, number> = {};
+    let currentChar = '';
+
+    lines.forEach((line, i) => {
+        const type = types[i];
+        const trimmed = line.trim();
+        if (type === 'dialogue' || type === 'parenthetical') {
+            dialogCount++;
+            if (type === 'dialogue' && currentChar) {
+                dialogByChar[currentChar] = (dialogByChar[currentChar] ?? 0) + 1;
+            }
+        } else if (type === 'action') {
+            actionCount++;
+            currentChar = '';
+        } else if (type === 'character') {
+            currentChar = trimmed.replace(/\s*\^.*$/, '').replace(/\s*\(.*?\)\s*$/, '').trim();
+        } else if (type === 'blank') {
+            currentChar = '';
+        } else if (type !== 'title' && type !== 'note') {
+            otherCount++;
+        }
+    });
+
+    const total = dialogCount + actionCount + otherCount;
+    const sorted = Object.entries(dialogByChar).sort(([, a], [, b]) => b - a);
+    const totalDialogLines = sorted.reduce((s, [, n]) => s + n, 0);
+
+    return {
+        dialog: total ? Math.round((dialogCount / total) * 100) : 0,
+        action: total ? Math.round((actionCount / total) * 100) : 0,
+        other:  total ? Math.round((otherCount  / total) * 100) : 0,
+        dialogByChar: sorted.map(([name, count]) => ({
+            name,
+            lines: count,
+            percent: totalDialogLines ? Math.round((count / totalDialogLines) * 100) : 0,
+        })),
+    };
+}
+
+// ---------------------------------------------------------------------------
 // Tooltip
 // ---------------------------------------------------------------------------
 
@@ -621,6 +678,7 @@ export const ScriptPage: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const [confirmFreezeOpen, setConfirmFreezeOpen] = useState(false);
     const [howtoOpen, setHowtoOpen] = useState(false);
+    const [analysisOpen, setAnalysisOpen] = useState(false);
     const [mode, setMode] = useState<'plain' | 'formatted'>('formatted');
     const [sidebarWidth, setSidebarWidth] = useState(280);
     const isResizing = useRef(false);
@@ -687,6 +745,7 @@ export const ScriptPage: React.FC = () => {
     const isEmpty = !draft.trim();
     const debouncedDraft = useDebounce(draft, 500);
     const { characters, locations, scenes } = useMemo(() => extractScriptInfo(debouncedDraft), [debouncedDraft]);
+    const analysis = useMemo(() => analyzeScript(debouncedDraft), [debouncedDraft]);
 
     const filename = activeProject?.name ?? 'script';
 
@@ -723,6 +782,11 @@ export const ScriptPage: React.FC = () => {
                     <Tooltip label="Syntax How To">
                         <Button variant="outline" size="sm" onClick={() => setHowtoOpen(true)}>
                             <Info size={14} />Info
+                        </Button>
+                    </Tooltip>
+                    <Tooltip label="Script analysis">
+                        <Button variant="outline" size="sm" onClick={() => setAnalysisOpen(true)} disabled={isEmpty}>
+                            <BarChart2 size={14} />Analysis
                         </Button>
                     </Tooltip>
                     {frozen && (
@@ -828,6 +892,67 @@ export const ScriptPage: React.FC = () => {
                                 <Lock size={14} /> Yes, freeze
                             </Button>
                         </div>
+                    </DialogPanel>
+                </div>
+            </Dialog>
+
+            {/* Analysis modal */}
+            <Dialog open={analysisOpen} onClose={() => setAnalysisOpen(false)} className="relative z-50">
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
+                <div className="fixed inset-0 flex items-center justify-center p-4">
+                    <DialogPanel className="w-full max-w-md rounded-2xl bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 p-6 shadow-xl">
+                        <div className="flex items-center justify-between mb-5">
+                            <DialogTitle className="text-lg font-semibold text-primary-900 dark:text-white flex items-center gap-2">
+                                <BarChart2 size={18} className="text-primary-400" /> Script Analysis
+                            </DialogTitle>
+                            <Button variant="ghost" size="icon" onClick={() => setAnalysisOpen(false)}>
+                                <X size={16} />
+                            </Button>
+                        </div>
+
+                        {/* Dialog vs Action */}
+                        <section className="mb-6">
+                            <h3 className="text-xs font-bold uppercase tracking-wide text-primary-500 dark:text-primary-400 mb-3">Dialog vs Action</h3>
+                            <div className="space-y-2">
+                                {([
+                                    { label: 'Dialog', value: analysis.dialog, color: 'bg-violet-500' },
+                                    { label: 'Action', value: analysis.action, color: 'bg-violet-300 dark:bg-violet-700' },
+                                    { label: 'Other',  value: analysis.other,  color: 'bg-primary-300 dark:bg-primary-600' },
+                                ] as const).map(({ label, value, color }) => (
+                                    <div key={label}>
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="font-medium text-primary-700 dark:text-primary-300">{label}</span>
+                                            <span className="font-semibold text-primary-900 dark:text-white">{value}%</span>
+                                        </div>
+                                        <div className="h-2 rounded-full bg-primary-100 dark:bg-primary-800 overflow-hidden">
+                                            <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${value}%` }} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        {/* Dialog per character */}
+                        <section>
+                            <h3 className="text-xs font-bold uppercase tracking-wide text-primary-500 dark:text-primary-400 mb-3">Dialog per Character</h3>
+                            {analysis.dialogByChar.length === 0 ? (
+                                <p className="text-sm text-primary-400 italic">No dialogue found</p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {analysis.dialogByChar.map(({ name, percent }) => (
+                                        <div key={name}>
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="font-medium text-primary-700 dark:text-primary-300 capitalize">{name.toLowerCase()}</span>
+                                                <span className="font-semibold text-primary-900 dark:text-white">{percent}%</span>
+                                            </div>
+                                            <div className="h-2 rounded-full bg-primary-100 dark:bg-primary-800 overflow-hidden">
+                                                <div className="h-full rounded-full bg-violet-500 transition-all" style={{ width: `${percent}%` }} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
                     </DialogPanel>
                 </div>
             </Dialog>

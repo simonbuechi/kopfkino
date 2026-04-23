@@ -21,9 +21,8 @@ export const Button: React.FC<ButtonProps> = ({
 
     const variants = {
         primary: clsx(
-            "bg-secondary-600 text-white hover:bg-secondary-700 active:bg-secondary-800",
-            "dark:bg-secondary-500 dark:hover:bg-secondary-400 dark:active:bg-secondary-300",
-            "focus-visible:outline-secondary-600 dark:focus-visible:outline-secondary-400"
+            "btn-primary text-white",
+            "focus-visible:outline-[#9123A6]"
         ),
         secondary: clsx(
             "bg-white text-primary-700 ring-1 ring-inset ring-primary-300 hover:bg-primary-50 active:bg-primary-100",
@@ -36,8 +35,8 @@ export const Button: React.FC<ButtonProps> = ({
             "focus-visible:outline-secondary-600"
         ),
         danger: clsx(
-            "bg-danger-600 text-white hover:bg-danger-700 active:bg-danger-800",
-            "dark:bg-danger-500 dark:hover:bg-danger-400 dark:active:bg-danger-300",
+            "bg-transparent text-danger-600 ring-1 ring-inset ring-danger-400 hover:bg-danger-50 active:bg-danger-100",
+            "dark:text-danger-400 dark:ring-danger-500 dark:hover:bg-danger-950 dark:active:bg-danger-900",
             "focus-visible:outline-danger-600"
         ),
         ghost: clsx(

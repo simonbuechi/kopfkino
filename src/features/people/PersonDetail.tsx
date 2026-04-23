@@ -120,26 +120,14 @@ export const PersonDetail: React.FC = () => {
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto">
-            <div>
+            <div className="flex items-center justify-between gap-4">
                 <Link
                     to=".."
                     className="inline-flex items-center gap-2 h-8 px-3 -ml-3 text-sm font-semibold rounded-lg transition-colors text-primary-500 hover:text-primary-900 hover:bg-primary-50 dark:text-primary-400 dark:hover:text-primary-100 dark:hover:bg-primary-900/60"
                 >
                     <ArrowLeft size={16} /> Back to People
                 </Link>
-            </div>
-
-            <div className="flex flex-col md:flex-row justify-between items-start gap-4 pb-6 border-b border-primary-200 dark:border-primary-800">
-                <div className="flex-1 w-full">
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'name', value: e.target.value })}
-                        className="text-4xl font-bold text-primary-900 dark:text-white mb-2 bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-primary-300 dark:placeholder-primary-700 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
-                        placeholder="Person Name"
-                    />
-                </div>
-                <div className="flex gap-2 items-center flex-wrap justify-end">
+                <div className="flex gap-2 items-center">
                     {saveStatus === 'saving' && (
                         <span className="text-primary-500 text-sm flex items-center gap-1">
                             <Loader2 className="animate-spin" size={14} /> Saving...
@@ -172,6 +160,14 @@ export const PersonDetail: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            <input
+                type="text"
+                value={name}
+                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'name', value: e.target.value })}
+                className="text-4xl font-bold text-primary-900 dark:text-white bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-primary-300 dark:placeholder-primary-700 transition-colors hover:border-primary-300 dark:hover:border-primary-600 shadow-sm"
+                placeholder="Person Name"
+            />
 
             <div className="grid md:grid-cols-2 gap-8">
                 {/* Left Side: Type, Role, Contact */}

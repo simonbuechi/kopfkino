@@ -23,6 +23,8 @@ export interface Scene {
     comment?: string;
     locationId: string;
     characters?: string[];
+    peopleIds?: string[];
+    assetIds?: string[];
     shots?: Shot[];
     order?: number;
 }

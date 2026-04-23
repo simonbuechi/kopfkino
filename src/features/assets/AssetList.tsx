@@ -68,6 +68,7 @@ const SortableAssetCard = ({
                     <div className="mt-auto pt-4 border-t border-primary-100 dark:border-primary-800 flex justify-end">
                         <Button
                             size="sm"
+                            variant="secondary"
                             className="w-full"
                             onClick={() => onEdit(asset.id)}
                         >
@@ -114,8 +115,9 @@ const SortableAssetListItem = ({
 
                 <Button
                     size="sm"
+                    variant="secondary"
                     onClick={() => onEdit(asset.id)}
-                    className="shrink-0 text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100"
+                    className="shrink-0"
                 >
                     <Edit size={14} /> Edit
                 </Button>

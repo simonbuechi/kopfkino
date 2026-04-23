@@ -83,6 +83,7 @@ const SortableCharacterCard = ({
                     <div className="mt-auto pt-2 border-t border-primary-100 dark:border-primary-800 flex justify-end">
                         <Button
                             size="sm"
+                            variant="secondary"
                             className="w-full"
                             onClick={() => onEdit(character.id)}
                         >
@@ -151,10 +152,9 @@ const SortableCharacterListItem = ({
 
                     <div className="flex items-center gap-1">
                         <Button
-                            size="sm"
-                            variant="ghost"
+                            size="icon"
+                            variant="secondary"
                             onClick={() => onEdit(character.id)}
-                            className="h-8 w-8 !p-0 text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100"
                             title="Edit Character"
                         >
                             <Edit size={16} />

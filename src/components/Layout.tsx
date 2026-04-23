@@ -4,8 +4,9 @@ import { Sidebar } from './Sidebar';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../hooks/useAuth';
 import { useProjects } from '../hooks/useProjects';
-import { Sun, Moon, Settings as SettingsIcon, LogOut, Clapperboard, ArrowRightLeft } from 'lucide-react';
+import { Sun, Moon, Settings as SettingsIcon, LogOut, ArrowRightLeft } from 'lucide-react';
 import { Button } from './ui/Button';
+import { Tooltip } from './ui/Tooltip';
 import { SettingsDialog } from '../features/settings/SettingsDialog';
 
 export const Layout: React.FC = () => {
@@ -42,32 +43,38 @@ export const Layout: React.FC = () => {
                 <header className="h-14 px-6 flex items-center justify-between border-b border-primary-200 dark:border-primary-800 bg-white/50 dark:bg-primary-950/50 backdrop-blur-sm shrink-0">
                     <div className="flex-1 flex items-center">
                         {activeProject && (
-                            <div className="flex items-center gap-2 group">
-                                <div className="flex items-center gap-2 text-sm font-semibold text-primary-900 dark:text-primary-100">
-                                    <Clapperboard size={18} className="text-primary-900 dark:text-primary-100" />
-                                    <span>{activeProject.name}</span>
-                                </div>
-                                <button
-                                    onClick={handleSwitchProject}
-                                    className="ml-2 p-1.5 rounded-md text-primary-400 hover:text-primary-900 dark:hover:text-primary-100 hover:bg-primary-100 dark:hover:bg-primary-700 transition-all opacity-0 group-hover:opacity-100"
-                                    title="Switch Project"
-                                >
-                                    <ArrowRightLeft size={14} />
-                                </button>
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-primary-900 dark:text-primary-100">
+                                    {activeProject.name}
+                                </span>
+                                <Tooltip label="Switch project">
+                                    <button
+                                        onClick={handleSwitchProject}
+                                        className="p-1.5 rounded-md text-primary-400 hover:text-primary-900 dark:hover:text-primary-100 hover:bg-primary-100 dark:hover:bg-primary-700 transition-colors"
+                                    >
+                                        <ArrowRightLeft size={14} />
+                                    </button>
+                                </Tooltip>
                             </div>
                         )}
                     </div>
                     <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign Out" title="Sign Out">
-                            <LogOut size={18} />
-                        </Button>
+                        <Tooltip label="Sign out">
+                            <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign Out">
+                                <LogOut size={18} />
+                            </Button>
+                        </Tooltip>
                         <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1" />
-                        <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)} aria-label="Settings">
-                            <SettingsIcon size={18} />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle Theme">
-                            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-                        </Button>
+                        <Tooltip label="Settings">
+                            <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)} aria-label="Settings">
+                                <SettingsIcon size={18} />
+                            </Button>
+                        </Tooltip>
+                        <Tooltip label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
+                            <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle Theme">
+                                {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+                            </Button>
+                        </Tooltip>
                     </div>
                 </header>
                 <div className="flex-1 overflow-y-auto p-8">
