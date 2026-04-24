@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { Location, Scene, Shot, Settings, Character, Schedule, Asset, Person, Script } from '../types/types';
+import type { Location, Scene, Shot, Settings, Character, Schedule, Asset, Person, Script, ScriptRevision, Act, Beat } from '../types/types';
 
 export interface StoreContextType {
     locations: Location[];
@@ -10,6 +10,7 @@ export interface StoreContextType {
     people: Person[];
     settings: Settings;
     script: Script | null;
+    scriptRevisions: ScriptRevision[];
     saveLocation: (loc: Location) => Promise<void>;
     deleteLocation: (id: string) => Promise<void>;
     replaceLocations: (locations: Location[]) => Promise<void>;
@@ -41,6 +42,15 @@ export interface StoreContextType {
     reorderPeople: (newOrder: Person[]) => Promise<void>;
     saveScript: (content: string) => Promise<void>;
     setScriptFrozen: (frozen: boolean) => Promise<void>;
+    saveScriptRevision: (revision: ScriptRevision) => Promise<void>;
+    deleteScriptRevision: (id: string) => Promise<void>;
+    acts: Act[];
+    beats: Beat[];
+    saveAct: (act: Act) => Promise<void>;
+    deleteAct: (actId: string) => Promise<void>;
+    saveBeat: (beat: Beat) => Promise<void>;
+    deleteBeat: (beatId: string) => Promise<void>;
+    saveBeats: (beats: Beat[]) => Promise<void>;
 }
 
 export const StoreContext = createContext<StoreContextType | undefined>(undefined);

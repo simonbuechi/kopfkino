@@ -19,7 +19,10 @@ const AuthPage = lazy(() => import('./features/auth/AuthPage').then(m => ({ defa
 const SchedulingPage = lazy(() => import('./features/scheduling').then(m => ({ default: m.SchedulingPage })));
 const AssetsPage = lazy(() => import('./features/assets').then(m => ({ default: m.AssetsPage })));
 const PeoplePage = lazy(() => import('./features/people').then(m => ({ default: m.PeoplePage })));
+const ScriptLayout = lazy(() => import('./features/script').then(m => ({ default: m.ScriptLayout })));
 const ScriptPage = lazy(() => import('./features/script').then(m => ({ default: m.ScriptPage })));
+const BeatsPage = lazy(() => import('./features/script').then(m => ({ default: m.BeatsPage })));
+const RevisionsPage = lazy(() => import('./features/script').then(m => ({ default: m.RevisionsPage })));
 
 // Loading Component
 const LoadingFallback = () => (
@@ -76,7 +79,11 @@ function App() {
                     <Route path="scheduling/*" element={<SchedulingPage />} />
                     <Route path="assets/*" element={<AssetsPage />} />
                     <Route path="people/*" element={<PeoplePage />} />
-                    <Route path="script" element={<ScriptPage />} />
+                    <Route path="script" element={<ScriptLayout />}>
+                      <Route index element={<ScriptPage />} />
+                      <Route path="beats" element={<BeatsPage />} />
+                      <Route path="revisions" element={<RevisionsPage />} />
+                    </Route>
                   </Route>
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>

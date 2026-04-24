@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useProjects } from '../hooks/useProjects';
-import { MapPin, Clapperboard, User, ChevronLeft, ChevronRight, LayoutDashboard, Calendar, Package, Users, ScrollText } from 'lucide-react';
+import { MapPin, Clapperboard, User, ChevronLeft, ChevronRight, Calendar, Package, Users, ScrollText } from 'lucide-react';
 import icon from '../assets/icon.webp';
 import clsx from 'clsx';
 import { version } from '../../package.json';
@@ -39,7 +39,7 @@ export const Sidebar: React.FC = () => {
             )}
         >
             <div className={clsx("flex items-center mb-6 transition-all duration-300", isCollapsed ? "justify-center px-0 py-4" : "px-3 py-4 gap-2")}>
-                <NavLink to="/" className={clsx("flex items-center gap-2", isCollapsed ? "justify-center" : "")}>
+                <NavLink to={activeProjectId ? `/project/${activeProjectId}` : "/"} className={clsx("flex items-center gap-2", isCollapsed ? "justify-center" : "")}>
                     <div className="w-8 h-8 flex items-center justify-center shrink-0 p-1.5">
                         <img src={icon} alt="Kopfkino Logo" className="w-full h-full object-contain" />
                     </div>
@@ -54,11 +54,6 @@ export const Sidebar: React.FC = () => {
             <nav className="flex flex-col gap-1 flex-1">
                 {activeProjectId && (
                     <>
-                        <NavLink to={`/project/${activeProjectId}`} end className={linkClass} title={isCollapsed ? "Dashboard" : undefined}>
-                            <LayoutDashboard size={20} className="shrink-0" />
-                            {!isCollapsed && <span>Dashboard</span>}
-                        </NavLink>
-
                         <SectionLabel label="Writing" collapsed={isCollapsed} />
                         <NavLink to={`/project/${activeProjectId}/script`} className={linkClass} title={isCollapsed ? "Script" : undefined}>
                             <ScrollText size={20} className="shrink-0" />

@@ -14,7 +14,8 @@ import {
 import type { Unsubscribe } from 'firebase/firestore';
 import { db } from './firebase';
 import type {
-    Location, Scene, Settings, Character, Project, Schedule, Asset, Person, Script,
+    Location, Scene, Settings, Character, Project, Schedule, Asset, Person, Script, ScriptRevision,
+    Act, Beat,
     ProjectRole, ProjectMember, ProjectRef, Invitation,
 } from '../types/types';
 import type { User } from 'firebase/auth';
@@ -33,6 +34,9 @@ const COLLECTIONS = {
     ASSETS: 'assets',
     PEOPLE: 'people',
     SCRIPT: 'script',
+    SCRIPT_REVISIONS: 'scriptRevisions',
+    ACTS: 'scriptActs',
+    BEATS: 'scriptBeats',
     PROJECT_REFS: 'projectRefs',
     INVITATIONS: 'invitations',
     USERS: 'users',
@@ -479,6 +483,78 @@ export const storage = {
     setScriptFrozen: async (projectId: string, frozen: boolean) => {
         const scriptDoc = doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCRIPT, 'main');
         await setDoc(scriptDoc, { frozen }, { merge: true });
+    },
+
+    // -------------------------------------------------------------------------
+    // Script Revisions
+    // -------------------------------------------------------------------------
+
+    subscribeToScriptRevisions: (projectId: string, callback: (revisions: ScriptRevision[]) => void): Unsubscribe => {
+        const col = getProjectCollection(projectId, COLLECTIONS.SCRIPT_REVISIONS);
+        return onSnapshot(query(col), (snap) => {
+            const revisions = snap.docs.map(d => d.data() as ScriptRevision);
+            revisions.sort((a, b) => b.createdAt - a.createdAt);
+            callback(revisions);
+        });
+    },
+
+    saveScriptRevision: async (projectId: string, revision: ScriptRevision) => {
+        const ref = doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCRIPT_REVISIONS, revision.id);
+        await setDoc(ref, revision);
+    },
+
+    deleteScriptRevision: async (projectId: string, revisionId: string) => {
+        await deleteDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCRIPT_REVISIONS, revisionId));
+    },
+
+    // -------------------------------------------------------------------------
+    // Acts
+    // -------------------------------------------------------------------------
+
+    subscribeToActs: (projectId: string, callback: (acts: Act[]) => void): Unsubscribe => {
+        const col = getProjectCollection(projectId, COLLECTIONS.ACTS);
+        return onSnapshot(query(col), (snap) => {
+            const acts = snap.docs.map(d => d.data() as Act);
+            acts.sort((a, b) => a.order - b.order);
+            callback(acts);
+        });
+    },
+
+    saveAct: async (projectId: string, act: Act) => {
+        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.ACTS, act.id), act);
+    },
+
+    deleteAct: async (projectId: string, actId: string) => {
+        await deleteDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.ACTS, actId));
+    },
+
+    // -------------------------------------------------------------------------
+    // Beats
+    // -------------------------------------------------------------------------
+
+    subscribeToBeats: (projectId: string, callback: (beats: Beat[]) => void): Unsubscribe => {
+        const col = getProjectCollection(projectId, COLLECTIONS.BEATS);
+        return onSnapshot(query(col), (snap) => {
+            const beats = snap.docs.map(d => d.data() as Beat);
+            beats.sort((a, b) => a.order - b.order);
+            callback(beats);
+        });
+    },
+
+    saveBeat: async (projectId: string, beat: Beat) => {
+        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.BEATS, beat.id), beat);
+    },
+
+    deleteBeat: async (projectId: string, beatId: string) => {
+        await deleteDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.BEATS, beatId));
+    },
+
+    saveBeats: async (projectId: string, beats: Beat[]) => {
+        const batch = writeBatch(db);
+        beats.forEach(beat => {
+            batch.set(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.BEATS, beat.id), beat);
+        });
+        await batch.commit();
     },
 
 };

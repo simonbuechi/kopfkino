@@ -161,3 +161,29 @@ export interface Script {
     frozen?: boolean;
 }
 
+export interface Act {
+    id: string;
+    projectId: string;
+    name: string;
+    description: string;
+    order: number;
+}
+
+export interface Beat {
+    id: string;
+    projectId: string;
+    actId: string;
+    name: string;
+    description: string;
+    order: number;
+    sceneRefs?: string[];
+}
+
+export interface ScriptRevision {
+    id: string;
+    projectId: string;
+    name: string;
+    content: string;
+    createdAt: number;
+}
+

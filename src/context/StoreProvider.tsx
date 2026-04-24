@@ -1,5 +1,5 @@
 import { useReducer, useEffect, useCallback, useMemo } from 'react';
-import type { Location, Scene, Shot, Person, Schedule, Asset, Character, Settings, Script } from '../types/types';
+import type { Location, Scene, Shot, Person, Schedule, Asset, Character, Settings, Script, ScriptRevision, Act, Beat } from '../types/types';
 import { storage } from '../services/storage';
 import { useAuth } from '../hooks/useAuth';
 import { useProjects } from '../hooks/useProjects';
@@ -13,7 +13,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     const { activeProjectId, activeProjectRole } = useProjects();
     const [state, dispatch] = useReducer(storeReducer, storeInitialState);
 
-    const { locations, scenes, characters, schedules, assets, people, settings, script } = state;
+    const { locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats } = state;
 
     const canUserWrite = canWrite(activeProjectId, activeProjectRole);
 
@@ -42,6 +42,9 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
             dispatch({ type: 'SET_SETTINGS', payload: data || DEFAULT_SETTINGS });
         });
         const unsubScript = storage.subscribeToScript(activeProjectId, (payload) => dispatch({ type: 'SET_SCRIPT', payload }));
+        const unsubScriptRevisions = storage.subscribeToScriptRevisions(activeProjectId, (payload) => dispatch({ type: 'SET_SCRIPT_REVISIONS', payload }));
+        const unsubActs = storage.subscribeToActs(activeProjectId, (payload) => dispatch({ type: 'SET_ACTS', payload }));
+        const unsubBeats = storage.subscribeToBeats(activeProjectId, (payload) => dispatch({ type: 'SET_BEATS', payload }));
 
         return () => {
             unsubLocations();
@@ -52,6 +55,9 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
             unsubPeople();
             unsubSettings();
             unsubScript();
+            unsubScriptRevisions();
+            unsubActs();
+            unsubBeats();
         };
     }, [user, activeProjectId]);
 
@@ -228,8 +234,36 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         await guardedWrite(id => storage.setScriptFrozen(id, frozen));
     }, [guardedWrite]);
 
+    const saveScriptRevision = useCallback(async (revision: ScriptRevision) => {
+        await guardedWrite(id => storage.saveScriptRevision(id, revision));
+    }, [guardedWrite]);
+
+    const deleteScriptRevision = useCallback(async (revisionId: string) => {
+        await guardedWrite(id => storage.deleteScriptRevision(id, revisionId));
+    }, [guardedWrite]);
+
+    const saveAct = useCallback(async (act: Act) => {
+        await guardedWrite(id => storage.saveAct(id, act));
+    }, [guardedWrite]);
+
+    const deleteAct = useCallback(async (actId: string) => {
+        await guardedWrite(id => storage.deleteAct(id, actId));
+    }, [guardedWrite]);
+
+    const saveBeat = useCallback(async (beat: Beat) => {
+        await guardedWrite(id => storage.saveBeat(id, beat));
+    }, [guardedWrite]);
+
+    const deleteBeat = useCallback(async (beatId: string) => {
+        await guardedWrite(id => storage.deleteBeat(id, beatId));
+    }, [guardedWrite]);
+
+    const saveBeats = useCallback(async (newBeats: Beat[]) => {
+        await guardedWrite(id => storage.saveBeats(id, newBeats));
+    }, [guardedWrite]);
+
     const contextValue = useMemo(() => ({
-        locations, scenes, characters, schedules, assets, people, settings, script,
+        locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats,
         saveLocation, deleteLocation, replaceLocations, reorderLocations,
         addScene, deleteScene, replaceScenes, reorderScenes,
         addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene,
@@ -238,9 +272,10 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         addSchedule, deleteSchedule, updateSchedule,
         addAsset, deleteAsset, updateAsset, reorderAssets,
         addPerson, deletePerson, updatePerson, reorderPeople,
-        saveScript, setScriptFrozen,
+        saveScript, setScriptFrozen, saveScriptRevision, deleteScriptRevision,
+        saveAct, deleteAct, saveBeat, deleteBeat, saveBeats,
     }), [
-        locations, scenes, characters, schedules, assets, people, settings, script,
+        locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats,
         saveLocation, deleteLocation, replaceLocations, reorderLocations,
         addScene, deleteScene, replaceScenes, reorderScenes,
         addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene,
@@ -249,7 +284,8 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         addSchedule, deleteSchedule, updateSchedule,
         addAsset, deleteAsset, updateAsset, reorderAssets,
         addPerson, deletePerson, updatePerson, reorderPeople,
-        saveScript, setScriptFrozen,
+        saveScript, setScriptFrozen, saveScriptRevision, deleteScriptRevision,
+        saveAct, deleteAct, saveBeat, deleteBeat, saveBeats,
     ]);
 
     return (
