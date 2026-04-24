@@ -4,6 +4,7 @@ import { useStore } from '../../hooks/useStore';
 import { MapPin, Users, Clapperboard, Video, ExternalLink, Plus, Eye, FileText, ArrowRight } from 'lucide-react';
 import { useProjects } from '../../hooks/useProjects';
 import { formatTime } from '../../utils/time';
+import { isSafeUrl } from '../../utils/url';
 
 const CHARS_PER_LINE = 60;
 const LINES_PER_PAGE = 55;
@@ -72,7 +73,7 @@ export const ProjectDashboard: React.FC = () => {
                 <p className="text-primary-500 dark:text-primary-400 max-w-2xl mb-4">
                     {activeProject?.description || 'Overview and statistics'}
                 </p>
-                {activeProject?.url && /^https?:\/\//i.test(activeProject.url) && (
+                {activeProject?.url && isSafeUrl(activeProject.url) && (
                     <a
                         href={activeProject.url}
                         target="_blank"

@@ -1,5 +1,7 @@
 import type { ProjectRole } from '../types/types';
 
+export const PERMISSION_DENIED_MSG = "You don't have permission to edit this project.";
+
 /**
  * Returns true when a write should be allowed.
  * Centralises the guard logic used throughout StoreProvider.

@@ -2,6 +2,7 @@ import React, { useReducer, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { Button } from '../../components/ui/Button';
 import { MapPin, Trash2, ArrowLeft, ImageIcon, Loader2, X, Upload, Star } from 'lucide-react';
 import { deleteImageFromUrl, uploadFile } from '../../services/storageService';
@@ -27,48 +28,49 @@ type LocationAction =
     | { type: 'SET_MULTIPLE'; payload: Partial<LocationState> }
     | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
     | { type: 'SAVED' }
-    | { type: 'SYNC'; payload: Partial<LocationState> }
-    | { type: 'MARK_CLEAN' };
+    | { type: 'SYNC'; payload: Partial<LocationState> };
+
+const initialLocationState: LocationState = {
+    name: '',
+    description: '',
+    geolocation: '',
+    comment: '',
+    images: [],
+    thumbnailUrl: '',
+    type: undefined,
+    isDirty: false,
+    saveStatus: null,
+};
+
+function locationReducer(state: LocationState, action: LocationAction): LocationState {
+    switch (action.type) {
+        case 'SET_FIELD':
+            return { ...state, [action.field]: action.value, isDirty: true, saveStatus: null };
+        case 'SET_MULTIPLE':
+            return { ...state, ...action.payload, isDirty: true, saveStatus: null };
+        case 'SET_STATUS':
+            return { ...state, saveStatus: action.status };
+        case 'SAVED':
+            return { ...state, saveStatus: 'saved', isDirty: false };
+        case 'SYNC':
+            return { ...state, ...action.payload, isDirty: false };
+        default:
+            return state;
+    }
+}
 
 export const LocationDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { locations, deleteLocation, saveLocation, scenes } = useStore();
     const { activeProjectId } = useProjects();
+    const { confirm, confirmDialog } = useConfirmDialog();
 
     // Derived state
     const location = locations.find((l) => l.id === id);
     const associatedScenes = scenes.filter(s => s.locationId === id);
 
-    // Local state for editing using a reducer
-    const [state, dispatch] = useReducer((state: LocationState, action: LocationAction): LocationState => {
-        switch (action.type) {
-            case 'SET_FIELD':
-                return { ...state, [action.field]: action.value, isDirty: true, saveStatus: null };
-            case 'SET_MULTIPLE':
-                return { ...state, ...action.payload, isDirty: true, saveStatus: null };
-            case 'SET_STATUS':
-                return { ...state, saveStatus: action.status };
-            case 'SAVED':
-                return { ...state, saveStatus: 'saved', isDirty: false };
-            case 'SYNC':
-                return { ...state, ...action.payload, isDirty: false };
-            case 'MARK_CLEAN':
-                return { ...state, isDirty: false };
-            default:
-                return state;
-        }
-    }, {
-        name: '',
-        description: '',
-        geolocation: '',
-        comment: '',
-        images: [],
-        thumbnailUrl: '',
-        type: undefined,
-        isDirty: false,
-        saveStatus: null
-    });
+    const [state, dispatch] = useReducer(locationReducer, initialLocationState);
 
     const { name, description, geolocation, comment, images, thumbnailUrl, type, isDirty, saveStatus } = state;
 
@@ -120,7 +122,7 @@ export const LocationDetail: React.FC = () => {
                     location.type === type;
 
                 if (matches) {
-                    dispatch({ type: 'MARK_CLEAN' });
+                    dispatch({ type: 'SYNC', payload: {} });
                 }
             }
         }
@@ -199,31 +201,6 @@ export const LocationDetail: React.FC = () => {
         };
     }, []);
 
-    if (!location) {
-        return <div className="p-8">Location not found</div>;
-    }
-
-    const handleDelete = () => {
-        if (confirm('Are you sure you want to delete this location?')) {
-            deleteLocation(location.id);
-            navigate('..');
-        }
-    };
-
-    const handleDeleteImage = async (imageUrl: string) => {
-        if (confirm('Delete this image?')) {
-            // 1. Update Local State (Effect will trigger save)
-            const updatedImages = images.filter((img: string) => img !== imageUrl);
-            dispatch({ type: 'SET_MULTIPLE', payload: {
-                images: updatedImages,
-                thumbnailUrl: thumbnailUrl === imageUrl ? (updatedImages[0] || '') : thumbnailUrl
-            }});
-
-            // 2. Delete from Storage (fire and forget)
-            await deleteImageFromUrl(imageUrl);
-        }
-    };
-
     const { fileInputRef, isUploading, handleClick: handleImageUploadClick, handleChange: onFileSelected } = useFileUpload(
         async (file) => {
             if (!activeProjectId) return;
@@ -240,6 +217,31 @@ export const LocationDetail: React.FC = () => {
             }
         }
     );
+
+    if (!location) {
+        return <div className="p-8">Location not found</div>;
+    }
+
+    const handleDelete = async () => {
+        if (await confirm('Are you sure you want to delete this location?', { title: 'Delete Location', confirmLabel: 'Delete' })) {
+            deleteLocation(location.id);
+            navigate('..');
+        }
+    };
+
+    const handleDeleteImage = async (imageUrl: string) => {
+        if (await confirm('Delete this image?', { title: 'Delete Image', confirmLabel: 'Delete' })) {
+            // 1. Update Local State (Effect will trigger save)
+            const updatedImages = images.filter((img: string) => img !== imageUrl);
+            dispatch({ type: 'SET_MULTIPLE', payload: {
+                images: updatedImages,
+                thumbnailUrl: thumbnailUrl === imageUrl ? (updatedImages[0] || '') : thumbnailUrl
+            }});
+
+            // 2. Delete from Storage (fire and forget)
+            await deleteImageFromUrl(imageUrl);
+        }
+    };
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto">
@@ -423,6 +425,7 @@ export const LocationDetail: React.FC = () => {
                     <p className="text-primary-500 italic">No scenes linked to this location.</p>
                 )}
             </section>
+            {confirmDialog}
         </div>
     );
 };

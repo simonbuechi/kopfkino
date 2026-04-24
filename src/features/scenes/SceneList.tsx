@@ -1,8 +1,10 @@
+'use no memo';
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { useCSVImportExport } from '../../hooks/useCSVImportExport';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { formatTime } from '../../utils/time';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -115,11 +117,13 @@ export const SceneList: React.FC = () => {
     const { scenes, locations, characters, replaceScenes, reorderScenes } = useStore();
     const { activeProjectId } = useProjects();
     const navigate = useNavigate();
+    const { confirm, confirmDialog } = useConfirmDialog();
     const [viewMode, setViewMode] = useState<'slim' | 'expanded'>('expanded');
 
     const { sensors, handleDragEnd } = useSortableList(scenes, reorderScenes);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    // eslint-disable-next-line react-hooks/incompatible-library
     const virtualizer = useVirtualizer({
         count: scenes.length,
         getScrollElement: () => scrollRef.current,
@@ -162,6 +166,7 @@ export const SceneList: React.FC = () => {
         }),
         entityName: 'scene',
         filename: 'kopfkino_scenes.csv',
+        confirmImport: (message) => confirm(message, { title: 'Import Scenes', confirmLabel: 'Delete & Import' }),
     });
 
     return (
@@ -254,6 +259,7 @@ export const SceneList: React.FC = () => {
                     </SortableContext>
                 </DndContext>
             )}
+            {confirmDialog}
         </div>
     );
 };

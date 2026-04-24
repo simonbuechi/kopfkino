@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useProjects } from '../../hooks/useProjects';
 import { useAuth } from '../../hooks/useAuth';
 import { useStore } from '../../hooks/useStore';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { isSafeUrl } from '../../utils/url';
 import { storage } from '../../services/storage';
 import { Plus, Trash2, Edit2, Play, MapPin, Users, Clapperboard, Film, Clock, Video, ExternalLink, Share2, Crown, Eye } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -16,6 +18,7 @@ export const ProjectList: React.FC = () => {
     const { user } = useAuth();
     const { locations, scenes, characters } = useStore();
     const navigate = useNavigate();
+    const { confirm, confirmDialog } = useConfirmDialog();
     const [isCreating, setIsCreating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [sharingProject, setSharingProject] = useState<Project | null>(null);
@@ -44,11 +47,6 @@ export const ProjectList: React.FC = () => {
         return { ...otherStats, [activeProjectId]: activeStats };
     }, [otherStats, activeProjectId, activeStats]);
 
-    const isSafeUrl = useCallback((val: string) => {
-        if (!val) return true;
-        try { return new URL(val).protocol.startsWith('http'); }
-        catch { return false; }
-    }, []);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -86,7 +84,7 @@ export const ProjectList: React.FC = () => {
 
     const handleDelete = async (e: React.MouseEvent, projectId: string) => {
         e.stopPropagation();
-        if (confirm('Are you sure you want to delete this project?')) {
+        if (await confirm('Are you sure you want to delete this project?', { title: 'Delete Project', confirmLabel: 'Delete' })) {
             await deleteProject(projectId);
         }
     };
@@ -313,6 +311,7 @@ export const ProjectList: React.FC = () => {
                     onClose={() => setSharingProject(null)}
                 />
             )}
+            {confirmDialog}
         </div>
     );
 };

@@ -6,10 +6,58 @@ import { Button } from '../../components/ui/Button';
 import { ArrowLeft, Save, Trash2, User, Loader2, Upload, X } from 'lucide-react';
 import { ImageModal } from '../../components/ui/ImageModal';
 import { useAuth } from '../../hooks/useAuth';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import type { Character, CharacterType } from '../../types/types';
 import { useDebounce } from '../../hooks/useDebounce';
 import toast from 'react-hot-toast';
 import { uploadFile, deleteImageFromUrl } from '../../services/storageService';
+
+interface CharacterState {
+    name: string;
+    description: string;
+    comment: string;
+    imageUrl?: string;
+    type?: CharacterType;
+    isDirty: boolean;
+    saveStatus: 'saved' | 'saving' | 'error' | null;
+}
+
+type CharacterAction =
+    | { type: 'SET_FIELD'; field: string; value: string | number | boolean | string[] | undefined | CharacterType }
+    | { type: 'SET_MULTIPLE'; payload: Partial<CharacterState> }
+    | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
+    | { type: 'SAVED' }
+    | { type: 'SYNC'; payload: Partial<CharacterState> }
+    | { type: 'RESET' };
+
+const initialCharacterState: CharacterState = {
+    name: '',
+    description: '',
+    comment: '',
+    imageUrl: undefined,
+    type: undefined,
+    isDirty: false,
+    saveStatus: null,
+};
+
+function characterReducer(state: CharacterState, action: CharacterAction): CharacterState {
+    switch (action.type) {
+        case 'SET_FIELD':
+            return { ...state, [action.field]: action.value, isDirty: true, saveStatus: null };
+        case 'SET_MULTIPLE':
+            return { ...state, ...action.payload, isDirty: true, saveStatus: null };
+        case 'SET_STATUS':
+            return { ...state, saveStatus: action.status };
+        case 'SAVED':
+            return { ...state, saveStatus: 'saved', isDirty: false };
+        case 'SYNC':
+            return { ...state, ...action.payload, isDirty: false };
+        case 'RESET':
+            return initialCharacterState;
+        default:
+            return state;
+    }
+}
 
 export const CharacterDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -17,63 +65,12 @@ export const CharacterDetail: React.FC = () => {
     const { characters, addCharacter, deleteCharacter } = useStore();
     const { user } = useAuth();
     const { activeProjectId } = useProjects();
+    const { confirm, confirmDialog } = useConfirmDialog();
 
     const isNew = id === 'new';
     const existingCharacter = characters.find(c => c.id === id);
 
-    interface CharacterState {
-        name: string;
-        description: string;
-        comment: string;
-        imageUrl?: string;
-        type?: CharacterType;
-        isDirty: boolean;
-        saveStatus: 'saved' | 'saving' | 'error' | null;
-    }
-
-    type CharacterAction = 
-        | { type: 'SET_FIELD'; field: string; value: string | number | boolean | string[] | undefined | CharacterType }
-        | { type: 'SET_MULTIPLE'; payload: Partial<CharacterState> }
-        | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
-        | { type: 'SAVED' }
-        | { type: 'SYNC'; payload: Partial<CharacterState> }
-        | { type: 'RESET' };
-
-    // Local state for editing using a reducer
-    const [state, dispatch] = useReducer((state: CharacterState, action: CharacterAction): CharacterState => {
-        switch (action.type) {
-            case 'SET_FIELD':
-                return { ...state, [action.field]: action.value, isDirty: true, saveStatus: null };
-            case 'SET_MULTIPLE':
-                return { ...state, ...action.payload, isDirty: true, saveStatus: null };
-            case 'SET_STATUS':
-                return { ...state, saveStatus: action.status };
-            case 'SAVED':
-                return { ...state, saveStatus: 'saved', isDirty: false };
-            case 'SYNC':
-                return { ...state, ...action.payload, isDirty: false };
-            case 'RESET':
-                return {
-                    name: '',
-                    description: '',
-                    comment: '',
-                    imageUrl: undefined,
-                    type: undefined,
-                    isDirty: false,
-                    saveStatus: null
-                };
-            default:
-                return state;
-        }
-    }, {
-        name: '',
-        description: '',
-        comment: '',
-        imageUrl: undefined,
-        type: undefined,
-        isDirty: false,
-        saveStatus: null
-    });
+    const [state, dispatch] = useReducer(characterReducer, initialCharacterState);
 
     const { name, description, comment, imageUrl, type, isDirty, saveStatus } = state;
 
@@ -207,7 +204,7 @@ export const CharacterDetail: React.FC = () => {
     };
 
     const handleDelete = async () => {
-        if (confirm('Are you sure you want to delete this character?')) {
+        if (await confirm('Are you sure you want to delete this character?', { title: 'Delete Character', confirmLabel: 'Delete' })) {
             await deleteCharacter(id!);
             navigate('..');
         }
@@ -233,7 +230,7 @@ export const CharacterDetail: React.FC = () => {
 
     const handleRemoveImage = async () => {
         if (!imageUrl) return;
-        if (confirm('Remove this image?')) {
+        if (await confirm('Remove this image?', { title: 'Remove Image', confirmLabel: 'Remove' })) {
             if (imageUrl.includes('firebasestorage')) {
                 await deleteImageFromUrl(imageUrl);
             }
@@ -382,6 +379,7 @@ export const CharacterDetail: React.FC = () => {
                     onClose={() => setIsFullscreen(false)}
                 />
             )}
+            {confirmDialog}
         </div>
     );
 };

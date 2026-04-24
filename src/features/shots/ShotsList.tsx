@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useAuth } from '../../hooks/useAuth';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Edit, Trash2, Plus, Image as ImageIcon, Loader2, GripVertical, List, Grid, Download, Timer, Film, Volume2 } from 'lucide-react';
@@ -224,9 +225,7 @@ const SortableShotItem = ({
                                 type="button"
                                 onClick={() => {
                                     if (shot.videoUrl) {
-                                        if (confirm("Delete video?")) {
-                                            onRemoveVideo(shot);
-                                        }
+                                        onRemoveVideo(shot);
                                     } else {
                                         videoInputRef.current?.click();
                                     }
@@ -363,9 +362,7 @@ const SortableShotItem = ({
                                 type="button"
                                 onClick={() => {
                                     if (shot.videoUrl) {
-                                        if (confirm("Delete video?")) {
-                                            onRemoveVideo(shot);
-                                        }
+                                        onRemoveVideo(shot);
                                     } else {
                                         videoInputRef.current?.click();
                                     }
@@ -408,6 +405,7 @@ const SortableShotItem = ({
 export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
     const { deleteShotFromScene, updateShotInScene, reorderShotsInScene } = useStore();
     const { user } = useAuth();
+    const { confirm, confirmDialog } = useConfirmDialog();
     const navigate = useNavigate();
     const [uploadingId, setUploadingId] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'preview' | 'slim' | 'detailed'>('detailed');
@@ -439,8 +437,8 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    const handleDelete = (id: string) => {
-        if (confirm('Delete this shot?')) {
+    const handleDelete = async (id: string) => {
+        if (await confirm('Delete this shot?', { title: 'Delete Shot', confirmLabel: 'Delete' })) {
             deleteShotFromScene(sceneId, id);
         }
     };
@@ -477,6 +475,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
 
     const handleRemoveVideo = async (shot: Shot) => {
         if (!shot.videoUrl) return;
+        if (!await confirm('Delete video?', { title: 'Delete Video', confirmLabel: 'Delete' })) return;
 
         // Optimistic update: remove from UI first (or wait? let's wait to be safe)
         try {
@@ -637,7 +636,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                     />
                 </div>
             )}
-
+            {confirmDialog}
         </div >
     );
 };

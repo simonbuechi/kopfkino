@@ -218,7 +218,9 @@ export const ScheduleForm: React.FC = () => {
                                         <input
                                             type="number"
                                             value={item.duration}
-                                            onChange={(e) => handleUpdateItem(item.id, { duration: parseInt(e.target.value) || 0 })}
+                                            min={0}
+                                            max={1440}
+                                            onChange={(e) => handleUpdateItem(item.id, { duration: Math.max(0, parseInt(e.target.value) || 0) })}
                                             className="w-full bg-primary-50 dark:bg-primary-800 border-none rounded-lg px-2 py-1.5 text-sm"
                                         />
                                     </div>

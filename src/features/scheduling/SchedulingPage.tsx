@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { useStore } from '../../hooks/useStore';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { ScheduleForm } from './ScheduleForm';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Button } from '../../components/ui/Button';
@@ -10,6 +11,14 @@ import { Card } from '../../components/ui/Card';
 export const SchedulingPage: React.FC = () => {
     const navigate = useNavigate();
     const { schedules, deleteSchedule } = useStore();
+    const { confirm, confirmDialog } = useConfirmDialog();
+
+    const handleDeleteSchedule = async (e: React.MouseEvent, scheduleId: string) => {
+        e.stopPropagation();
+        if (await confirm('Are you sure you want to delete this schedule?', { title: 'Delete Schedule', confirmLabel: 'Delete' })) {
+            deleteSchedule(scheduleId);
+        }
+    };
 
     return (
         <Routes>
@@ -60,12 +69,7 @@ export const SchedulingPage: React.FC = () => {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (window.confirm('Are you sure you want to delete this schedule?')) {
-                                                    deleteSchedule(schedule.id);
-                                                }
-                                            }}
+                                            onClick={(e) => handleDeleteSchedule(e, schedule.id)}
                                             className="text-danger-500 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/30"
                                         >
                                             Delete
@@ -75,6 +79,7 @@ export const SchedulingPage: React.FC = () => {
                             ))}
                         </div>
                     )}
+                    {confirmDialog}
                 </>
             } />
             <Route path="new" element={<ScheduleForm />} />

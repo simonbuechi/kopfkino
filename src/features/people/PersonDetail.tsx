@@ -4,6 +4,7 @@ import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
 import { Trash2, ArrowLeft, Loader2, Phone, Mail, Briefcase, Save } from 'lucide-react';
 import { useProjects } from '../../hooks/useProjects';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import type { Person, PersonType } from '../../types/types';
 
 export const PersonDetail: React.FC = () => {
@@ -11,6 +12,7 @@ export const PersonDetail: React.FC = () => {
     const navigate = useNavigate();
     const { people, deletePerson, addPerson, updatePerson } = useStore();
     const { activeProjectId } = useProjects();
+    const { confirm, confirmDialog } = useConfirmDialog();
 
     const existingPerson = people.find((p) => p.id === id);
     const isNew = !id || id === 'new';
@@ -111,8 +113,8 @@ export const PersonDetail: React.FC = () => {
         }
     };
 
-    const handleDelete = () => {
-        if (confirm('Are you sure you want to delete this person?')) {
+    const handleDelete = async () => {
+        if (await confirm('Are you sure you want to delete this person?', { title: 'Delete Person', confirmLabel: 'Delete' })) {
             if (existingPerson) deletePerson(existingPerson.id);
             navigate('..');
         }
@@ -253,6 +255,7 @@ export const PersonDetail: React.FC = () => {
                     </section>
                 </div>
             </div>
+            {confirmDialog}
         </div>
     );
 };

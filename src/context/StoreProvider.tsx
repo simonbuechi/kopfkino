@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useProjects } from '../hooks/useProjects';
 import { StoreContext } from './StoreContextObject';
 import { storeReducer, storeInitialState, DEFAULT_SETTINGS } from './reducers';
-import { canWrite } from '../utils/writeGuard';
+import { canWrite, PERMISSION_DENIED_MSG } from '../utils/writeGuard';
 import toast from 'react-hot-toast';
 
 export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
@@ -16,6 +16,15 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     const { locations, scenes, characters, schedules, assets, people, settings, script } = state;
 
     const canUserWrite = canWrite(activeProjectId, activeProjectRole);
+
+    const guardedWrite = useCallback(
+        async (fn: (projectId: string) => Promise<void>): Promise<void> => {
+            if (!activeProjectId) return;
+            if (!canUserWrite) { toast.error(PERMISSION_DENIED_MSG); return; }
+            await fn(activeProjectId);
+        },
+        [activeProjectId, canUserWrite]
+    );
 
     useEffect(() => {
         if (!user || !activeProjectId) {
@@ -48,126 +57,103 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Locations
     const saveLocation = useCallback(async (loc: Location) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.saveLocation(activeProjectId, loc);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.saveLocation(id, loc));
+    }, [guardedWrite]);
 
-    const deleteLocation = useCallback(async (id: string) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.deleteLocation(activeProjectId, id);
-    }, [activeProjectId, canUserWrite]);
+    const deleteLocation = useCallback(async (locId: string) => {
+        await guardedWrite(id => storage.deleteLocation(id, locId));
+    }, [guardedWrite]);
 
     const replaceLocations = useCallback(async (newLocations: Location[]) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.replaceAllLocations(activeProjectId, newLocations);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.replaceAllLocations(id, newLocations));
+    }, [guardedWrite]);
 
     const reorderLocations = useCallback(async (newOrder: Location[]) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        dispatch({ type: 'SET_LOCATIONS', payload: newOrder });
-        const locationsWithOrder = newOrder.map((loc, index) => ({ ...loc, order: index }));
-        await storage.updateLocationOrders(activeProjectId, locationsWithOrder);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => {
+            dispatch({ type: 'SET_LOCATIONS', payload: newOrder });
+            const locationsWithOrder = newOrder.map((loc, index) => ({ ...loc, order: index }));
+            return storage.updateLocationOrders(id, locationsWithOrder);
+        });
+    }, [guardedWrite]);
 
     // Scenes
     const addScene = useCallback(async (scene: Scene) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.saveScene(activeProjectId, scene);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.saveScene(id, scene));
+    }, [guardedWrite]);
 
-    const deleteScene = useCallback(async (id: string) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.deleteScene(activeProjectId, id);
-    }, [activeProjectId, canUserWrite]);
+    const deleteScene = useCallback(async (sceneId: string) => {
+        await guardedWrite(id => storage.deleteScene(id, sceneId));
+    }, [guardedWrite]);
 
     const replaceScenes = useCallback(async (newScenes: Scene[]) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.replaceAllScenes(activeProjectId, newScenes);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.replaceAllScenes(id, newScenes));
+    }, [guardedWrite]);
 
     const reorderScenes = useCallback(async (newOrder: Scene[]) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        dispatch({ type: 'SET_SCENES', payload: newOrder });
-        const scenesWithOrder = newOrder.map((scene, index) => ({ ...scene, order: index }));
-        await storage.updateSceneOrders(activeProjectId, scenesWithOrder);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => {
+            dispatch({ type: 'SET_SCENES', payload: newOrder });
+            const scenesWithOrder = newOrder.map((scene, index) => ({ ...scene, order: index }));
+            return storage.updateSceneOrders(id, scenesWithOrder);
+        });
+    }, [guardedWrite]);
 
     // Shots — embedded in Scenes
     const addShotToScene = useCallback(async (sceneId: string, shot: Shot) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        const scene = scenes.find(s => s.id === sceneId);
-        if (!scene) return;
-        const updatedScene = { ...scene, shots: [...(scene.shots || []), shot] };
-        await storage.saveScene(activeProjectId, updatedScene);
-    }, [activeProjectId, canUserWrite, scenes]);
+        await guardedWrite(id => {
+            const scene = scenes.find(s => s.id === sceneId);
+            if (!scene) return Promise.resolve();
+            return storage.saveScene(id, { ...scene, shots: [...(scene.shots || []), shot] });
+        });
+    }, [guardedWrite, scenes]);
 
     const deleteShotFromScene = useCallback(async (sceneId: string, shotId: string) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        const scene = scenes.find(s => s.id === sceneId);
-        if (!scene?.shots) return;
-        const updatedScene = { ...scene, shots: scene.shots.filter(s => s.id !== shotId) };
-        await storage.saveScene(activeProjectId, updatedScene);
-    }, [activeProjectId, canUserWrite, scenes]);
+        await guardedWrite(id => {
+            const scene = scenes.find(s => s.id === sceneId);
+            if (!scene?.shots) return Promise.resolve();
+            return storage.saveScene(id, { ...scene, shots: scene.shots.filter(s => s.id !== shotId) });
+        });
+    }, [guardedWrite, scenes]);
 
     const updateShotInScene = useCallback(async (sceneId: string, shot: Shot) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        const scene = scenes.find(s => s.id === sceneId);
-        if (!scene?.shots) return;
-        const updatedScene = { ...scene, shots: scene.shots.map(s => s.id === shot.id ? shot : s) };
-        await storage.saveScene(activeProjectId, updatedScene);
-    }, [activeProjectId, canUserWrite, scenes]);
+        await guardedWrite(id => {
+            const scene = scenes.find(s => s.id === sceneId);
+            if (!scene?.shots) return Promise.resolve();
+            return storage.saveScene(id, { ...scene, shots: scene.shots.map(s => s.id === shot.id ? shot : s) });
+        });
+    }, [guardedWrite, scenes]);
 
     const reorderShotsInScene = useCallback(async (sceneId: string, newShots: Shot[]) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        const scene = scenes.find(s => s.id === sceneId);
-        if (!scene) return;
-        await storage.saveScene(activeProjectId, { ...scene, shots: newShots });
-    }, [activeProjectId, canUserWrite, scenes]);
+        await guardedWrite(id => {
+            const scene = scenes.find(s => s.id === sceneId);
+            if (!scene) return Promise.resolve();
+            return storage.saveScene(id, { ...scene, shots: newShots });
+        });
+    }, [guardedWrite, scenes]);
 
     // Characters
     const addCharacter = useCallback(async (character: Character) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.saveCharacter(activeProjectId, character);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.saveCharacter(id, character));
+    }, [guardedWrite]);
 
-    const deleteCharacter = useCallback(async (id: string) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.deleteCharacter(activeProjectId, id);
-    }, [activeProjectId, canUserWrite]);
+    const deleteCharacter = useCallback(async (charId: string) => {
+        await guardedWrite(id => storage.deleteCharacter(id, charId));
+    }, [guardedWrite]);
 
     const updateCharacter = useCallback(async (character: Character) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.saveCharacter(activeProjectId, character);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.saveCharacter(id, character));
+    }, [guardedWrite]);
 
     const replaceCharacters = useCallback(async (newCharacters: Character[]) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.replaceAllCharacters(activeProjectId, newCharacters);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.replaceAllCharacters(id, newCharacters));
+    }, [guardedWrite]);
 
     const reorderCharacters = useCallback(async (newOrder: Character[]) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        dispatch({ type: 'SET_CHARACTERS', payload: newOrder });
-        const charactersWithOrder = newOrder.map((char, index) => ({ ...char, order: index }));
-        await storage.updateCharacterOrders(activeProjectId, charactersWithOrder);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => {
+            dispatch({ type: 'SET_CHARACTERS', payload: newOrder });
+            const charactersWithOrder = newOrder.map((char, index) => ({ ...char, order: index }));
+            return storage.updateCharacterOrders(id, charactersWithOrder);
+        });
+    }, [guardedWrite]);
 
     // Settings (user-scoped, always writable)
     const updateSettings = useCallback(async (newSettings: Settings) => {
@@ -177,90 +163,70 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Schedules
     const addSchedule = useCallback(async (schedule: Schedule) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.saveSchedule(activeProjectId, schedule);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.saveSchedule(id, schedule));
+    }, [guardedWrite]);
 
-    const deleteSchedule = useCallback(async (id: string) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.deleteSchedule(activeProjectId, id);
-    }, [activeProjectId, canUserWrite]);
+    const deleteSchedule = useCallback(async (scheduleId: string) => {
+        await guardedWrite(id => storage.deleteSchedule(id, scheduleId));
+    }, [guardedWrite]);
 
     const updateSchedule = useCallback(async (schedule: Schedule) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.saveSchedule(activeProjectId, schedule);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.saveSchedule(id, schedule));
+    }, [guardedWrite]);
 
     // Assets
     const addAsset = useCallback(async (asset: Asset) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.saveAsset(activeProjectId, asset);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.saveAsset(id, asset));
+    }, [guardedWrite]);
 
-    const deleteAsset = useCallback(async (id: string) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.deleteAsset(activeProjectId, id);
-    }, [activeProjectId, canUserWrite]);
+    const deleteAsset = useCallback(async (assetId: string) => {
+        await guardedWrite(id => storage.deleteAsset(id, assetId));
+    }, [guardedWrite]);
 
     const updateAsset = useCallback(async (asset: Asset) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.saveAsset(activeProjectId, asset);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.saveAsset(id, asset));
+    }, [guardedWrite]);
 
     const reorderAssets = useCallback(async (newOrder: Asset[]) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        dispatch({ type: 'SET_ASSETS', payload: newOrder });
-        const assetsWithOrder = newOrder.map((asset, index) => ({ ...asset, order: index }));
-        await storage.updateAssetOrders(activeProjectId, assetsWithOrder);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => {
+            dispatch({ type: 'SET_ASSETS', payload: newOrder });
+            const assetsWithOrder = newOrder.map((asset, index) => ({ ...asset, order: index }));
+            return storage.updateAssetOrders(id, assetsWithOrder);
+        });
+    }, [guardedWrite]);
 
     // People
     const addPerson = useCallback(async (person: Person) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.savePerson(activeProjectId, person);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.savePerson(id, person));
+    }, [guardedWrite]);
 
-    const deletePerson = useCallback(async (id: string) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.deletePerson(activeProjectId, id);
-    }, [activeProjectId, canUserWrite]);
+    const deletePerson = useCallback(async (personId: string) => {
+        await guardedWrite(id => storage.deletePerson(id, personId));
+    }, [guardedWrite]);
 
     const updatePerson = useCallback(async (person: Person) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.savePerson(activeProjectId, person);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.savePerson(id, person));
+    }, [guardedWrite]);
 
     const reorderPeople = useCallback(async (newOrder: Person[]) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        dispatch({ type: 'SET_PEOPLE', payload: newOrder });
-        const peopleWithOrder = newOrder.map((person, index) => ({ ...person, order: index }));
-        await storage.updatePersonOrders(activeProjectId, peopleWithOrder);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => {
+            dispatch({ type: 'SET_PEOPLE', payload: newOrder });
+            const peopleWithOrder = newOrder.map((person, index) => ({ ...person, order: index }));
+            return storage.updatePersonOrders(id, peopleWithOrder);
+        });
+    }, [guardedWrite]);
 
     // Script
     const saveScript = useCallback(async (content: string) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        const scriptData: Script = { projectId: activeProjectId, content, updatedAt: Date.now() };
-        await storage.saveScript(activeProjectId, scriptData);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => {
+            const scriptData: Script = { projectId: id, content, updatedAt: Date.now() };
+            return storage.saveScript(id, scriptData);
+        });
+    }, [guardedWrite]);
 
     const setScriptFrozen = useCallback(async (frozen: boolean) => {
-        if (!activeProjectId) return;
-        if (!canUserWrite) { toast.error('You don\'t have permission to edit this project.'); return; }
-        await storage.setScriptFrozen(activeProjectId, frozen);
-    }, [activeProjectId, canUserWrite]);
+        await guardedWrite(id => storage.setScriptFrozen(id, frozen));
+    }, [guardedWrite]);
 
     const contextValue = useMemo(() => ({
         locations, scenes, characters, schedules, assets, people, settings, script,

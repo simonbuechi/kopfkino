@@ -1,7 +1,9 @@
+'use no memo';
 import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { MapPin, Plus, Upload, Download } from 'lucide-react';
@@ -148,12 +150,14 @@ export const LocationList: React.FC = () => {
     const { locations, replaceLocations, reorderLocations } = useStore();
     const { activeProjectId } = useProjects();
     const navigate = useNavigate();
+    const { confirm, confirmDialog } = useConfirmDialog();
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
 
     const { sensors, handleDragEnd } = useSortableList(locations, reorderLocations);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    // eslint-disable-next-line react-hooks/incompatible-library
     const slimVirtualizer = useVirtualizer({
         count: locations.length,
         getScrollElement: () => scrollRef.current,
@@ -188,6 +192,7 @@ export const LocationList: React.FC = () => {
         },
         entityName: 'location',
         filename: `kopfkino_locations_${new Date().toISOString().slice(0, 10)}.csv`,
+        confirmImport: (message) => confirm(message, { title: 'Import Locations', confirmLabel: 'Delete & Import' }),
     });
 
     return (
@@ -285,6 +290,7 @@ export const LocationList: React.FC = () => {
                     downloadFilename={`location-${new Date().getTime()}.png`}
                 />
             )}
+            {confirmDialog}
         </div>
     );
 };

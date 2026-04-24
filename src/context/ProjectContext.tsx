@@ -10,7 +10,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const [state, dispatch] = useReducer(projectReducer, {
         projects: [],
-        activeProjectId: localStorage.getItem('activeProjectId'),
+        activeProjectId: sessionStorage.getItem('activeProjectId'),
         loading: true,
     });
 
@@ -23,13 +23,13 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const activeProjectRole: ProjectRole | null =
         activeProject && user ? (activeProject.members?.[user.uid]?.role ?? null) : null;
 
-    // Keep localStorage in sync with activeProjectId
+    // Keep sessionStorage in sync with activeProjectId
     useEffect(() => {
         activeProjectIdRef.current = activeProjectId;
         if (activeProjectId) {
-            localStorage.setItem('activeProjectId', activeProjectId);
+            sessionStorage.setItem('activeProjectId', activeProjectId);
         } else {
-            localStorage.removeItem('activeProjectId');
+            sessionStorage.removeItem('activeProjectId');
         }
     }, [activeProjectId]);
 
@@ -39,7 +39,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
             return;
         }
 
-        let cancelled = false;
+        let isCancelled = false;
         let projectsUnsub: (() => void) | null = null;
         let invitationsUnsub: (() => void) | null = null;
 
@@ -62,7 +62,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         // Subscribe to all accessible projects
         projectsUnsub = storage.subscribeToProjects(user.uid, async (fetchedProjects) => {
-            if (cancelled) return;
+            if (isCancelled) return;
             const currentActiveId = activeProjectIdRef.current;
             let nextActiveId = currentActiveId;
 
@@ -100,7 +100,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
 
         return () => {
-            cancelled = true;
+            isCancelled = true;
             projectsUnsub?.();
             invitationsUnsub?.();
         };

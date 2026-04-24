@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { useDnDSensors } from './useDnDSensors';
@@ -10,8 +10,10 @@ export function useSortableList<T extends { id: string }>(
     const sensors = useDnDSensors();
     const itemsRef = useRef(items);
     const reorderRef = useRef(reorder);
-    itemsRef.current = items;
-    reorderRef.current = reorder;
+    useLayoutEffect(() => {
+        itemsRef.current = items;
+        reorderRef.current = reorder;
+    });
 
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event;

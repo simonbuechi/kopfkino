@@ -18,6 +18,12 @@ const SCENE_RE = /^(INT\.|EXT\.|INT\.\/EXT\.|I\/E\.|EST\.)\s/i;
 const TRANSITION_RE = /^[A-Z\s]+TO:$/;
 const CHAR_RE = /^[A-Z@][A-Z\s\-'.()@^]*$/;
 
+// Classifies each line of a Fountain-format screenplay into a LineType.
+// Rules applied in priority order: title page block → blank → scene heading
+// (INT./EXT. prefix or leading dot) → centered (>…<) → transition → section (#)
+// → synopsis (= ) → note ([[…]]) → parenthetical → forced action (!) →
+// character (ALL CAPS after blank, followed by non-blank) → dialogue
+// (continuation inside dialogue block) → action (default).
 function classifyLines(text: string): LineType[] {
     const lines = text.split('\n');
     const types: LineType[] = [];
@@ -430,6 +436,8 @@ const FormattedEditor: React.FC<EditorProps> = ({ value, onChange, disabled }) =
 // Script info extraction
 // ---------------------------------------------------------------------------
 
+// Returns the primary location name from a scene heading, deliberately ignoring
+// sub-locations and time-of-day qualifiers (e.g. "INT. OFFICE - LOBBY - DAY" → "OFFICE").
 function extractLocation(heading: string): string {
     let h = heading.startsWith('.') ? heading.slice(1).trim() : heading;
     h = h.replace(/^(INT\.\/EXT\.|INT\.|EXT\.|I\/E\.|EST\.)\s*/i, '');
@@ -624,13 +632,13 @@ const ScriptSidebar: React.FC<ScriptSidebarProps> = ({
     const toggle = (key: keyof typeof open) =>
         setOpen(prev => ({ ...prev, [key]: !prev[key] }));
 
-    const charMap = useMemo(() => {
-        const m = new Map<string, string>(); // name.toLowerCase() → id
+    const charNameToIdMap = useMemo(() => {
+        const m = new Map<string, string>();
         storeCharacters.forEach(c => m.set(c.name.toLowerCase(), c.id));
         return m;
     }, [storeCharacters]);
 
-    const locMap = useMemo(() => {
+    const locNameToIdMap = useMemo(() => {
         const m = new Map<string, string>();
         storeLocations.forEach(l => m.set(l.name.toLowerCase(), l.id));
         return m;
@@ -645,7 +653,7 @@ const ScriptSidebar: React.FC<ScriptSidebarProps> = ({
                 isOpen={open.characters}
                 onToggle={() => toggle('characters')}
                 getLink={name => {
-                    const id = charMap.get(name.toLowerCase());
+                    const id = charNameToIdMap.get(name.toLowerCase());
                     return id ? `/project/${projectId}/characters/${id}` : null;
                 }}
             />
@@ -656,7 +664,7 @@ const ScriptSidebar: React.FC<ScriptSidebarProps> = ({
                 isOpen={open.locations}
                 onToggle={() => toggle('locations')}
                 getLink={name => {
-                    const id = locMap.get(name.toLowerCase());
+                    const id = locNameToIdMap.get(name.toLowerCase());
                     return id ? `/project/${projectId}/locations/${id}` : null;
                 }}
             />

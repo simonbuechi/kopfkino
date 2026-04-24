@@ -4,6 +4,7 @@ import { X, UserPlus, Crown, Pencil, Eye, Trash2, ArrowRightLeft, Clock } from '
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../hooks/useAuth';
 import { useProjects } from '../../hooks/useProjects';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { storage } from '../../services/storage';
 import type { Project, ProjectRole, ProjectMember, Invitation } from '../../types/types';
 
@@ -27,12 +28,15 @@ const RoleIcon = ({ role }: { role: ProjectRole }) => {
 export const ShareDialog: React.FC<Props> = ({ project, onClose }) => {
     const { user } = useAuth();
     const { shareProject, removeMember, updateMemberRole, transferOwnership } = useProjects();
+    const { confirm, confirmDialog } = useConfirmDialog();
 
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor');
     const [inviting, setInviting] = useState(false);
     const [inviteSuccess, setInviteSuccess] = useState(false);
     const [inviteError, setInviteError] = useState('');
+    const [lastInvitedAt, setLastInvitedAt] = useState(0);
+    const INVITE_COOLDOWN_MS = 5_000;
 
     const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
 
@@ -62,12 +66,17 @@ export const ShareDialog: React.FC<Props> = ({ project, onClose }) => {
     const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!inviteEmail.trim()) return;
+        if (Date.now() - lastInvitedAt < INVITE_COOLDOWN_MS) {
+            setInviteError('Please wait a moment before sending another invitation.');
+            return;
+        }
         setInviting(true);
         setInviteError('');
         setInviteSuccess(false);
         try {
             await shareProject(project.id, inviteEmail.trim(), inviteRole);
             setInviteSuccess(true);
+            setLastInvitedAt(Date.now());
             setInviteEmail('');
             // Refresh pending list
             const updated = await storage.getPendingInvitationsForProject(project.id);
@@ -80,7 +89,7 @@ export const ShareDialog: React.FC<Props> = ({ project, onClose }) => {
     };
 
     const handleRemove = async (targetUserId: string, displayName: string) => {
-        if (!window.confirm(`Remove ${displayName} from this project?`)) return;
+        if (!await confirm(`Remove ${displayName} from this project?`, { title: 'Remove Member', confirmLabel: 'Remove' })) return;
         await removeMember(project.id, targetUserId);
     };
 
@@ -101,7 +110,7 @@ export const ShareDialog: React.FC<Props> = ({ project, onClose }) => {
     const handleTransfer = async () => {
         if (!transferTargetId) return;
         const target = project.members[transferTargetId];
-        if (!window.confirm(`Transfer ownership to ${target?.displayName ?? target?.email}? You will become an Editor.`)) return;
+        if (!await confirm(`Transfer ownership to ${target?.displayName ?? target?.email}? You will become an Editor.`, { title: 'Transfer Ownership', confirmLabel: 'Transfer', danger: false })) return;
         setTransferring(true);
         try {
             await transferOwnership(project.id, transferTargetId);
@@ -114,6 +123,7 @@ export const ShareDialog: React.FC<Props> = ({ project, onClose }) => {
     };
 
     return (
+        <>
         <Dialog open onClose={onClose} className="relative z-50">
             <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
             <div className="fixed inset-0 flex items-center justify-center p-4">
@@ -293,5 +303,7 @@ export const ShareDialog: React.FC<Props> = ({ project, onClose }) => {
                 </DialogPanel>
             </div>
         </Dialog>
+        {confirmDialog}
+        </>
     );
 };

@@ -4,6 +4,7 @@ import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
 import { Trash2, ArrowLeft, Loader2, Save } from 'lucide-react';
 import { useProjects } from '../../hooks/useProjects';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import type { Asset, AssetType } from '../../types/types';
 import { User } from 'lucide-react';
 
@@ -12,6 +13,7 @@ export const AssetDetail: React.FC = () => {
     const navigate = useNavigate();
     const { assets, deleteAsset, addAsset, updateAsset, people } = useStore();
     const { activeProjectId } = useProjects();
+    const { confirm, confirmDialog } = useConfirmDialog();
 
     const existingAsset = assets.find((a) => a.id === id);
     const isNew = !id || id === 'new';
@@ -98,7 +100,7 @@ export const AssetDetail: React.FC = () => {
                 navigate(`../${newId}`, { replace: true });
             } else if (existingAsset) {
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const { ownerId: _old, ...base } = existingAsset;
+                const { ownerId: _, ...base } = existingAsset;
                 const updatedAsset: Asset = {
                     ...base, name, description, type, comment,
                     ...(ownerId ? { ownerId } : {})
@@ -112,8 +114,8 @@ export const AssetDetail: React.FC = () => {
         }
     };
 
-    const handleDelete = () => {
-        if (confirm('Are you sure you want to delete this asset?')) {
+    const handleDelete = async () => {
+        if (await confirm('Are you sure you want to delete this asset?', { title: 'Delete Asset', confirmLabel: 'Delete' })) {
             if (existingAsset) deleteAsset(existingAsset.id);
             navigate('..');
         }
@@ -228,6 +230,7 @@ export const AssetDetail: React.FC = () => {
                     </section>
                 </div>
             </div>
+            {confirmDialog}
         </div>
     );
 };

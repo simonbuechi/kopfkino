@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
 import { Trash2, ArrowLeft, Loader2, Save, MapPin, ChevronDown, ChevronRight, X, Search } from 'lucide-react';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { ShotsList } from '../shots/ShotsList';
 import type { Scene } from '../../types/types';
 
@@ -191,6 +192,7 @@ export const SceneDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { scenes, addScene, deleteScene, locations, characters, people, assets } = useStore();
+    const { confirm, confirmDialog } = useConfirmDialog();
 
     const scene = scenes.find((s) => s.id === id);
 
@@ -243,7 +245,7 @@ export const SceneDetail: React.FC = () => {
     };
 
     const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to delete this scene?')) {
+        if (await confirm('Are you sure you want to delete this scene?', { title: 'Delete Scene', confirmLabel: 'Delete' })) {
             await deleteScene(scene.id);
             navigate('..');
         }
@@ -396,6 +398,7 @@ export const SceneDetail: React.FC = () => {
                     </div>
                 )}
             </div>
+            {confirmDialog}
         </div>
     );
 };

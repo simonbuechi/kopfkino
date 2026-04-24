@@ -1,8 +1,10 @@
+'use no memo';
 import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { useCSVImportExport } from '../../hooks/useCSVImportExport';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { User, Plus, Upload, Download, Edit, Trash2 } from 'lucide-react';
@@ -179,12 +181,14 @@ export const CharacterList: React.FC = () => {
     const { characters, replaceCharacters, reorderCharacters, deleteCharacter } = useStore();
     const { activeProjectId } = useProjects();
     const navigate = useNavigate();
+    const { confirm, confirmDialog } = useConfirmDialog();
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
 
     const { sensors, handleDragEnd } = useSortableList(characters, reorderCharacters);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    // eslint-disable-next-line react-hooks/incompatible-library
     const slimVirtualizer = useVirtualizer({
         count: characters.length,
         getScrollElement: () => scrollRef.current,
@@ -219,10 +223,11 @@ export const CharacterList: React.FC = () => {
         },
         entityName: 'character',
         filename: `kopfkino_characters_${new Date().toISOString().slice(0, 10)}.csv`,
+        confirmImport: (message) => confirm(message, { title: 'Import Characters', confirmLabel: 'Delete & Import' }),
     });
 
     const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to delete this character?')) {
+        if (await confirm('Are you sure you want to delete this character?', { title: 'Delete Character', confirmLabel: 'Delete' })) {
             await deleteCharacter(id);
         }
     };
@@ -324,6 +329,7 @@ export const CharacterList: React.FC = () => {
                     downloadFilename={`character-${new Date().getTime()}.png`}
                 />
             )}
+            {confirmDialog}
         </div>
     );
 };

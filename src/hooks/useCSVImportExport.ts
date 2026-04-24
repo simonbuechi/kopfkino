@@ -14,6 +14,7 @@ export interface UseCSVImportExportOptions<T> {
     buildItem: (row: Record<string, string>) => T | null;
     entityName: string;
     filename: string;
+    confirmImport?: (message: string) => Promise<boolean>;
 }
 
 // RFC 4180-compliant CSV parser
@@ -72,15 +73,18 @@ export function useCSVImportExport<T>({
     buildItem,
     entityName,
     filename,
+    confirmImport,
 }: UseCSVImportExportOptions<T>) {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleImportClick = useCallback(() => {
+    const handleImportClick = useCallback(async () => {
         const plural = `${entityName}s`;
-        if (confirm(`WARNING: Importing a CSV will PERMANENTLY DELETE all existing ${plural}. Proceed?`)) {
-            fileInputRef.current?.click();
-        }
-    }, [entityName]);
+        const message = `WARNING: Importing a CSV will PERMANENTLY DELETE all existing ${plural}. Proceed?`;
+        const ok = confirmImport
+            ? await confirmImport(message)
+            : confirm(message);
+        if (ok) fileInputRef.current?.click();
+    }, [entityName, confirmImport]);
 
     const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
