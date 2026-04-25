@@ -1,24 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
-import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Package, Plus, Edit } from 'lucide-react';
 import { ViewToggle } from '../../components/ui/ViewToggle';
-import { DragHandle } from '../../components/ui/DragHandle';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { TypeBadge } from '../../components/ui/TypeBadge';
+import { SortableCard } from '../../components/ui/SortableCard';
+import { SortableListItem } from '../../components/ui/SortableListItem';
 import type { Asset, Person } from '../../types/types';
 import {
     DndContext,
     closestCenter,
 } from '@dnd-kit/core';
-import {
-    SortableContext,
-    useSortable,
-    rectSortingStrategy
-} from '@dnd-kit/sortable';
+import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { useSortableList } from '../../hooks/useSortableList';
-import { CSS } from '@dnd-kit/utilities';
 
 // Sortable Item Component
 const SortableAssetCard = ({
@@ -29,58 +26,25 @@ const SortableAssetCard = ({
     asset: Asset;
     ownerName?: string;
     onEdit: (id: string) => void;
-}) => {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging
-    } = useSortable({ id: asset.id });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        zIndex: isDragging ? 10 : 1,
-        opacity: isDragging ? 0.5 : 1,
-    };
-
-    return (
-        <div ref={setNodeRef} style={style} className="h-full">
-            <Card className="!p-0 flex flex-col h-full bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800 relative group/card">
-                <DragHandle variant="card" attributes={attributes} listeners={listeners} />
-
-                <div className="p-6 flex flex-col gap-2 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                        <div className="flex flex-col gap-1">
-                            <h3 className="text-lg font-semibold text-primary-900 dark:text-white pointer-events-none select-none">{asset.name}</h3>
-                            {ownerName && <span className="text-xs text-primary-400 font-semibold uppercase tracking-wider">{ownerName}</span>}
-                        </div>
-                        {asset.type && (
-                            <span className="shrink-0 px-2 py-0.5 rounded text-xs font-bold bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-300 pointer-events-none select-none">
-                                {asset.type}
-                            </span>
-                        )}
-                    </div>
-                    <p className="text-primary-500 text-sm line-clamp-3 mb-4 pointer-events-none select-none">{asset.description}</p>
-                    
-                    <div className="mt-auto pt-4 border-t border-primary-100 dark:border-primary-800 flex justify-end">
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            className="w-full"
-                            onClick={() => onEdit(asset.id)}
-                        >
-                            <Edit size={14} />
-                            Edit
-                        </Button>
-                    </div>
+}) => (
+    <SortableCard id={asset.id} className="bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800">
+        <div className="p-6 flex flex-col gap-2 flex-1">
+            <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-col gap-1">
+                    <h3 className="text-lg font-semibold text-primary-900 dark:text-white pointer-events-none select-none">{asset.name}</h3>
+                    {ownerName && <span className="text-xs text-primary-400 font-semibold uppercase tracking-wider">{ownerName}</span>}
                 </div>
-            </Card>
+                {asset.type && <TypeBadge label={asset.type} />}
+            </div>
+            <p className="text-primary-500 dark:text-primary-400 text-sm line-clamp-3 mb-4 pointer-events-none select-none">{asset.description}</p>
+            <div className="mt-auto pt-4 border-t border-primary-100 dark:border-primary-800 flex justify-end">
+                <Button size="sm" variant="secondary" className="w-full" onClick={() => onEdit(asset.id)}>
+                    <Edit size={14} /> Edit
+                </Button>
+            </div>
         </div>
-    );
-};
+    </SortableCard>
+);
 
 // Sortable List Item Component
 const SortableAssetListItem = ({
@@ -91,51 +55,18 @@ const SortableAssetListItem = ({
     asset: Asset;
     ownerName?: string;
     onEdit: (id: string) => void;
-}) => {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging
-    } = useSortable({ id: asset.id });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        zIndex: isDragging ? 10 : 1,
-        opacity: isDragging ? 0.5 : 1,
-    };
-
-    return (
-        <div ref={setNodeRef} style={style} className="w-full">
-            <Card className="!p-3 flex items-center gap-4 bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800 relative group/item">
-                <DragHandle variant="list" attributes={attributes} listeners={listeners} />
-
-                <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => onEdit(asset.id)}
-                    className="shrink-0"
-                >
-                    <Edit size={14} /> Edit
-                </Button>
-                <div className="flex-1 min-w-0 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <h3 className="font-medium text-primary-900 dark:text-white truncate select-none">{asset.name}</h3>
-                        {ownerName && <span className="text-xs text-primary-400 hidden sm:inline-block">— {ownerName}</span>}
-                        {asset.type && (
-                            <span className="shrink-0 px-2 py-0.5 rounded text-xs font-bold bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-300 pointer-events-none select-none">
-                                {asset.type}
-                            </span>
-                        )}
-                    </div>
-                </div>
-            </Card>
+}) => (
+    <SortableListItem id={asset.id} className="bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800">
+        <Button size="sm" variant="secondary" onClick={() => onEdit(asset.id)} className="shrink-0">
+            <Edit size={14} /> Edit
+        </Button>
+        <div className="flex-1 min-w-0 flex items-center gap-3">
+            <h3 className="font-medium text-primary-900 dark:text-white truncate select-none">{asset.name}</h3>
+            {ownerName && <span className="text-xs text-primary-400 hidden sm:inline-block">— {ownerName}</span>}
+            {asset.type && <TypeBadge label={asset.type} />}
         </div>
-    );
-};
+    </SortableListItem>
+);
 
 export const AssetList: React.FC = () => {
     const { assets, reorderAssets, people } = useStore();
@@ -147,16 +78,15 @@ export const AssetList: React.FC = () => {
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-3xl font-bold text-primary-900 dark:text-white">Assets</h2>
-                <div className="flex flex-wrap gap-2">
+            <PageHeader
+                title="Assets"
+                actions={<>
                     <ViewToggle value={viewMode} onChange={setViewMode} />
                     <Button onClick={() => navigate('new')} size="sm">
-                        <Plus size={16} />
-                        Add asset
+                        <Plus size={16} /> Add asset
                     </Button>
-                </div>
-            </div>
+                </>}
+            />
 
             <DndContext
                 sensors={sensors}

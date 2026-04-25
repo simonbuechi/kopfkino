@@ -5,13 +5,15 @@ import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { useCSVImportExport } from '../../hooks/useCSVImportExport';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { User, Plus, Upload, Download, Edit, Trash2 } from 'lucide-react';
 import { ViewToggle } from '../../components/ui/ViewToggle';
-import { DragHandle } from '../../components/ui/DragHandle';
 import { ImageModal } from '../../components/ui/ImageModal';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { TypeBadge } from '../../components/ui/TypeBadge';
+import { SortableCard } from '../../components/ui/SortableCard';
+import { SortableListItem } from '../../components/ui/SortableListItem';
 
 import type { Character } from '../../types/types';
 import {
@@ -20,12 +22,10 @@ import {
 } from '@dnd-kit/core';
 import {
     SortableContext,
-    useSortable,
     rectSortingStrategy,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useSortableList } from '../../hooks/useSortableList';
-import { CSS } from '@dnd-kit/utilities';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 // Sortable Item Component
@@ -37,67 +37,29 @@ const SortableCharacterCard = ({
     character: Character;
     onClickImage: (url: string) => void;
     onEdit: (id: string) => void;
-}) => {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging
-    } = useSortable({ id: character.id });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        zIndex: isDragging ? 10 : 1,
-        opacity: isDragging ? 0.5 : 1,
-    };
-
-    return (
-        <div ref={setNodeRef} style={style} className="h-full">
-            <Card className="!p-0 flex flex-col h-full bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800 relative group/card">
-                <DragHandle variant="card" attributes={attributes} listeners={listeners} />
-
-                <div className="relative group cursor-pointer" onClick={() => character.imageUrl && onClickImage(character.imageUrl)}>
-                    {character.imageUrl ? (
-                        <img
-                            src={character.imageUrl}
-                            alt={character.name}
-                            className="w-full h-48 object-cover bg-primary-100 dark:bg-primary-800 hover:opacity-95 transition-opacity"
-                        />
-                    ) : (
-                        <div className="w-full h-48 bg-primary-100 dark:bg-primary-800 flex items-center justify-center text-primary-300 dark:text-primary-700">
-                            <User size={32} />
-                        </div>
-                    )}
+}) => (
+    <SortableCard id={character.id} className="bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800">
+        <div className="relative group cursor-pointer" onClick={() => character.imageUrl && onClickImage(character.imageUrl)}>
+            {character.imageUrl ? (
+                <img src={character.imageUrl} alt={character.name} className="w-full h-48 object-cover bg-primary-100 dark:bg-primary-800 hover:opacity-95 transition-opacity" />
+            ) : (
+                <div className="w-full h-48 bg-primary-100 dark:bg-primary-800 flex items-center justify-center text-primary-300 dark:text-primary-700">
+                    <User size={32} />
                 </div>
-
-                <div className="p-4 flex flex-col gap-2 flex-1">
-                    <h3 className="text-lg font-semibold text-primary-900 dark:text-white pointer-events-none select-none">{character.name}</h3>
-                    {character.type && (
-                        <span className="w-fit px-2 py-0.5 rounded text-xs font-semibold bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-400 capitalize pointer-events-none select-none">
-                            {character.type}
-                        </span>
-                    )}
-                    <p className="text-primary-500 text-sm line-clamp-3 mb-4 pointer-events-none select-none">{character.description}</p>
-
-                    <div className="mt-auto pt-2 border-t border-primary-100 dark:border-primary-800 flex justify-end">
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            className="w-full"
-                            onClick={() => onEdit(character.id)}
-                        >
-                            <Edit size={14} />
-                            Edit
-                        </Button>
-                    </div>
-                </div>
-            </Card>
+            )}
         </div>
-    );
-};
+        <div className="p-4 flex flex-col gap-2 flex-1">
+            <h3 className="text-lg font-semibold text-primary-900 dark:text-white pointer-events-none select-none">{character.name}</h3>
+            {character.type && <TypeBadge label={character.type} />}
+            <p className="text-primary-500 dark:text-primary-400 text-sm line-clamp-3 mb-4 pointer-events-none select-none">{character.description}</p>
+            <div className="mt-auto pt-2 border-t border-primary-100 dark:border-primary-800 flex justify-end">
+                <Button size="sm" variant="secondary" className="w-full" onClick={() => onEdit(character.id)}>
+                    <Edit size={14} /> Edit
+                </Button>
+            </div>
+        </div>
+    </SortableCard>
+);
 
 // Sortable List Item Component
 const SortableCharacterListItem = ({
@@ -110,72 +72,34 @@ const SortableCharacterListItem = ({
     onEdit: (id: string) => void;
     onDelete: (id: string) => void;
     onClickImage: (url: string) => void;
-}) => {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging
-    } = useSortable({ id: character.id });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        zIndex: isDragging ? 10 : 1,
-        opacity: isDragging ? 0.5 : 1,
-    };
-
-    return (
-        <div ref={setNodeRef} style={style} className="w-full">
-            <Card className="!p-3 flex items-center gap-4 bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800 relative group/item">
-                <DragHandle variant="list" attributes={attributes} listeners={listeners} />
-
-                <div className="flex-1 min-w-0 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => character.imageUrl && onClickImage(character.imageUrl)}
-                            disabled={!character.imageUrl}
-                            className="h-8 w-8 !p-0 shrink-0 text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100 disabled:opacity-30 disabled:hover:bg-transparent"
-                            title={character.imageUrl ? "View Image" : "No Image Available"}
-                        >
-                            <User size={16} />
-                        </Button>
-                        <h3 className="font-medium text-primary-900 dark:text-white truncate select-none">{character.name}</h3>
-                        {character.type && (
-                            <span className="shrink-0 px-2 py-0.5 rounded text-xs font-semibold bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-400 capitalize pointer-events-none select-none">
-                                {character.type}
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                        <Button
-                            size="icon"
-                            variant="secondary"
-                            onClick={() => onEdit(character.id)}
-                            title="Edit Character"
-                        >
-                            <Edit size={16} />
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={() => onDelete(character.id)}
-                            className="h-8 w-8 !p-0 transition-colors"
-                            title="Delete Character"
-                        >
-                            <Trash2 size={16} />
-                        </Button>
-                    </div>
-                </div>
-            </Card>
+}) => (
+    <SortableListItem id={character.id} className="bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800">
+        <div className="flex-1 min-w-0 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+                <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => character.imageUrl && onClickImage(character.imageUrl)}
+                    disabled={!character.imageUrl}
+                    className="h-8 w-8 !p-0 shrink-0 text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                    title={character.imageUrl ? "View Image" : "No Image Available"}
+                >
+                    <User size={16} />
+                </Button>
+                <h3 className="font-medium text-primary-900 dark:text-white truncate select-none">{character.name}</h3>
+                {character.type && <TypeBadge label={character.type} />}
+            </div>
+            <div className="flex items-center gap-1">
+                <Button size="icon" variant="secondary" onClick={() => onEdit(character.id)} title="Edit Character">
+                    <Edit size={16} />
+                </Button>
+                <Button size="sm" variant="danger" onClick={() => onDelete(character.id)} className="h-8 w-8 !p-0 transition-colors" title="Delete Character">
+                    <Trash2 size={16} />
+                </Button>
+            </div>
         </div>
-    );
-};
+    </SortableListItem>
+);
 
 export const CharacterList: React.FC = () => {
     const { characters, replaceCharacters, reorderCharacters, deleteCharacter } = useStore();
@@ -234,31 +158,22 @@ export const CharacterList: React.FC = () => {
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-3xl font-bold text-primary-900 dark:text-white">Characters</h2>
-                <div className="flex flex-wrap gap-2">
+            <PageHeader
+                title="Characters"
+                actions={<>
                     <ViewToggle value={viewMode} onChange={setViewMode} />
-                    <input
-                        type="file"
-                        accept=".csv"
-                        ref={fileInputRef}
-                        className="hidden"
-                        onChange={handleFileChange}
-                    />
+                    <input type="file" accept=".csv" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
                     <Button onClick={handleImportClick} size="sm" variant="secondary" disabled title="Import disabled">
-                        <Upload size={16} />
-                        Import CSV
+                        <Upload size={16} /> Import CSV
                     </Button>
                     <Button onClick={handleExportClick} size="sm" variant="secondary">
-                        <Download size={16} />
-                        Export CSV
+                        <Download size={16} /> Export CSV
                     </Button>
                     <Button onClick={() => navigate('new')} size="sm">
-                        <Plus size={16} />
-                        New Character
+                        <Plus size={16} /> New Character
                     </Button>
-                </div>
-            </div>
+                </>}
+            />
 
             <DndContext
                 sensors={sensors}

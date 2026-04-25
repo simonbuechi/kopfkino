@@ -3,7 +3,7 @@ import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { Button } from '../../components/ui/Button';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
-import { Plus, Trash2, X, Clock, ChevronLeft } from 'lucide-react';
+import { Plus, Trash2, X, Clock } from 'lucide-react';
 import type { ScriptRevision } from '../../types/types';
 
 function formatDate(ts: number): string {
@@ -50,33 +50,13 @@ export const RevisionsPage: React.FC = () => {
         setConfirmDeleteId(null);
     };
 
-    if (viewing) {
-        return (
-            <div className="w-full">
-                <div className="flex items-center gap-3 mb-6">
-                    <button
-                        onClick={() => setViewing(null)}
-                        className="flex items-center gap-1.5 text-sm font-semibold text-primary-500 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-100 transition-colors"
-                    >
-                        <ChevronLeft size={16} /> Back to revisions
-                    </button>
-                    <span className="text-primary-300 dark:text-primary-700">|</span>
-                    <span className="text-sm font-bold text-primary-900 dark:text-white">{viewing.name}</span>
-                    <span className="text-xs text-primary-400 ml-auto">{formatDate(viewing.createdAt)}</span>
-                </div>
-                <div className="font-mono text-sm leading-6">
-                    <div className="mx-auto py-6" style={{ width: '60ch' }}>
-                        <pre className="whitespace-pre-wrap text-primary-900 dark:text-primary-100">{viewing.content}</pre>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="w-full">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold text-primary-900 dark:text-white">Revisions</h2>
+    const revisionList = (
+        <>
+            <div className="flex items-center justify-between mb-4 shrink-0">
+                {viewing
+                    ? <p className="text-sm font-bold text-primary-900 dark:text-white uppercase tracking-wide">Revisions</p>
+                    : <h2 className="text-3xl font-bold text-primary-900 dark:text-white">Revisions</h2>
+                }
                 <Button
                     size="sm"
                     onClick={() => setCreateOpen(true)}
@@ -94,27 +74,61 @@ export const RevisionsPage: React.FC = () => {
                 </div>
             ) : (
                 <ul className="space-y-2">
-                    {scriptRevisions.map(rev => (
-                        <li
-                            key={rev.id}
-                            className="flex items-center gap-4 px-4 py-3 rounded-xl border border-primary-200 dark:border-primary-800 bg-white dark:bg-primary-900 hover:border-primary-300 dark:hover:border-primary-700 transition-colors group cursor-pointer"
-                            onClick={() => setViewing(rev)}
-                        >
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-primary-900 dark:text-white truncate">{rev.name}</p>
-                                <p className="text-xs text-primary-400 dark:text-primary-500 mt-0.5">{formatDate(rev.createdAt)}</p>
-                            </div>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(rev.id); }}
-                                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-primary-400 hover:text-danger-600 dark:hover:text-danger-400 hover:bg-primary-100 dark:hover:bg-primary-800 transition-all"
-                                title="Delete revision"
+                    {scriptRevisions.map(rev => {
+                        const isSelected = viewing?.id === rev.id;
+                        return (
+                            <li
+                                key={rev.id}
+                                className={`flex items-center gap-4 px-4 py-3 rounded-xl border transition-colors group cursor-pointer ${
+                                    isSelected
+                                        ? 'border-secondary-400 dark:border-secondary-500 bg-secondary-50 dark:bg-secondary-950/30'
+                                        : 'border-primary-200 dark:border-primary-800 bg-white dark:bg-primary-900 hover:border-primary-300 dark:hover:border-primary-700'
+                                }`}
+                                onClick={() => setViewing(rev)}
                             >
-                                <Trash2 size={15} />
-                            </button>
-                        </li>
-                    ))}
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-primary-900 dark:text-white truncate">{rev.name}</p>
+                                    <p className="text-xs text-primary-400 dark:text-primary-500 mt-0.5">{formatDate(rev.createdAt)}</p>
+                                </div>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(rev.id); }}
+                                    className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-primary-400 hover:text-danger-600 dark:hover:text-danger-400 hover:bg-primary-100 dark:hover:bg-primary-800 transition-all"
+                                    title="Delete revision"
+                                >
+                                    <Trash2 size={15} />
+                                </button>
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
+        </>
+    );
+
+    if (viewing) {
+        return (
+            <div className="flex gap-6 w-full min-h-0">
+                <div className="w-72 shrink-0 flex flex-col">
+                    {revisionList}
+                </div>
+                <div className="flex-1 min-w-0 border-l border-primary-200 dark:border-primary-800 pl-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <span className="text-sm font-bold text-primary-900 dark:text-white">{viewing.name}</span>
+                        <span className="text-xs text-primary-400 ml-auto">{formatDate(viewing.createdAt)}</span>
+                    </div>
+                    <div className="font-mono text-sm leading-6">
+                        <div className="mx-auto py-6" style={{ width: '60ch' }}>
+                            <pre className="whitespace-pre-wrap text-primary-900 dark:text-primary-100">{viewing.content}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full">
+            {revisionList}
 
             {/* Create revision modal */}
             <Dialog open={createOpen} onClose={() => setCreateOpen(false)} className="relative z-50">

@@ -157,7 +157,7 @@ const DraggableSceneChip: React.FC<DraggableSceneChipProps> = ({ scene, onUnassi
     return (
         <span
             ref={setNodeRef}
-            className={`flex items-center gap-0.5 text-xs bg-primary-100 dark:bg-primary-800 rounded px-1 py-0.5 max-w-full ${isDragging ? 'opacity-0' : ''}`}
+            className={`flex items-center gap-0.5 text-sm bg-primary-100 dark:bg-primary-800 rounded px-1 py-0.5 w-full ${isDragging ? 'opacity-0' : ''}`}
         >
             <button
                 {...attributes}
@@ -166,8 +166,8 @@ const DraggableSceneChip: React.FC<DraggableSceneChipProps> = ({ scene, onUnassi
             >
                 <GripVertical size={9} />
             </button>
-            <span className="text-primary-400 dark:text-primary-500 tabular-nums">{scene.index}.</span>
-            <span className="truncate max-w-[72px] ml-0.5">{scene.heading}</span>
+            <span className="text-primary-500 dark:text-primary-400 tabular-nums">{scene.index}.</span>
+            <span className="truncate min-w-0 flex-1 ml-0.5 text-primary-700 dark:text-primary-200 font-medium">{scene.heading}</span>
             {onUnassign && (
                 <button
                     onClick={e => { e.stopPropagation(); onUnassign(); }}
@@ -214,11 +214,10 @@ const BeatCard: React.FC<BeatCardProps> = ({
         <div
             ref={setNodeRef}
             style={overlay ? undefined : style}
-            className={`group relative bg-white dark:bg-primary-900 border rounded-lg p-2.5 ${
-                isSceneTarget
-                    ? 'border-secondary-400 dark:border-secondary-500 bg-secondary-50 dark:bg-secondary-950/30'
-                    : 'border-primary-200 dark:border-primary-800 hover:border-primary-300 dark:hover:border-primary-700'
-            } ${overlay ? 'shadow-lg rotate-1' : ''} transition-colors`}
+            className={`group relative bg-white dark:bg-primary-900 border rounded-lg p-2.5 ${isSceneTarget
+                ? 'border-secondary-400 dark:border-secondary-500 bg-secondary-50 dark:bg-secondary-950/30'
+                : 'border-primary-200 dark:border-primary-800 hover:border-primary-300 dark:hover:border-primary-700'
+                } ${overlay ? 'shadow-lg rotate-1' : ''} transition-colors`}
         >
             <div className="flex items-start gap-1.5">
                 <button
@@ -231,7 +230,7 @@ const BeatCard: React.FC<BeatCardProps> = ({
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-primary-900 dark:text-white leading-tight">{beat.name}</p>
                     {showDescriptions && beat.description && (
-                        <p className="text-sm text-primary-400 dark:text-primary-500 mt-0.5 leading-tight line-clamp-3">{beat.description}</p>
+                        <p className="text-sm font-medium text-primary-700 dark:text-primary-300 mt-0.5 leading-tight line-clamp-3">{beat.description}</p>
                     )}
                     {assignedScenes.length > 0 && (
                         <div className="mt-1.5 flex flex-wrap gap-1">
@@ -297,7 +296,7 @@ const ActColumn: React.FC<ActColumnProps> = ({
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-primary-900 dark:text-white uppercase tracking-wide truncate">{act.name}</p>
                     {showDescriptions && act.description && (
-                        <p className="text-sm text-primary-400 dark:text-primary-500 mt-0.5 line-clamp-2 leading-tight">{act.description}</p>
+                        <p className="text-sm font-medium text-primary-700 dark:text-primary-300 mt-0.5 line-clamp-2 leading-tight">{act.description}</p>
                     )}
                 </div>
                 <div className="opacity-0 group-hover:opacity-100 flex gap-0.5 shrink-0 mt-0.5">
@@ -809,8 +808,8 @@ export const BeatsPage: React.FC = () => {
                     {activeType === 'beat' && activeBeat ? (
                         <BeatCard
                             beat={activeBeat}
-                            onEdit={() => {}}
-                            onDelete={() => {}}
+                            onEdit={() => { }}
+                            onDelete={() => { }}
                             overlay
                             showDescriptions={showDescriptions}
                         />

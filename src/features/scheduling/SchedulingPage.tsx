@@ -6,6 +6,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { ScheduleForm } from './ScheduleForm';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Button } from '../../components/ui/Button';
+import { PageHeader } from '../../components/ui/PageHeader';
 import { Card } from '../../components/ui/Card';
 
 export const SchedulingPage: React.FC = () => {
@@ -24,12 +25,15 @@ export const SchedulingPage: React.FC = () => {
         <Routes>
             <Route index element={
                 <>
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-3xl font-bold text-primary-900 dark:text-white">Scheduling</h2>
-                        <Button onClick={() => navigate('new')}>
-                            <Plus size={18} /> Add schedule
-                        </Button>
-                    </div>
+                    <PageHeader
+                        title="Scheduling"
+                        className="mb-6"
+                        actions={
+                            <Button onClick={() => navigate('new')}>
+                                <Plus size={18} /> Add schedule
+                            </Button>
+                        }
+                    />
 
                     {schedules.length === 0 ? (
                         <EmptyState

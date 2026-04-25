@@ -8,6 +8,8 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { formatTime } from '../../utils/time';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { StatBadge } from '../../components/ui/StatBadge';
 import { Clapperboard, Plus, MapPin, Upload, Download, LayoutList, GripVertical, AlignJustify, Users, Timer, Film } from 'lucide-react';
 import type { Scene } from '../../types/types';
 import {
@@ -83,24 +85,20 @@ const SortableSceneItem = React.memo(({ scene, viewMode, getLocationName, getCha
                         <div className="flex-1 space-y-2 w-full">
                             <h3 className="text-lg font-bold text-primary-900 dark:text-white">{scene.name}</h3>
                             <div className="flex flex-wrap gap-2">
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-700">
-                                    <MapPin size={12} />
+                                <StatBadge color="primary" icon={<MapPin size={12} />}>
                                     {getLocationName(scene.locationId)}
-                                </div>
+                                </StatBadge>
                                 {characterNames.length > 0 && (
-                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
-                                        <Users size={12} />
+                                    <StatBadge color="blue" icon={<Users size={12} />}>
                                         {characterNames.join(', ')}
-                                    </div>
+                                    </StatBadge>
                                 )}
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-300 border border-amber-100 dark:border-amber-800">
-                                    <Film size={12} />
+                                <StatBadge color="amber" icon={<Film size={12} />}>
                                     {scene.shots?.length || 0} Shots
-                                </div>
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">
-                                    <Timer size={12} />
+                                </StatBadge>
+                                <StatBadge color="emerald" icon={<Timer size={12} />}>
                                     {formatTime(scene.shots?.reduce((acc, shot) => acc + (shot.length || 0), 0) || 0)}
-                                </div>
+                                </StatBadge>
                             </div>
                             <p className="text-primary-500 dark:text-primary-400 text-sm line-clamp-2">
                                 {scene.description}
@@ -171,42 +169,37 @@ export const SceneList: React.FC = () => {
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h2 className="text-3xl font-bold text-primary-900 dark:text-white">Scenes</h2>
-                <div className="flex flex-col gap-3 items-end">
-                    <div className="flex flex-wrap gap-2 justify-end items-center">
-                        {/* View Mode Toggle */}
-                        <div className="flex items-center gap-1 bg-primary-100 dark:bg-primary-800 p-1 rounded-lg mr-2">
-                            <button
-                                onClick={() => setViewMode('slim')}
-                                className={`p-1.5 rounded-md transition-all ${viewMode === 'slim' ? 'bg-white dark:bg-primary-700 shadow-sm text-primary-900 dark:text-white' : 'text-primary-500 hover:text-primary-700 dark:hover:text-primary-300'}`}
-                                title="Slim View"
-                            >
-                                <AlignJustify size={16} />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('expanded')}
-                                className={`p-1.5 rounded-md transition-all ${viewMode === 'expanded' ? 'bg-white dark:bg-primary-700 shadow-sm text-primary-900 dark:text-white' : 'text-primary-500 hover:text-primary-700 dark:hover:text-primary-300'}`}
-                                title="Expanded View"
-                            >
-                                <LayoutList size={16} />
-                            </button>
-                        </div>
-
-                        <input type="file" accept=".csv" ref={sceneFileInputRef} className="hidden" onChange={handleSceneFileChange} />
-
-                        <Button size="sm" variant="secondary" onClick={handleImportScenesClick} disabled title="Import disabled">
-                            <Upload size={14} /> Import
-                        </Button>
-                        <Button size="sm" variant="secondary" onClick={handleExportScenes}>
-                            <Download size={14} /> Export
-                        </Button>
-                        <Button onClick={() => navigate('new')} size="sm">
-                            <Plus size={16} /> New Scene
-                        </Button>
+            <PageHeader
+                title="Scenes"
+                actions={<>
+                    <div className="flex items-center gap-1 bg-primary-100 dark:bg-primary-800 p-1 rounded-lg">
+                        <button
+                            onClick={() => setViewMode('slim')}
+                            className={`p-1.5 rounded-md transition-all ${viewMode === 'slim' ? 'bg-white dark:bg-primary-700 shadow-sm text-primary-900 dark:text-white' : 'text-primary-500 hover:text-primary-700 dark:hover:text-primary-300'}`}
+                            title="Slim View"
+                        >
+                            <AlignJustify size={16} />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('expanded')}
+                            className={`p-1.5 rounded-md transition-all ${viewMode === 'expanded' ? 'bg-white dark:bg-primary-700 shadow-sm text-primary-900 dark:text-white' : 'text-primary-500 hover:text-primary-700 dark:hover:text-primary-300'}`}
+                            title="Expanded View"
+                        >
+                            <LayoutList size={16} />
+                        </button>
                     </div>
-                </div>
-            </div>
+                    <input type="file" accept=".csv" ref={sceneFileInputRef} className="hidden" onChange={handleSceneFileChange} />
+                    <Button size="sm" variant="secondary" onClick={handleImportScenesClick} disabled title="Import disabled">
+                        <Upload size={14} /> Import
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={handleExportScenes}>
+                        <Download size={14} /> Export
+                    </Button>
+                    <Button onClick={() => navigate('new')} size="sm">
+                        <Plus size={16} /> New Scene
+                    </Button>
+                </>}
+            />
 
             {scenes.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-primary-500 border-2 border-dashed border-primary-200 dark:border-primary-800 rounded-xl">

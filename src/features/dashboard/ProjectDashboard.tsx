@@ -5,6 +5,7 @@ import { MapPin, Users, Clapperboard, Video, ExternalLink, Plus, Eye, FileText, 
 import { useProjects } from '../../hooks/useProjects';
 import { formatTime } from '../../utils/time';
 import { isSafeUrl } from '../../utils/url';
+import { StatCard, StatCardAction } from '../../components/ui/StatCard';
 
 const CHARS_PER_LINE = 60;
 const LINES_PER_PAGE = 55;
@@ -88,65 +89,29 @@ export const ProjectDashboard: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
                 {stats.map((stat) => (
-                    <div key={stat.label} className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 rounded-xl p-4 flex flex-col shadow-sm group">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-sm font-semibold text-primary-500 dark:text-primary-400 mb-1">
-                                    {stat.label}
-                                </p>
-                                <div>
-                                    <p className="text-2xl font-bold text-primary-900 dark:text-white leading-none">
-                                        {stat.count}
-                                    </p>
-                                    {stat.subCount && (
-                                        <p className="text-xs font-semibold text-primary-400 dark:text-primary-500 mt-1">
-                                            {stat.subCount}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                            <div className={`p-3 rounded-lg ${stat.color}`}>
-                                <stat.icon size={20} />
-                            </div>
-                        </div>
-                        {stat.action && activeProjectRole !== 'viewer' ? (
-                            <button
-                                onClick={() => navigate(stat.action!.path)}
-                                className="flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-md bg-primary-50 dark:bg-primary-800/50 hover:bg-primary-100 dark:hover:bg-primary-800 text-sm font-semibold text-primary-600 dark:text-primary-300 transition-colors border border-primary-200 dark:border-primary-700 mt-auto"
-                            >
-                                <Plus size={16} />
-                                {stat.action.label}
-                            </button>
-                        ) : (
-                            <div className="h-9 mt-auto"></div>
-                        )}
-                    </div>
+                    <StatCard
+                        key={stat.label}
+                        label={stat.label}
+                        count={stat.count}
+                        subCount={stat.subCount}
+                        icon={<stat.icon size={20} />}
+                        iconClassName={stat.color}
+                        action={stat.action && activeProjectRole !== 'viewer'
+                            ? <StatCardAction onClick={() => navigate(stat.action!.path)} icon={<Plus size={16} />} label={stat.action.label} />
+                            : undefined
+                        }
+                    />
                 ))}
 
                 {script?.content?.trim() && (
-                    <div className="bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 rounded-xl p-4 flex flex-col shadow-sm">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-sm font-semibold text-primary-500 dark:text-primary-400 mb-1">Script</p>
-                                <div>
-                                    <p className="text-2xl font-bold text-primary-900 dark:text-white leading-none">
-                                        {countScriptPages(script.content)}
-                                    </p>
-                                    <p className="text-xs font-semibold text-primary-400 dark:text-primary-500 mt-1">pages</p>
-                                </div>
-                            </div>
-                            <div className="p-3 rounded-lg text-primary-500 bg-primary-500/10">
-                                <FileText size={20} />
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => navigate('script')}
-                            className="flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-md bg-primary-50 dark:bg-primary-800/50 hover:bg-primary-100 dark:hover:bg-primary-800 text-sm font-semibold text-primary-600 dark:text-primary-300 transition-colors border border-primary-200 dark:border-primary-700 mt-auto"
-                        >
-                            <ArrowRight size={16} />
-                            Open script
-                        </button>
-                    </div>
+                    <StatCard
+                        label="Script"
+                        count={countScriptPages(script.content)}
+                        subCount="pages"
+                        icon={<FileText size={20} />}
+                        iconClassName="text-primary-500 bg-primary-500/10"
+                        action={<StatCardAction onClick={() => navigate('script')} icon={<ArrowRight size={16} />} label="Open script" />}
+                    />
                 )}
             </div>
 

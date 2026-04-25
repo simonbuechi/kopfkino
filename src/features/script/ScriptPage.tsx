@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { FileText, Lock, Unlock, User, MapPin, Clapperboard, ChevronDown, ChevronRight, Code, BookOpen, Info, X, CheckCircle, AlertCircle, Download, BarChart2 } from 'lucide-react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { Button } from '../../components/ui/Button';
+import { PageHeader } from '../../components/ui/PageHeader';
 import type { Character, Location } from '../../types/types';
 
 const AUTOSAVE_DELAY = 1500;
@@ -144,6 +145,37 @@ const LINE_INDENT: Partial<Record<LineType, { paddingLeft?: string; paddingRight
     transition:    { textAlign: 'right' },
     centered:      { textAlign: 'center' },
 };
+
+// ---------------------------------------------------------------------------
+// Paper / page-break constants
+// ---------------------------------------------------------------------------
+
+// Standard US Letter screenplay: 12pt Courier, 1" top+bottom margins, 11" page.
+// (792pt - 144pt) / 12pt = 54 lines per page.
+const LINES_PER_PAGE = 54;
+const PAPER_PAD_T = 40;  // py-10 = 2.5rem = 40px — keep in sync with editors
+const PAPER_LINE_H = 24; // leading-6 = 1.5rem = 24px — keep in sync with editors
+
+const PageBreakIndicator: React.FC<{ lineNum: number; pageNum: number }> = ({ lineNum, pageNum }) => (
+    <div
+        className="absolute left-0 right-0 pointer-events-none select-none z-10"
+        style={{ top: `${PAPER_PAD_T + lineNum * PAPER_LINE_H}px` }}
+    >
+        <div className="border-t border-dashed border-primary-200 dark:border-primary-700" />
+        <span
+            className="absolute top-0 -translate-y-1/2 text-[10px] font-sans text-primary-400 dark:text-primary-500 leading-none whitespace-nowrap"
+            style={{ left: 'calc(100% + 0.75rem)' }}
+        >
+            p.{pageNum}
+        </span>
+    </div>
+);
+
+function pageBreakLines(lineCount: number): number[] {
+    const breaks: number[] = [];
+    for (let n = LINES_PER_PAGE; n < lineCount; n += LINES_PER_PAGE) breaks.push(n);
+    return breaks;
+}
 
 // ---------------------------------------------------------------------------
 // PDF / Print export
@@ -351,10 +383,15 @@ const handleTabKey = (e: React.KeyboardEvent<HTMLTextAreaElement>, value: string
 const PlainEditor: React.FC<EditorProps> = ({ value, onChange, disabled }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     useAutoResize(textareaRef, value);
+    const breaks = pageBreakLines(value.split('\n').length);
 
     return (
-        <div className="w-full font-mono text-sm leading-6">
-            <div className="mx-auto py-10" style={{ width: '60ch' }}>
+        <div className="w-full font-mono text-sm leading-6 bg-primary-50 dark:bg-primary-950 py-8">
+            <div
+                className="relative mx-auto bg-white dark:bg-primary-900 shadow-lg border border-primary-100 dark:border-primary-800"
+                style={{ width: '72ch', paddingLeft: '6ch', paddingRight: '6ch', paddingTop: PAPER_PAD_T, paddingBottom: PAPER_PAD_T }}
+            >
+                {breaks.map((n, i) => <PageBreakIndicator key={n} lineNum={n} pageNum={i + 2} />)}
                 <textarea
                     ref={textareaRef}
                     value={value}
@@ -414,9 +451,15 @@ const FormattedEditor: React.FC<EditorProps> = ({ value, onChange, disabled }) =
         }
     }, []);
 
+    const breaks = pageBreakLines(value.split('\n').length);
+
     return (
-        <div className="w-full font-mono text-sm leading-6">
-            <div className="mx-auto py-10" style={{ width: '60ch' }}>
+        <div className="w-full font-mono text-sm leading-6 bg-primary-50 dark:bg-primary-950 py-8">
+            <div
+                className="relative mx-auto bg-white dark:bg-primary-900 shadow-lg border border-primary-100 dark:border-primary-800"
+                style={{ width: '72ch', paddingLeft: '6ch', paddingRight: '6ch', paddingTop: PAPER_PAD_T, paddingBottom: PAPER_PAD_T }}
+            >
+                {breaks.map((n, i) => <PageBreakIndicator key={n} lineNum={n} pageNum={i + 2} />)}
                 <div
                     ref={editorRef}
                     contentEditable={!disabled}
@@ -482,6 +525,9 @@ interface ScriptAnalysis {
     action: number;
     other: number;
     dialogByChar: { name: string; percent: number; lines: number }[];
+    pages: number;
+    scenes: number;
+    avgPagesPerScene: string;
 }
 
 function analyzeScript(text: string): ScriptAnalysis {
@@ -491,6 +537,7 @@ function analyzeScript(text: string): ScriptAnalysis {
     let dialogCount = 0;
     let actionCount = 0;
     let otherCount = 0;
+    let sceneCount = 0;
     const dialogByChar: Record<string, number> = {};
     let currentChar = '';
 
@@ -507,6 +554,9 @@ function analyzeScript(text: string): ScriptAnalysis {
             currentChar = '';
         } else if (type === 'character') {
             currentChar = trimmed.replace(/\s*\^.*$/, '').replace(/\s*\(.*?\)\s*$/, '').trim();
+        } else if (type === 'scene-heading') {
+            sceneCount++;
+            currentChar = '';
         } else if (type === 'blank') {
             currentChar = '';
         } else if (type !== 'title' && type !== 'note') {
@@ -517,6 +567,7 @@ function analyzeScript(text: string): ScriptAnalysis {
     const total = dialogCount + actionCount + otherCount;
     const sorted = Object.entries(dialogByChar).sort(([, a], [, b]) => b - a);
     const totalDialogLines = sorted.reduce((s, [, n]) => s + n, 0);
+    const pages = Math.max(1, Math.ceil(lines.length / LINES_PER_PAGE));
 
     return {
         dialog: total ? Math.round((dialogCount / total) * 100) : 0,
@@ -527,6 +578,9 @@ function analyzeScript(text: string): ScriptAnalysis {
             lines: count,
             percent: totalDialogLines ? Math.round((count / totalDialogLines) * 100) : 0,
         })),
+        pages,
+        scenes: sceneCount,
+        avgPagesPerScene: sceneCount > 0 ? (pages / sceneCount).toFixed(1) : '—',
     };
 }
 
@@ -774,9 +828,10 @@ export const ScriptPage: React.FC = () => {
     return (
         <div className="w-full">
             {/* Toolbar */}
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-3xl font-bold text-primary-900 dark:text-white">Script</h2>
-                <div className="flex items-center gap-3">
+            <PageHeader
+                title="Script"
+                className="mb-6"
+                actions={<div className="flex items-center gap-3">
                     <Tooltip label="Download script PDF">
                         <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
                             <Download size={14} />.pdf
@@ -838,8 +893,8 @@ export const ScriptPage: React.FC = () => {
                             </Button>
                         </Tooltip>
                     )}
-                </div>
-            </div>
+                </div>}
+            />
 
             {/* Body: editor + resize handle + sidebar */}
             <div className="flex items-start">
@@ -916,6 +971,20 @@ export const ScriptPage: React.FC = () => {
                             <Button variant="ghost" size="icon" onClick={() => setAnalysisOpen(false)}>
                                 <X size={16} />
                             </Button>
+                        </div>
+
+                        {/* Page stats */}
+                        <div className="grid grid-cols-3 gap-3 mb-6">
+                            {([
+                                { label: 'Pages',           value: analysis.pages },
+                                { label: 'Scenes',          value: analysis.scenes },
+                                { label: 'Avg / scene',     value: analysis.avgPagesPerScene },
+                            ] as const).map(({ label, value }) => (
+                                <div key={label} className="flex flex-col items-center justify-center bg-primary-50 dark:bg-primary-800/50 rounded-xl py-3 px-2 gap-0.5">
+                                    <span className="text-2xl font-bold text-primary-900 dark:text-white leading-none">{value}</span>
+                                    <span className="text-xs text-primary-400 dark:text-primary-500 font-medium mt-1">{label}</span>
+                                </div>
+                            ))}
                         </div>
 
                         {/* Dialog vs Action */}
