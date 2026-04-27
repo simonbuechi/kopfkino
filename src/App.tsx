@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Layout } from './components/Layout';
 import { ThemeProvider } from './context/ThemeContext';
@@ -60,7 +60,7 @@ function App() {
       <AuthProvider>
         <ProjectProvider>
           <StoreProvider>
-          <BrowserRouter>
+          <HashRouter>
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
                 <Route path="/login" element={<AuthPage />} />
@@ -89,7 +89,7 @@ function App() {
                 </Route>
               </Routes>
             </Suspense>
-          </BrowserRouter>
+          </HashRouter>
           </StoreProvider>
         </ProjectProvider>
       </AuthProvider>

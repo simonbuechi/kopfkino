@@ -14,7 +14,7 @@ export default {
             },
             colors: {
                 primary: colors.slate,
-                secondary: colors.rose,
+                secondary: colors.violet,
                 danger: colors.red,
             }
         },
