@@ -332,7 +332,10 @@ export const storage = {
     },
 
     saveCharacter: async (projectId: string, character: Character) => {
-        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.CHARACTERS, character.id), character);
+        const data = Object.fromEntries(
+            Object.entries(character).filter(([, v]) => v !== undefined)
+        ) as Character;
+        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.CHARACTERS, data.id), data);
     },
 
     deleteCharacter: async (projectId: string, characterId: string) => {
@@ -388,7 +391,10 @@ export const storage = {
     },
 
     saveAsset: async (projectId: string, asset: Asset) => {
-        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.ASSETS, asset.id), asset);
+        const data = Object.fromEntries(
+            Object.entries(asset).filter(([, v]) => v !== undefined)
+        ) as Asset;
+        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.ASSETS, data.id), data);
     },
 
     deleteAsset: async (projectId: string, assetId: string) => {
@@ -416,7 +422,10 @@ export const storage = {
     },
 
     savePerson: async (projectId: string, person: Person) => {
-        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.PEOPLE, person.id), person);
+        const data = Object.fromEntries(
+            Object.entries(person).filter(([, v]) => v !== undefined)
+        ) as Person;
+        await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.PEOPLE, data.id), data);
     },
 
     deletePerson: async (projectId: string, personId: string) => {

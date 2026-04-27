@@ -428,6 +428,7 @@ export const BeatsPage: React.FC = () => {
     const [localBeats, setLocalBeats] = useState<Beat[]>(beats);
     const isDragging = useRef(false);
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (!isDragging.current) setLocalBeats(beats);
     }, [beats]);
 
@@ -440,6 +441,7 @@ export const BeatsPage: React.FC = () => {
     const localBeatsRef = useRef(localBeats);
     useEffect(() => { localBeatsRef.current = localBeats; }, [localBeats]);
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (!isDragging.current) setLocalSceneOrder(parsedScenes.map(s => s.key));
     }, [parsedScenes]);
 
