@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useProjects } from '../hooks/useProjects';
-import { MapPin, Clapperboard, User, ChevronLeft, ChevronRight, Calendar, Package, Users, ScrollText } from 'lucide-react';
+import { MapPin, Clapperboard, User, ChevronLeft, ChevronRight, Calendar, Package, Users, ScrollText, Columns3, Clock } from 'lucide-react';
 import icon from '../assets/icon.webp';
 import clsx from 'clsx';
 import { version } from '../../package.json';
@@ -14,6 +14,8 @@ const SectionLabel: React.FC<{ label: string; collapsed: boolean }> = ({ label, 
 
 export const Sidebar: React.FC = () => {
     const { activeProjectId } = useProjects();
+    const location = useLocation();
+    const isOnScript = location.pathname.includes('/script');
     const [isCollapsed, setIsCollapsed] = useState(() => {
         const saved = localStorage.getItem('sidebar-collapsed');
         return saved === 'true';
@@ -55,10 +57,22 @@ export const Sidebar: React.FC = () => {
                 {activeProjectId && (
                     <>
                         <SectionLabel label="Writing" collapsed={isCollapsed} />
-                        <NavLink to={`/project/${activeProjectId}/script`} className={linkClass} title={isCollapsed ? "Script" : undefined}>
+                        <NavLink to={`/project/${activeProjectId}/script`} end className={linkClass} title={isCollapsed ? "Script" : undefined}>
                             <ScrollText size={20} className="shrink-0" />
                             {!isCollapsed && <span>Script</span>}
                         </NavLink>
+                        {isOnScript && !isCollapsed && (
+                            <div className="flex flex-col gap-1 ml-4 pl-3 border-l border-primary-200 dark:border-primary-800">
+                                <NavLink to={`/project/${activeProjectId}/script/beats`} className={linkClass}>
+                                    <Columns3 size={16} className="shrink-0" />
+                                    <span>Beats</span>
+                                </NavLink>
+                                <NavLink to={`/project/${activeProjectId}/script/revisions`} className={linkClass}>
+                                    <Clock size={16} className="shrink-0" />
+                                    <span>Revisions</span>
+                                </NavLink>
+                            </div>
+                        )}
 
                         <SectionLabel label="Creative" collapsed={isCollapsed} />
                         <NavLink to={`/project/${activeProjectId}/characters`} className={linkClass} title={isCollapsed ? "Characters" : undefined}>
@@ -106,7 +120,7 @@ export const Sidebar: React.FC = () => {
                     )}
                     title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                 >
-                    {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+                    {isCollapsed ? <ChevronRight size={20} className="shrink-0" /> : <ChevronLeft size={20} className="shrink-0" />}
                     {!isCollapsed && <span>Collapse</span>}
                 </button>
             </div>
