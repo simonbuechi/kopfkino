@@ -201,9 +201,12 @@ function buildEditorDOM(el: HTMLElement, text: string) {
     const lines = text.split('\n');
     const types = classifyLines(text);
     el.innerHTML = '';
+    let sceneIndex = 0;
     lines.forEach((line, i) => {
         const div = document.createElement('div');
-        applyLineStyle(div, types[i] ?? 'action');
+        const type = types[i] ?? 'action';
+        applyLineStyle(div, type);
+        if (type === 'scene-heading') div.id = `scene-${sceneIndex++}`;
         if (line) { div.textContent = line; }
         else       { div.appendChild(document.createElement('br')); }
         el.appendChild(div);
@@ -212,9 +215,17 @@ function buildEditorDOM(el: HTMLElement, text: string) {
 
 function refreshLineStyles(el: HTMLElement, text: string) {
     const types = classifyLines(text);
-    Array.from(el.children).forEach((child, i) =>
-        applyLineStyle(child as HTMLElement, types[i] ?? 'action')
-    );
+    let sceneIndex = 0;
+    Array.from(el.children).forEach((child, i) => {
+        const type = types[i] ?? 'action';
+        const childEl = child as HTMLElement;
+        applyLineStyle(childEl, type);
+        if (type === 'scene-heading') {
+            childEl.id = `scene-${sceneIndex++}`;
+        } else if (childEl.id.startsWith('scene-')) {
+            childEl.removeAttribute('id');
+        }
+    });
 }
 
 function extractEditorText(el: HTMLElement): string {
@@ -225,6 +236,7 @@ interface EditorProps {
     value: string;
     onChange: (v: string) => void;
     disabled?: boolean;
+    paperRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const useAutoResize = (ref: React.RefObject<HTMLTextAreaElement | null>, value: string) => {
@@ -248,7 +260,7 @@ const handleTabKey = (e: React.KeyboardEvent<HTMLTextAreaElement>, value: string
     });
 };
 
-const PlainEditor: React.FC<EditorProps> = ({ value, onChange, disabled }) => {
+const PlainEditor: React.FC<EditorProps> = ({ value, onChange, disabled, paperRef }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     useAutoResize(textareaRef, value);
     const breaks = pageBreakLines(value.split('\n').length);
@@ -256,6 +268,7 @@ const PlainEditor: React.FC<EditorProps> = ({ value, onChange, disabled }) => {
     return (
         <div className="w-full font-mono text-sm leading-6 bg-primary-50 dark:bg-primary-950 py-8">
             <div
+                ref={paperRef}
                 className="relative mx-auto bg-white dark:bg-primary-900 shadow-lg border border-primary-100 dark:border-primary-800"
                 style={{ width: '72ch', paddingLeft: '6ch', paddingRight: '6ch', paddingTop: PAPER_PAD_T, paddingBottom: PAPER_PAD_T }}
             >
@@ -361,7 +374,7 @@ function extractScriptInfo(text: string) {
     const types = classifyLines(text);
     const characters = new Set<string>();
     const locations = new Set<string>();
-    const scenes: string[] = [];
+    const scenes: { text: string; lineIndex: number }[] = [];
 
     lines.forEach((line, i) => {
         const trimmed = line.trim();
@@ -371,7 +384,7 @@ function extractScriptInfo(text: string) {
             if (name) characters.add(name);
         }
         if (type === 'scene-heading') {
-            scenes.push(trimmed.startsWith('.') ? trimmed.slice(1).trim() : trimmed);
+            scenes.push({ text: trimmed.startsWith('.') ? trimmed.slice(1).trim() : trimmed, lineIndex: i });
             const loc = extractLocation(trimmed);
             if (loc) locations.add(loc);
         }
@@ -535,10 +548,53 @@ const SidebarSection: React.FC<SidebarSectionProps> = ({ icon, title, items, isO
     </div>
 );
 
+interface ScenesSidebarProps {
+    scenes: { text: string; lineIndex: number }[];
+    width: number;
+    onSceneClick: (index: number, lineIndex: number) => void;
+}
+
+const ScenesSidebar: React.FC<ScenesSidebarProps> = ({ scenes, width, onSceneClick }) => {
+    const [open, setOpen] = useState(true);
+    return (
+        <div style={{ width }} className="shrink-0 sticky top-0 self-start max-h-[calc(100vh-8rem)] overflow-y-auto pr-4 pt-2">
+            <button
+                onClick={() => setOpen(o => !o)}
+                className="w-full flex items-center gap-2 mb-1 px-3 py-1.5 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900 transition-colors group"
+            >
+                <span className="text-primary-500 dark:text-primary-400"><Clapperboard size={13} /></span>
+                <h3 className="text-sm font-bold text-primary-800 dark:text-primary-200">Scenes</h3>
+                <span className="ml-auto text-xs text-primary-400 font-semibold">{scenes.length}</span>
+                {open
+                    ? <ChevronDown size={14} className="text-primary-400 group-hover:text-primary-600 dark:group-hover:text-primary-300 shrink-0 transition-colors" />
+                    : <ChevronRight size={14} className="text-primary-400 group-hover:text-primary-600 dark:group-hover:text-primary-300 shrink-0 transition-colors" />}
+            </button>
+            {open && (
+                scenes.length === 0 ? (
+                    <p className="text-xs text-primary-400 dark:text-primary-600 italic px-3 py-1">No scenes found</p>
+                ) : (
+                    <ul className="space-y-0">
+                        {scenes.map((scene, i) => (
+                            <li key={i}>
+                                <button
+                                    onClick={() => onSceneClick(i, scene.lineIndex)}
+                                    className="w-full flex items-start gap-2 px-3 py-1 rounded-lg text-left hover:bg-primary-100 dark:hover:bg-primary-900 transition-colors"
+                                >
+                                    <span className="shrink-0 text-xs text-primary-400 font-mono mt-0.5 w-5 text-right">{i + 1}</span>
+                                    <span className="text-sm text-primary-700 dark:text-primary-300 truncate">{scene.text}</span>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                )
+            )}
+        </div>
+    );
+};
+
 interface ScriptSidebarProps {
     characters: string[];
     locations: string[];
-    scenes: string[];
     width: number;
     projectId: string;
     storeCharacters: Character[];
@@ -546,12 +602,12 @@ interface ScriptSidebarProps {
 }
 
 const ScriptSidebar: React.FC<ScriptSidebarProps> = ({
-    characters, locations, scenes, width,
+    characters, locations, width,
     projectId, storeCharacters, storeLocations,
 }) => {
-    const [open, setOpen] = useState({ characters: true, locations: true, scenes: true });
+    const [open, setOpen] = useState({ characters: true, locations: true });
 
-    const toggle = (key: keyof typeof open) =>
+    const toggle = (key: 'characters' | 'locations') =>
         setOpen(prev => ({ ...prev, [key]: !prev[key] }));
 
     const charNameToIdMap = useMemo(() => {
@@ -590,13 +646,6 @@ const ScriptSidebar: React.FC<ScriptSidebarProps> = ({
                     return id ? `/project/${projectId}/locations/${id}` : null;
                 }}
             />
-            <SidebarSection
-                icon={<Clapperboard size={13} />}
-                title="Scenes"
-                items={scenes}
-                isOpen={open.scenes}
-                onToggle={() => toggle('scenes')}
-            />
         </div>
     );
 };
@@ -611,19 +660,29 @@ export const ScriptPage: React.FC = () => {
     const [analysisOpen, setAnalysisOpen] = useState(false);
     const [mode, setMode] = useState<'plain' | 'formatted'>('formatted');
     const [sidebarWidth, setSidebarWidth] = useState(280);
+    const [leftSidebarWidth, setLeftSidebarWidth] = useState(220);
     const isResizing = useRef(false);
     const resizeStartX = useRef(0);
     const resizeStartWidth = useRef(0);
+    const isResizingLeft = useRef(false);
+    const leftResizeStartX = useRef(0);
+    const leftResizeStartWidth = useRef(0);
+    const paperRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const onMove = (e: MouseEvent) => {
-            if (!isResizing.current) return;
-            const delta = resizeStartX.current - e.clientX;
-            setSidebarWidth(Math.min(480, Math.max(120, resizeStartWidth.current + delta)));
+            if (isResizing.current) {
+                const delta = resizeStartX.current - e.clientX;
+                setSidebarWidth(Math.min(480, Math.max(120, resizeStartWidth.current + delta)));
+            }
+            if (isResizingLeft.current) {
+                const delta = e.clientX - leftResizeStartX.current;
+                setLeftSidebarWidth(Math.min(400, Math.max(120, leftResizeStartWidth.current + delta)));
+            }
         };
         const onUp = () => {
-            if (!isResizing.current) return;
             isResizing.current = false;
+            isResizingLeft.current = false;
             document.body.style.userSelect = '';
             document.body.style.cursor = '';
         };
@@ -643,6 +702,26 @@ export const ScriptPage: React.FC = () => {
         document.body.style.cursor = 'col-resize';
         e.preventDefault();
     };
+
+    const handleLeftResizeStart = (e: React.MouseEvent) => {
+        isResizingLeft.current = true;
+        leftResizeStartX.current = e.clientX;
+        leftResizeStartWidth.current = leftSidebarWidth;
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'col-resize';
+        e.preventDefault();
+    };
+
+    const scrollToScene = useCallback((sceneIndex: number, lineIndex: number) => {
+        if (mode === 'formatted') {
+            document.getElementById(`scene-${sceneIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            const paper = paperRef.current;
+            if (!paper) return;
+            const top = paper.getBoundingClientRect().top + window.scrollY + PAPER_PAD_T + lineIndex * PAPER_LINE_H - 100;
+            window.scrollTo({ top, behavior: 'smooth' });
+        }
+    }, [mode]);
 
     const frozen = script?.frozen ?? false;
 
@@ -764,8 +843,23 @@ export const ScriptPage: React.FC = () => {
                 </div>}
             />
 
-            {/* Body: editor + resize handle + sidebar */}
+            {/* Body: left sidebar + editor + right sidebar */}
             <div className="flex items-start">
+                {/* Scenes sidebar (left) */}
+                <ScenesSidebar
+                    scenes={scenes}
+                    width={leftSidebarWidth}
+                    onSceneClick={scrollToScene}
+                />
+
+                {/* Left resize handle */}
+                <div
+                    onMouseDown={handleLeftResizeStart}
+                    className="w-3 self-stretch cursor-col-resize flex items-start justify-center group pt-2 shrink-0"
+                >
+                    <div className="w-px h-full bg-primary-200 dark:bg-primary-800 group-hover:bg-primary-400 dark:group-hover:bg-primary-500 transition-colors" />
+                </div>
+
                 {/* Editor / Viewer */}
                 <div className="flex-1 min-w-0 relative">
                     {isEmpty && !saving && (
@@ -777,7 +871,7 @@ export const ScriptPage: React.FC = () => {
                     )}
                     {mode === 'formatted'
                         ? <FormattedEditor value={draft} onChange={handleChange} disabled={frozen} />
-                        : <PlainEditor value={draft} onChange={handleChange} disabled={frozen} />
+                        : <PlainEditor value={draft} onChange={handleChange} disabled={frozen} paperRef={paperRef} />
                     }
                 </div>
 
@@ -789,11 +883,10 @@ export const ScriptPage: React.FC = () => {
                     <div className="w-px h-full bg-primary-200 dark:bg-primary-800 group-hover:bg-primary-400 dark:group-hover:bg-primary-500 transition-colors" />
                 </div>
 
-                {/* Sidebar */}
+                {/* Characters & Locations sidebar (right) */}
                 <ScriptSidebar
                     characters={characters}
                     locations={locations}
-                    scenes={scenes}
                     width={sidebarWidth}
                     projectId={activeProjectId ?? ''}
                     storeCharacters={storeCharacters}

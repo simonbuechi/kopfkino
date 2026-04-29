@@ -25,6 +25,8 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 interface ShotsListProps {
     sceneId: string;
     shots: Shot[];
+    onAddShot?: () => void;
+    onEditShot?: (id: string) => void;
 }
 
 const SortableShotItem = ({
@@ -402,7 +404,7 @@ const SortableShotItem = ({
     );
 };
 
-export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
+export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots, onAddShot, onEditShot }) => {
     const { deleteShotFromScene, updateShotInScene, reorderShotsInScene } = useStore();
     const { user } = useAuth();
     const { confirm, confirmDialog } = useConfirmDialog();
@@ -546,7 +548,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                         </button>
                     </div>
                 </div>
-                <Button size="sm" onClick={() => navigate(`shots/new`)}>
+                <Button size="sm" onClick={() => onAddShot ? onAddShot() : navigate(`shots/new`)}>
                     <Plus size={16} /> Add Shot
                 </Button>
             </div>
@@ -590,7 +592,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({ sceneId, shots }) => {
                                                 onUploadVideo={handleUploadVideo}
                                                 onDelete={handleDelete}
                                                 onRemoveVideo={handleRemoveVideo}
-                                                onEdit={(id) => navigate(`shots/${id}/edit`)}
+                                                onEdit={(id) => onEditShot ? onEditShot(id) : navigate(`shots/${id}`)}
                                                 isUploading={uploadingId === shot.id}
                                                 viewMode={viewMode}
                                                 onImageClick={(url, alt) => setImageModal({ url, alt })}

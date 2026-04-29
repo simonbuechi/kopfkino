@@ -1,10 +1,11 @@
 import React, { useReducer, useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
+import { useProjects } from '../../hooks/useProjects';
 import { Button } from '../../components/ui/Button';
-import { Trash2, ArrowLeft, Loader2, Save, MapPin, ChevronDown, ChevronRight, X, Search } from 'lucide-react';
+import { Trash2, ArrowLeft, Loader2, Save, MapPin, ChevronDown, ChevronRight, X, Search, Clapperboard, Info } from 'lucide-react';
+import { Tooltip } from '../../components/ui/Tooltip';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { ShotsList } from '../shots/ShotsList';
 import type { Scene } from '../../types/types';
 
 // ---------------------------------------------------------------------------
@@ -17,6 +18,7 @@ interface SceneState {
     description: string;
     comment: string;
     locationId: string;
+    length: string;
     characters: string[];
     peopleIds: string[];
     assetIds: string[];
@@ -55,7 +57,7 @@ function sceneReducer(state: SceneState, action: SceneAction): SceneState {
 
 const initialState: SceneState = {
     name: '', number: '', description: '', comment: '',
-    locationId: '', characters: [], peopleIds: [], assetIds: [],
+    locationId: '', length: '', characters: [], peopleIds: [], assetIds: [],
     isDirty: false, saveStatus: null,
 };
 
@@ -192,14 +194,15 @@ export const SceneDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { scenes, addScene, deleteScene, locations, characters, people, assets } = useStore();
+    const { activeProjectId } = useProjects();
     const { confirm, confirmDialog } = useConfirmDialog();
 
     const scene = scenes.find((s) => s.id === id);
 
     const [state, dispatch] = useReducer(sceneReducer, initialState);
-    const { name, number, description, comment, locationId, characters: selectedChars, peopleIds, assetIds, isDirty, saveStatus } = state;
+    const { name, number, description, comment, locationId, length, characters: selectedChars, peopleIds, assetIds, isDirty, saveStatus } = state;
 
-    const [open, setOpen] = useState({ description: true, shots: true, admin: true });
+    const [open, setOpen] = useState({ description: true, admin: true });
     const toggle = (key: keyof typeof open) => setOpen(prev => ({ ...prev, [key]: !prev[key] }));
 
     useEffect(() => {
@@ -212,6 +215,7 @@ export const SceneDetail: React.FC = () => {
                     description: scene.description,
                     comment: scene.comment ?? '',
                     locationId: scene.locationId,
+                    length: scene.length?.toString() ?? '',
                     characters: scene.characters ?? [],
                     peopleIds: scene.peopleIds ?? [],
                     assetIds: scene.assetIds ?? [],
@@ -232,6 +236,7 @@ export const SceneDetail: React.FC = () => {
                 ...scene,
                 name, number, description, comment,
                 locationId,
+                length: length ? Number(length) : undefined,
                 characters: selectedChars,
                 peopleIds,
                 assetIds,
@@ -275,6 +280,12 @@ export const SceneDetail: React.FC = () => {
                     {saveStatus === 'error' && (
                         <span className="text-danger-600 text-sm font-semibold">Error saving</span>
                     )}
+                    <Link to={`/project/${activeProjectId}/scenes/${id}/shots`}>
+                        <Button size="sm" variant="outline">
+                            <Clapperboard size={16} /> Shots
+                        </Button>
+                    </Link>
+                    <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1" />
                     <Button onClick={handleSave} disabled={!isDirty || saveStatus === 'saving'} size="sm">
                         <Save size={16} /> Save
                     </Button>
@@ -321,6 +332,23 @@ export const SceneDetail: React.FC = () => {
                         <div className="flex flex-col gap-6">
                             <section className="flex flex-col gap-2">
                                 <h3 className="font-semibold text-primary-900 dark:text-white flex items-center gap-1.5">
+                                    Length
+                                    <Tooltip label="Enter estimated length of scene (in sec)">
+                                        <Info size={13} className="text-primary-400 cursor-default" />
+                                    </Tooltip>
+                                </h3>
+                                <input
+                                    type="number"
+                                    value={length}
+                                    onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'length', value: e.target.value })}
+                                    className={inputClass}
+                                    placeholder="20 sec"
+                                    min={0}
+                                />
+                            </section>
+
+                            <section className="flex flex-col gap-2">
+                                <h3 className="font-semibold text-primary-900 dark:text-white flex items-center gap-1.5">
                                     <MapPin size={14} className="text-primary-400" /> Location
                                 </h3>
                                 <select
@@ -347,14 +375,6 @@ export const SceneDetail: React.FC = () => {
                             </section>
                         </div>
                     </div>
-                )}
-            </div>
-
-            {/* ── Shots ── */}
-            <div className="flex flex-col gap-6">
-                <SectionHeader title="Shots" isOpen={open.shots} onToggle={() => toggle('shots')} />
-                {open.shots && (
-                    <ShotsList sceneId={scene.id} shots={scene.shots ?? []} />
                 )}
             </div>
 

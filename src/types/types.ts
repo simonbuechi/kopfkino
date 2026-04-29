@@ -26,6 +26,7 @@ export interface Scene {
     peopleIds?: string[];
     assetIds?: string[];
     shots?: Shot[];
+    length?: number;
     order?: number;
 }
 

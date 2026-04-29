@@ -1,12 +1,11 @@
-import React, { useReducer, useEffect, useRef } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { Button } from '../../components/ui/Button';
-import { MapPin, Trash2, ArrowLeft, ImageIcon, Loader2, X, Upload, Star } from 'lucide-react';
+import { MapPin, Trash2, ArrowLeft, ImageIcon, Loader2, X, Upload, Star, Save } from 'lucide-react';
 import { deleteImageFromUrl, uploadFile } from '../../services/storageService';
-import { useDebounce } from '../../hooks/useDebounce';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import toast from 'react-hot-toast';
 import type { Location, LocationType } from '../../types/types';
@@ -74,132 +73,39 @@ export const LocationDetail: React.FC = () => {
 
     const { name, description, geolocation, comment, images, thumbnailUrl, type, isDirty, saveStatus } = state;
 
-    const debouncedTextKey = useDebounce(`${name}|${description}|${geolocation}|${comment}`, 1000);
-
-    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const latestStateRef = useRef(state);
-
-    useEffect(() => {
-        latestStateRef.current = state;
-    }, [state]);
-
-    // Initial load and sync effect
     useEffect(() => {
         if (location) {
-            if (location.id !== id || !isDirty) {
-                const payload = {
+            dispatch({
+                type: 'SYNC',
+                payload: {
                     name: location.name,
                     description: location.description,
                     geolocation: location.geolocation || '',
                     comment: location.comment || '',
                     images: location.images || [],
                     thumbnailUrl: location.thumbnailUrl || '',
-                    type: location.type
-                };
-                
-                // Only sync if actual data differs from state to avoid loops
-                const needsSync = 
-                    payload.name !== name ||
-                    payload.description !== description ||
-                    payload.geolocation !== geolocation ||
-                    payload.comment !== comment ||
-                    JSON.stringify(payload.images) !== JSON.stringify(images) ||
-                    payload.thumbnailUrl !== thumbnailUrl ||
-                    payload.type !== type;
-
-                if (needsSync) {
-                    dispatch({ type: 'SYNC', payload });
-                }
-            } else if (isDirty) {
-                // Check if remote matches local
-                const matches =
-                    location.name === name &&
-                    location.description === description &&
-                    (location.geolocation || '') === geolocation &&
-                    (location.comment || '') === comment &&
-                    JSON.stringify(location.images || []) === JSON.stringify(images) &&
-                    (location.thumbnailUrl || '') === thumbnailUrl &&
-                    location.type === type;
-
-                if (matches) {
-                    dispatch({ type: 'SYNC', payload: {} });
-                }
-            }
+                    type: location.type,
+                },
+            });
         }
-    }, [location, id, name, description, geolocation, comment, images, thumbnailUrl, type, isDirty]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
 
-    // Auto-save effect
-    useEffect(() => {
-        if (!location || !isDirty) return;
-
-        const { name: n, description: d, geolocation: g, comment: c } = latestStateRef.current;
-        if (!n.trim()) return;
-
-        const save = async () => {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-            dispatch({ type: 'SET_STATUS', status: 'saving' });
-
-            try {
-                const s = latestStateRef.current;
-                const locationData: Location = {
-                    ...location,
-                    name: s.name,
-                    description: s.description,
-                    geolocation: s.geolocation,
-                    comment: s.comment,
-                    images: s.images,
-                    thumbnailUrl: s.thumbnailUrl,
-                    type: s.type,
-                };
-
-                await saveLocation(locationData);
-
-                const current = latestStateRef.current;
-                const isStillMatches =
-                    current.name === locationData.name &&
-                    current.description === locationData.description &&
-                    current.geolocation === (locationData.geolocation || '') &&
-                    current.comment === (locationData.comment || '') &&
-                    JSON.stringify(current.images) === JSON.stringify(locationData.images) &&
-                    current.thumbnailUrl === (locationData.thumbnailUrl || '') &&
-                    current.type === locationData.type;
-
-                if (isStillMatches) {
-                    dispatch({ type: 'SAVED' });
-                    saveTimeoutRef.current = setTimeout(() => {
-                        dispatch({ type: 'SET_STATUS', status: null });
-                    }, 2000);
-                } else {
-                    dispatch({ type: 'SET_STATUS', status: null });
-                }
-
-            } catch (error) {
-                console.error("Auto-save failed", error);
-                dispatch({ type: 'SET_STATUS', status: 'error' });
-            }
-        };
-
-        const hasChanged =
-            n !== location.name ||
-            d !== location.description ||
-            g !== (location.geolocation || '') ||
-            c !== (location.comment || '') ||
-            JSON.stringify(images) !== JSON.stringify(location.images || []) ||
-            thumbnailUrl !== (location.thumbnailUrl || '') ||
-            type !== location.type;
-
-        if (hasChanged) {
-            save();
+    const handleSave = async () => {
+        if (!name.trim()) return;
+        dispatch({ type: 'SET_STATUS', status: 'saving' });
+        try {
+            const locationData: Location = {
+                ...location!,
+                name, description, geolocation, comment, images, thumbnailUrl, type,
+            };
+            await saveLocation(locationData);
+            dispatch({ type: 'SAVED' });
+        } catch (error) {
+            console.error('Save failed', error);
+            dispatch({ type: 'SET_STATUS', status: 'error' });
         }
-
-    }, [debouncedTextKey, images, thumbnailUrl, location, saveLocation, isDirty, type]);
-
-    // Cleanup timeout
-    useEffect(() => {
-        return () => {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-        };
-    }, []);
+    };
 
     const { fileInputRef, isUploading, handleClick: handleImageUploadClick, handleChange: onFileSelected } = useFileUpload(
         async (file) => {
@@ -271,15 +177,14 @@ export const LocationDetail: React.FC = () => {
                         </span>
                     )}
                     {saveStatus === 'saved' && (
-                        <span className="text-green-600 dark:text-green-400 text-sm flex items-center gap-1 font-semibold transition-opacity duration-500">
-                            Saved
-                        </span>
+                        <span className="text-green-600 dark:text-green-400 text-sm font-semibold">Saved</span>
                     )}
                     {saveStatus === 'error' && (
-                        <span className="text-danger-600 text-sm font-semibold">
-                            Error saving
-                        </span>
+                        <span className="text-danger-600 text-sm font-semibold">Error saving</span>
                     )}
+                    <Button onClick={handleSave} disabled={!isDirty || !name.trim() || saveStatus === 'saving'} size="sm">
+                        <Save size={16} /> Save
+                    </Button>
                     <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1"></div>
                     <Button
                         onClick={handleImageUploadClick}

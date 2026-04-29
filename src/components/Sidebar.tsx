@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useProjects } from '../hooks/useProjects';
-import { MapPin, Clapperboard, User, ChevronLeft, ChevronRight, Calendar, Package, Users, ScrollText, Columns3, Clock } from 'lucide-react';
+import { MapPin, Clapperboard, User, ChevronLeft, ChevronRight, Calendar, Package, Users, ScrollText, Columns3, Clock, Film } from 'lucide-react';
 import icon from '../assets/icon.webp';
 import clsx from 'clsx';
 import { version } from '../../package.json';
@@ -16,6 +16,7 @@ export const Sidebar: React.FC = () => {
     const { activeProjectId } = useProjects();
     const location = useLocation();
     const isOnScript = location.pathname.includes('/script');
+    const isOnScenes = location.pathname.includes('/scenes');
     const [isCollapsed, setIsCollapsed] = useState(() => {
         const saved = localStorage.getItem('sidebar-collapsed');
         return saved === 'true';
@@ -83,10 +84,18 @@ export const Sidebar: React.FC = () => {
                             <MapPin size={20} className="shrink-0" />
                             {!isCollapsed && <span>Locations</span>}
                         </NavLink>
-                        <NavLink to={`/project/${activeProjectId}/scenes`} className={linkClass} title={isCollapsed ? "Scenes" : undefined}>
+                        <NavLink to={`/project/${activeProjectId}/scenes`} end className={linkClass} title={isCollapsed ? "Scenes" : undefined}>
                             <Clapperboard size={20} className="shrink-0" />
                             {!isCollapsed && <span>Scenes</span>}
                         </NavLink>
+                        {isOnScenes && !isCollapsed && (
+                            <div className="flex flex-col gap-1 ml-4 pl-3 border-l border-primary-200 dark:border-primary-800">
+                                <NavLink to={`/project/${activeProjectId}/scenes/shots`} className={linkClass}>
+                                    <Film size={16} className="shrink-0" />
+                                    <span>Shots</span>
+                                </NavLink>
+                            </div>
+                        )}
 
                         <SectionLabel label="Manage" collapsed={isCollapsed} />
                         <NavLink to={`/project/${activeProjectId}/people`} className={linkClass} title={isCollapsed ? "People" : undefined}>

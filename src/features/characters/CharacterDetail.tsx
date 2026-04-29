@@ -8,7 +8,6 @@ import { ImageModal } from '../../components/ui/ImageModal';
 import { useAuth } from '../../hooks/useAuth';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import type { Character, CharacterType } from '../../types/types';
-import { useDebounce } from '../../hooks/useDebounce';
 import toast from 'react-hot-toast';
 import { uploadFile, deleteImageFromUrl } from '../../services/storageService';
 
@@ -74,132 +73,56 @@ export const CharacterDetail: React.FC = () => {
 
     const { name, description, comment, imageUrl, type, isDirty, saveStatus } = state;
 
-    const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
 
-    const debouncedName = useDebounce(name, 1000);
-    const debouncedDescription = useDebounce(description, 1000);
-    const debouncedComment = useDebounce(comment, 1000);
-
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const latestStateRef = useRef(state);
 
-    useEffect(() => {
-        latestStateRef.current = state;
-    }, [state]);
-
-    // Initial load and sync effect
     useEffect(() => {
         if (existingCharacter) {
-            const payload = {
-                name: existingCharacter.name,
-                description: existingCharacter.description,
-                comment: existingCharacter.comment || '',
-                imageUrl: existingCharacter.imageUrl,
-                type: existingCharacter.type
-            };
-
-            const needsSync = 
-                payload.name !== name ||
-                payload.description !== description ||
-                payload.comment !== comment ||
-                payload.imageUrl !== imageUrl ||
-                payload.type !== type;
-
-            if (needsSync && (!isDirty || existingCharacter.id !== id)) {
-                dispatch({ type: 'SYNC', payload });
-            }
+            dispatch({
+                type: 'SYNC',
+                payload: {
+                    name: existingCharacter.name,
+                    description: existingCharacter.description,
+                    comment: existingCharacter.comment || '',
+                    imageUrl: existingCharacter.imageUrl,
+                    type: existingCharacter.type,
+                },
+            });
         } else if (isNew) {
             dispatch({ type: 'RESET' });
         }
-    }, [existingCharacter, id, isNew, name, description, comment, imageUrl, type, isDirty]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
 
-    // Auto-save effect
-    useEffect(() => {
-        if (isNew || !existingCharacter || !isDirty) return;
-        if (!debouncedName.trim()) return;
-
-        const save = async () => {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-            dispatch({ type: 'SET_STATUS', status: 'saving' });
-
-            try {
-                const characterData: Character = {
-                    ...existingCharacter,
-                    name: debouncedName,
-                    description: debouncedDescription,
-                    comment: debouncedComment,
-                    imageUrl: imageUrl,
-                    type: type,
-                };
-
-                await addCharacter(characterData);
-
-                const current = latestStateRef.current;
-                const isStillMatches =
-                    current.name === characterData.name &&
-                    current.description === characterData.description &&
-                    (current.comment || '') === (characterData.comment || '') &&
-                    current.imageUrl === characterData.imageUrl &&
-                    current.type === characterData.type;
-
-                if (isStillMatches) {
-                    dispatch({ type: 'SAVED' });
-                    saveTimeoutRef.current = setTimeout(() => {
-                        dispatch({ type: 'SET_STATUS', status: null });
-                    }, 2000);
-                } else {
-                    dispatch({ type: 'SET_STATUS', status: null });
-                }
-            } catch (error) {
-                console.error("Auto-save failed", error);
-                dispatch({ type: 'SET_STATUS', status: 'error' });
-            }
-        };
-
-        const hasChanged =
-            debouncedName !== existingCharacter.name ||
-            debouncedDescription !== existingCharacter.description ||
-            debouncedComment !== (existingCharacter.comment || '') ||
-            imageUrl !== existingCharacter.imageUrl ||
-            type !== existingCharacter.type;
-
-        if (hasChanged) {
-            save();
-        }
-    }, [debouncedName, debouncedDescription, debouncedComment, imageUrl, type, isNew, existingCharacter, addCharacter, id, isDirty]);
-
-    // Clean up timeout on unmount
-    useEffect(() => {
-        return () => {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-        };
-    }, []);
-
-    const handleManualSave = async () => {
+    const handleSave = async () => {
         if (!name.trim()) return;
-        setIsSaving(true);
+        dispatch({ type: 'SET_STATUS', status: 'saving' });
         try {
-            const characterData: Character = {
-                id: isNew ? crypto.randomUUID() : id!,
-                projectId: existingCharacter?.projectId || activeProjectId || '',
-                name,
-                description,
-                type,
-                comment,
-                imageUrl,
-                order: existingCharacter?.order
-            };
-
-            await addCharacter(characterData);
-            navigate('..');
+            if (isNew) {
+                const newId = crypto.randomUUID();
+                const characterData: Character = {
+                    id: newId,
+                    projectId: activeProjectId || '',
+                    name, description, type, comment, imageUrl,
+                    order: existingCharacter?.order,
+                };
+                await addCharacter(characterData);
+                dispatch({ type: 'SAVED' });
+                navigate(`../${newId}`, { replace: true });
+            } else {
+                const characterData: Character = {
+                    ...existingCharacter!,
+                    name, description, type, comment, imageUrl,
+                };
+                await addCharacter(characterData);
+                dispatch({ type: 'SAVED' });
+            }
         } catch (error) {
-            console.error("Failed to save character", error);
+            console.error('Save failed', error);
             toast.error('Failed to save character.');
-        } finally {
-            setIsSaving(false);
+            dispatch({ type: 'SET_STATUS', status: 'error' });
         }
     };
 
@@ -256,34 +179,27 @@ export const CharacterDetail: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 pb-6 border-b border-primary-200 dark:border-primary-800">
                 <h1 className="text-4xl font-bold text-primary-900 dark:text-white">{isNew ? 'New Character' : name}</h1>
                 <div className="flex gap-2 items-center">
+                    {saveStatus === 'saving' && (
+                        <span className="text-primary-500 text-sm flex items-center gap-1">
+                            <Loader2 className="animate-spin" size={14} /> Saving...
+                        </span>
+                    )}
+                    {saveStatus === 'saved' && (
+                        <span className="text-green-600 dark:text-green-400 text-sm font-semibold">Saved</span>
+                    )}
+                    {saveStatus === 'error' && (
+                        <span className="text-danger-600 text-sm font-semibold">Error saving</span>
+                    )}
+                    <Button onClick={handleSave} disabled={!isDirty || !name.trim() || saveStatus === 'saving'} size="sm">
+                        <Save size={16} /> {isNew ? 'Create Character' : 'Save'}
+                    </Button>
                     {!isNew && (
                         <>
-                            {saveStatus === 'saving' && (
-                                <span className="text-primary-500 text-sm flex items-center gap-1">
-                                    <Loader2 className="animate-spin" size={14} /> Saving...
-                                </span>
-                            )}
-                            {saveStatus === 'saved' && (
-                                <span className="text-green-600 dark:text-green-400 text-sm flex items-center gap-1 font-semibold transition-opacity duration-500">
-                                    Saved
-                                </span>
-                            )}
-                            {saveStatus === 'error' && (
-                                <span className="text-danger-600 text-sm font-semibold">
-                                    Error saving
-                                </span>
-                            )}
                             <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1"></div>
                             <Button variant="danger" onClick={handleDelete} size="sm">
                                 <Trash2 size={16} /> Delete
                             </Button>
                         </>
-                    )}
-                    {isNew && (
-                        <Button onClick={handleManualSave} disabled={isSaving || !name} size="sm">
-                            {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                            Create Character
-                        </Button>
                     )}
                 </div>
             </div>
