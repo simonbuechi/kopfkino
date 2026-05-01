@@ -33,8 +33,9 @@ export type StoreAction =
     | { type: 'RESET' };
 
 export const DEFAULT_SETTINGS: Settings = {
-    aspectRatio: '16:9',
-    useRandomSeed: true,
+    pollinationsModel: 'zimage',
+    pollinationsSizeIndex: 0,
+    pollinationsEnhance: false,
 };
 
 export const storeInitialState: StoreState = {

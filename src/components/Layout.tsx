@@ -8,7 +8,6 @@ import { Sun, Moon, Settings as SettingsIcon, LogOut, ArrowRightLeft } from 'luc
 import { Button } from './ui/Button';
 import { Tooltip } from './ui/Tooltip';
 import { SettingsDialog } from '../features/settings/SettingsDialog';
-
 export const Layout: React.FC = () => {
     const { theme, toggleTheme } = useTheme();
     const { signOut } = useAuth();

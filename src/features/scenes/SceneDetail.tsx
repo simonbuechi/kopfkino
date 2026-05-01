@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect, useState, useRef } from 'react';
+﻿import React, { useReducer, useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
@@ -97,7 +97,6 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ allItems, selectedIds, onTogg
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Close on outside click
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -119,69 +118,80 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ allItems, selectedIds, onTogg
         return <p className="text-sm text-primary-400 italic">{emptyMessage}</p>;
     }
 
+    const showPlaceholder = selected.length === 0 && !query;
+
     return (
-        <div ref={containerRef} className="flex flex-col gap-2">
-            {/* Selected chips */}
-            {selected.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                    {selected.map(item => (
-                        <span
-                            key={item.id}
-                            className="inline-flex items-center gap-1 pl-2.5 pr-1 py-0.5 rounded-full text-sm font-medium bg-primary-900 text-white dark:bg-primary-100 dark:text-primary-900"
+        <div ref={containerRef} className="relative">
+            {/* Unified tag + input field */}
+            <div
+                className={`flex flex-wrap items-center gap-1.5 min-h-[38px] w-full px-2.5 py-1.5 bg-white dark:bg-primary-900 border rounded-lg shadow-sm transition-colors cursor-text ${open ? 'border-primary-500 ring-2 ring-primary-500/30' : 'border-primary-200 dark:border-primary-700 hover:border-primary-300 dark:hover:border-primary-600'}`}
+                onMouseDown={(e) => {
+                    if (e.target === e.currentTarget) {
+                        e.preventDefault();
+                        inputRef.current?.focus();
+                    }
+                }}
+            >
+                {selected.map(item => (
+                    <span
+                        key={item.id}
+                        className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-700 dark:text-primary-100 border border-primary-200 dark:border-primary-600"
+                    >
+                        {item.name}
+                        <button
+                            type="button"
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                onToggle(item.id);
+                            }}
+                            className="flex items-center justify-center w-3.5 h-3.5 rounded-full hover:bg-primary-200 dark:hover:bg-primary-600 transition-colors"
+                            aria-label={`Remove ${item.name}`}
                         >
-                            {item.name}
+                            <X size={9} />
+                        </button>
+                    </span>
+                ))}
+                <div className="relative flex items-center flex-1 min-w-[80px]">
+                    {showPlaceholder && (
+                        <Search size={12} className="absolute left-0 text-primary-400 pointer-events-none" />
+                    )}
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        value={query}
+                        placeholder={showPlaceholder ? placeholder : ''}
+                        onFocus={() => setOpen(true)}
+                        onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+                        className={`w-full bg-transparent border-none outline-none text-sm text-primary-900 dark:text-white placeholder-primary-400 ${showPlaceholder ? 'pl-5' : ''}`}
+                    />
+                </div>
+            </div>
+
+            {/* Dropdown */}
+            {open && (
+                <div className="absolute z-20 top-full mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-primary-200 dark:border-primary-700 bg-white dark:bg-primary-900 shadow-lg">
+                    {filtered.length === 0 ? (
+                        <p className="px-3 py-2 text-sm text-primary-400 italic">
+                            {query ? 'No matches' : 'All items selected'}
+                        </p>
+                    ) : (
+                        filtered.map(item => (
                             <button
+                                key={item.id}
                                 type="button"
-                                onClick={() => onToggle(item.id)}
-                                className="p-0.5 rounded-full hover:bg-white/20 dark:hover:bg-black/10 transition-colors"
-                                aria-label={`Remove ${item.name}`}
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    onToggle(item.id);
+                                    setQuery('');
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm text-primary-900 dark:text-primary-100 hover:bg-primary-50 dark:hover:bg-primary-800 transition-colors"
                             >
-                                <X size={11} />
+                                {item.name}
                             </button>
-                        </span>
-                    ))}
+                        ))
+                    )}
                 </div>
             )}
-
-            {/* Search input */}
-            <div className="relative">
-                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-400 pointer-events-none" />
-                <input
-                    ref={inputRef}
-                    type="text"
-                    value={query}
-                    placeholder={placeholder}
-                    onFocus={() => setOpen(true)}
-                    onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-                    className="w-full pl-8 pr-3 py-1.5 text-sm bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 hover:border-primary-300 dark:hover:border-primary-600 transition-colors placeholder-primary-400 text-primary-900 dark:text-white shadow-sm"
-                />
-
-                {/* Dropdown */}
-                {open && (
-                    <div className="absolute z-20 top-full mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-primary-200 dark:border-primary-700 bg-white dark:bg-primary-900 shadow-lg">
-                        {filtered.length === 0 ? (
-                            <p className="px-3 py-2 text-sm text-primary-400 italic">
-                                {query ? 'No matches' : 'All items selected'}
-                            </p>
-                        ) : (
-                            filtered.map(item => (
-                                <button
-                                    key={item.id}
-                                    type="button"
-                                    onMouseDown={(e) => {
-                                        e.preventDefault(); // keep focus on input
-                                        onToggle(item.id);
-                                        setQuery('');
-                                    }}
-                                    className="w-full text-left px-3 py-2 text-sm text-primary-900 dark:text-primary-100 hover:bg-primary-50 dark:hover:bg-primary-800 transition-colors"
-                                >
-                                    {item.name}
-                                </button>
-                            ))
-                        )}
-                    </div>
-                )}
-            </div>
         </div>
     );
 };

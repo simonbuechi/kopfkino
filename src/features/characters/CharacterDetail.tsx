@@ -3,13 +3,16 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { Button } from '../../components/ui/Button';
-import { ArrowLeft, Save, Trash2, User, Loader2, Upload, X } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, User, Loader2, Upload, X, Sparkles } from 'lucide-react';
 import { ImageModal } from '../../components/ui/ImageModal';
 import { useAuth } from '../../hooks/useAuth';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import type { Character, CharacterType } from '../../types/types';
 import toast from 'react-hot-toast';
-import { uploadFile, deleteImageFromUrl } from '../../services/storageService';
+import { uploadFile, uploadImage, deleteImageFromUrl } from '../../services/storageService';
+import { GenerateImageModal } from './GenerateImageModal';
+import { generateImageBlob, type GenerateImageParams } from '../../services/pollinationsService';
+import { usePollinationsAuth } from '../../hooks/usePollinationsAuth';
 
 interface CharacterState {
     name: string;
@@ -61,7 +64,7 @@ function characterReducer(state: CharacterState, action: CharacterAction): Chara
 export const CharacterDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { characters, addCharacter, deleteCharacter } = useStore();
+    const { characters, addCharacter, deleteCharacter, settings } = useStore();
     const { user } = useAuth();
     const { activeProjectId } = useProjects();
     const { confirm, confirmDialog } = useConfirmDialog();
@@ -73,8 +76,12 @@ export const CharacterDetail: React.FC = () => {
 
     const { name, description, comment, imageUrl, type, isDirty, saveStatus } = state;
 
+    const { apiKey, connect: connectPollinations, isConnected } = usePollinationsAuth();
+
     const [isUploading, setIsUploading] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [showGenerateModal, setShowGenerateModal] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -161,6 +168,35 @@ export const CharacterDetail: React.FC = () => {
         }
     };
 
+    const handleGenerateClick = () => {
+        if (!isConnected) {
+            toast('Redirecting to Pollinations to connect your account…', { icon: '🔗' });
+            connectPollinations();
+            return;
+        }
+        setShowGenerateModal(true);
+    };
+
+    const handleGenerate = async (params: GenerateImageParams) => {
+        if (!user || !apiKey) return;
+        setIsGenerating(true);
+        const toastId = toast.loading('Generating image…');
+        try {
+            const blob = await generateImageBlob(params, apiKey);
+            toast.loading('Uploading image…', { id: toastId });
+            const url = await uploadImage(blob, user.uid);
+            dispatch({ type: 'SET_FIELD', field: 'imageUrl', value: url });
+            setShowGenerateModal(false);
+            toast.success('Image generated!', { id: toastId });
+        } catch (error: unknown) {
+            console.error('Failed to generate image', error);
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            toast.error(`Failed to generate image: ${message}`, { id: toastId });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     if (!isNew && !existingCharacter) {
         return <div className="p-8">Character not found</div>;
     }
@@ -231,9 +267,13 @@ export const CharacterDetail: React.FC = () => {
 
                         <div className="flex flex-col gap-2">
                             <input type="file" ref={fileInputRef} onChange={onFileSelected} className="hidden" accept="image/*" />
-                            <Button size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                            <Button size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading || isGenerating}>
                                 {isUploading ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
                                 Upload Image
+                            </Button>
+                            <Button size="sm" variant="secondary" onClick={handleGenerateClick} disabled={isUploading || isGenerating}>
+                                {isGenerating ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
+                                Generate Image
                             </Button>
                         </div>
                     </div>
@@ -266,7 +306,13 @@ export const CharacterDetail: React.FC = () => {
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <label className="text-sm font-semibold text-primary-900 dark:text-primary-300">Description</label>
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-semibold text-primary-900 dark:text-primary-300">Description</label>
+                                <Button size="sm" variant="ghost" onClick={handleGenerateClick} disabled={isUploading || isGenerating} className="h-7 px-2 text-xs">
+                                    {isGenerating ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
+                                    Generate Image
+                                </Button>
+                            </div>
                             <textarea
                                 value={description}
                                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })}
@@ -293,6 +339,20 @@ export const CharacterDetail: React.FC = () => {
                     src={imageUrl}
                     alt={name}
                     onClose={() => setIsFullscreen(false)}
+                />
+            )}
+            {showGenerateModal && (
+                <GenerateImageModal
+                    initialPrompt={description || name}
+                    defaults={{
+                        model: settings.pollinationsModel,
+                        sizeIndex: settings.pollinationsSizeIndex,
+                        enhance: settings.pollinationsEnhance,
+                        seed: settings.pollinationsSeed,
+                    }}
+                    isGenerating={isGenerating}
+                    onClose={() => !isGenerating && setShowGenerateModal(false)}
+                    onConfirm={handleGenerate}
                 />
             )}
             {confirmDialog}

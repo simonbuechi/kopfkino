@@ -44,13 +44,13 @@ export interface Shot {
     notes?: string;
 }
 
-export type AspectRatio = '1:1' | '16:9';
+export type PollinationsModel = 'zimage' | 'flux' | 'klein' | 'gptimage' | 'gptimage-large' | 'wan-image' | 'qwen-image' | 'kontext';
 
 export interface Settings {
-    aspectRatio: AspectRatio;
-    useRandomSeed: boolean;
-    customSeed?: number;
-    aiApiKey?: string;
+    pollinationsModel: PollinationsModel;
+    pollinationsSizeIndex: number;
+    pollinationsEnhance: boolean;
+    pollinationsSeed?: number;
 }
 
 export type CharacterType = 'main' | 'supporting' | 'background' | 'special';
