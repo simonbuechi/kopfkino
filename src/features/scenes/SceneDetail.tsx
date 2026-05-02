@@ -3,7 +3,10 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { Button } from '../../components/ui/Button';
-import { Trash2, ArrowLeft, Loader2, Save, MapPin, ChevronDown, ChevronRight, X, Search, Clapperboard, Info } from 'lucide-react';
+import { Trash2, Save, MapPin, ChevronDown, ChevronRight, X, Search, Clapperboard, Info } from 'lucide-react';
+import { SaveStatusBadge } from '../../components/ui/SaveStatusBadge';
+import { FormSection } from '../../components/ui/FormSection';
+import { BackLink } from '../../components/ui/BackLink';
 import { Tooltip } from '../../components/ui/Tooltip';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import type { Scene } from '../../types/types';
@@ -272,24 +275,9 @@ export const SceneDetail: React.FC = () => {
         <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto">
             {/* Header row */}
             <div className="flex items-center justify-between gap-4">
-                <Link
-                    to=".."
-                    className="inline-flex items-center gap-2 h-8 px-3 -ml-3 text-sm font-semibold rounded-lg transition-colors text-primary-500 hover:text-primary-900 hover:bg-primary-50 dark:text-primary-400 dark:hover:text-primary-100 dark:hover:bg-primary-900/60"
-                >
-                    <ArrowLeft size={16} /> Back to Scenes
-                </Link>
+                <BackLink to=".." label="Back to Scenes" />
                 <div className="flex gap-2 items-center">
-                    {saveStatus === 'saving' && (
-                        <span className="text-primary-500 text-sm flex items-center gap-1">
-                            <Loader2 className="animate-spin" size={14} /> Saving...
-                        </span>
-                    )}
-                    {saveStatus === 'saved' && (
-                        <span className="text-green-600 dark:text-green-400 text-sm font-semibold">Saved</span>
-                    )}
-                    {saveStatus === 'error' && (
-                        <span className="text-danger-600 text-sm font-semibold">Error saving</span>
-                    )}
+                    <SaveStatusBadge status={saveStatus} />
                     <Link to={`/project/${activeProjectId}/scenes/${id}/shots`}>
                         <Button size="sm" variant="outline">
                             <Clapperboard size={16} /> Shots
@@ -329,24 +317,17 @@ export const SceneDetail: React.FC = () => {
                 <SectionHeader title="Description" isOpen={open.description} onToggle={() => toggle('description')} />
                 {open.description && (
                     <div className="grid md:grid-cols-2 gap-6">
-                        <section className="flex flex-col gap-2">
-                            <h3 className="font-semibold text-primary-900 dark:text-white">Description</h3>
+                        <FormSection title="Description">
                             <textarea
                                 value={description}
                                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })}
                                 className={`${inputClass} min-h-[120px] resize-y`}
                                 placeholder="Describe the scene..."
                             />
-                        </section>
+                        </FormSection>
 
                         <div className="flex flex-col gap-6">
-                            <section className="flex flex-col gap-2">
-                                <h3 className="font-semibold text-primary-900 dark:text-white flex items-center gap-1.5">
-                                    Length
-                                    <Tooltip label="Enter estimated length of scene (in sec)">
-                                        <Info size={13} className="text-primary-400 cursor-default" />
-                                    </Tooltip>
-                                </h3>
+                            <FormSection title={<>Length <Tooltip label="Enter estimated length of scene (in sec)"><Info size={13} className="text-primary-400 cursor-default" /></Tooltip></>}>
                                 <input
                                     type="number"
                                     value={length}
@@ -355,12 +336,9 @@ export const SceneDetail: React.FC = () => {
                                     placeholder="20 sec"
                                     min={0}
                                 />
-                            </section>
+                            </FormSection>
 
-                            <section className="flex flex-col gap-2">
-                                <h3 className="font-semibold text-primary-900 dark:text-white flex items-center gap-1.5">
-                                    <MapPin size={14} className="text-primary-400" /> Location
-                                </h3>
+                            <FormSection title={<><MapPin size={14} className="text-primary-400" /> Location</>}>
                                 <select
                                     value={locationId}
                                     onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'locationId', value: e.target.value })}
@@ -371,10 +349,9 @@ export const SceneDetail: React.FC = () => {
                                         <option key={loc.id} value={loc.id}>{loc.name}</option>
                                     ))}
                                 </select>
-                            </section>
+                            </FormSection>
 
-                            <section className="flex flex-col gap-2">
-                                <h3 className="font-semibold text-primary-900 dark:text-white">Characters</h3>
+                            <FormSection title="Characters">
                                 <MultiSelect
                                     allItems={characters.map(c => ({ id: c.id, name: c.name }))}
                                     selectedIds={selectedChars}
@@ -382,7 +359,7 @@ export const SceneDetail: React.FC = () => {
                                     placeholder="Search characters…"
                                     emptyMessage="No characters in this project yet."
                                 />
-                            </section>
+                            </FormSection>
                         </div>
                     </div>
                 )}
@@ -393,19 +370,17 @@ export const SceneDetail: React.FC = () => {
                 <SectionHeader title="Admin" isOpen={open.admin} onToggle={() => toggle('admin')} />
                 {open.admin && (
                     <div className="grid md:grid-cols-2 gap-6">
-                        <section className="flex flex-col gap-2">
-                            <h3 className="font-semibold text-primary-900 dark:text-white">Notes</h3>
+                        <FormSection title="Notes">
                             <textarea
                                 value={comment}
                                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'comment', value: e.target.value })}
                                 className={`${inputClass} min-h-[120px] resize-y`}
                                 placeholder="Internal notes..."
                             />
-                        </section>
+                        </FormSection>
 
                         <div className="flex flex-col gap-6">
-                            <section className="flex flex-col gap-2">
-                                <h3 className="font-semibold text-primary-900 dark:text-white">People</h3>
+                            <FormSection title="People">
                                 <MultiSelect
                                     allItems={people.map(p => ({ id: p.id, name: p.name }))}
                                     selectedIds={peopleIds}
@@ -413,9 +388,8 @@ export const SceneDetail: React.FC = () => {
                                     placeholder="Search people…"
                                     emptyMessage="No people in this project yet."
                                 />
-                            </section>
-                            <section className="flex flex-col gap-2">
-                                <h3 className="font-semibold text-primary-900 dark:text-white">Assets</h3>
+                            </FormSection>
+                            <FormSection title="Assets">
                                 <MultiSelect
                                     allItems={assets.map(a => ({ id: a.id, name: a.name }))}
                                     selectedIds={assetIds}
@@ -423,7 +397,7 @@ export const SceneDetail: React.FC = () => {
                                     placeholder="Search assets…"
                                     emptyMessage="No assets in this project yet."
                                 />
-                            </section>
+                            </FormSection>
                         </div>
                     </div>
                 )}

@@ -1,11 +1,13 @@
 import React, { useReducer, useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { useAuth } from '../../hooks/useAuth';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { Button } from '../../components/ui/Button';
-import { ArrowLeft, Save, Trash2, Loader2, Upload, X } from 'lucide-react';
+import { Save, Trash2, Loader2, Upload, X } from 'lucide-react';
+import { SaveStatusBadge } from '../../components/ui/SaveStatusBadge';
+import { BackLink } from '../../components/ui/BackLink';
 import type { Shot } from '../../types/types';
 import toast from 'react-hot-toast';
 import { uploadFile } from '../../services/storageService';
@@ -160,28 +162,13 @@ export const ShotDetail: React.FC = () => {
     return (
         <div className="flex flex-col gap-8 w-full max-w-3xl mx-auto">
             <div>
-                <Link
-                    to={sceneUrl}
-                    className="inline-flex items-center gap-2 h-8 px-3 -ml-3 text-sm font-semibold rounded-lg transition-colors text-primary-500 hover:text-primary-900 hover:bg-primary-50 dark:text-primary-400 dark:hover:text-primary-100 dark:hover:bg-primary-900/60"
-                >
-                    <ArrowLeft size={16} /> Back to Scene {scene.number}
-                </Link>
+                <BackLink to={sceneUrl} label={`Back to Scene ${scene.number}`} />
             </div>
 
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 pb-6 border-b border-primary-200 dark:border-primary-800">
                 <h1 className="text-4xl font-bold text-primary-900 dark:text-white">{isNew ? 'New Shot' : name}</h1>
                 <div className="flex gap-2 items-center">
-                    {saveStatus === 'saving' && (
-                        <span className="text-primary-500 text-sm flex items-center gap-1">
-                            <Loader2 className="animate-spin" size={14} /> Saving...
-                        </span>
-                    )}
-                    {saveStatus === 'saved' && (
-                        <span className="text-green-600 dark:text-green-400 text-sm font-semibold">Saved</span>
-                    )}
-                    {saveStatus === 'error' && (
-                        <span className="text-danger-600 text-sm font-semibold">Error saving</span>
-                    )}
+                    <SaveStatusBadge status={saveStatus} />
                     <Button onClick={handleSave} disabled={!isDirty || !name.trim() || saveStatus === 'saving'} size="sm">
                         <Save size={16} /> {isNew ? 'Create Shot' : 'Save'}
                     </Button>

@@ -1,11 +1,14 @@
 import React, { useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
-import { Trash2, ArrowLeft, Loader2, Phone, Mail, Briefcase, Save } from 'lucide-react';
+import { Trash2, Phone, Mail, Briefcase, Save } from 'lucide-react';
 import { useProjects } from '../../hooks/useProjects';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDetailState } from '../../hooks/useDetailState';
+import { SaveStatusBadge } from '../../components/ui/SaveStatusBadge';
+import { FormSection } from '../../components/ui/FormSection';
+import { BackLink } from '../../components/ui/BackLink';
 import type { Person, PersonType } from '../../types/types';
 
 interface PersonFields {
@@ -104,28 +107,9 @@ export const PersonDetail: React.FC = () => {
     return (
         <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto">
             <div className="flex items-center justify-between gap-4">
-                <Link
-                    to=".."
-                    className="inline-flex items-center gap-2 h-8 px-3 -ml-3 text-sm font-semibold rounded-lg transition-colors text-primary-500 hover:text-primary-900 hover:bg-primary-50 dark:text-primary-400 dark:hover:text-primary-100 dark:hover:bg-primary-900/60"
-                >
-                    <ArrowLeft size={16} /> Back to People
-                </Link>
+                <BackLink to=".." label="Back to People" />
                 <div className="flex gap-2 items-center">
-                    {saveStatus === 'saving' && (
-                        <span className="text-primary-500 text-sm flex items-center gap-1">
-                            <Loader2 className="animate-spin" size={14} /> Saving...
-                        </span>
-                    )}
-                    {saveStatus === 'saved' && (
-                        <span className="text-green-600 dark:text-green-400 text-sm font-semibold">
-                            Saved
-                        </span>
-                    )}
-                    {saveStatus === 'error' && (
-                        <span className="text-danger-600 text-sm font-semibold">
-                            Error saving
-                        </span>
-                    )}
+                    <SaveStatusBadge status={saveStatus} />
                     <Button
                         onClick={handleSave}
                         disabled={!isDirty || !name.trim() || saveStatus === 'saving'}
@@ -156,8 +140,7 @@ export const PersonDetail: React.FC = () => {
                 {/* Left Side: Type, Role, Contact */}
                 <div className="flex flex-col gap-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <section className="flex flex-col gap-2">
-                            <h3 className="font-semibold text-primary-900 dark:text-white">Type</h3>
+                        <FormSection title="Type">
                             <select
                                 value={type}
                                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'type', value: e.target.value as PersonType })}
@@ -167,10 +150,9 @@ export const PersonDetail: React.FC = () => {
                                 <option value="Crew">Crew</option>
                                 <option value="Other">Other</option>
                             </select>
-                        </section>
+                        </FormSection>
 
-                        <section className="flex flex-col gap-2">
-                            <h3 className="font-semibold text-primary-900 dark:text-white">Role</h3>
+                        <FormSection title="Role">
                             <div className="relative">
                                 <Briefcase size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-400" />
                                 <input
@@ -181,12 +163,11 @@ export const PersonDetail: React.FC = () => {
                                     placeholder="e.g. Director, Lead"
                                 />
                             </div>
-                        </section>
+                        </FormSection>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4">
-                        <section className="flex flex-col gap-2">
-                            <h3 className="font-semibold text-primary-900 dark:text-white">Contact Info</h3>
+                        <FormSection title="Contact Info">
                             <div className="flex flex-col gap-3">
                                 <div className="relative">
                                     <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-400" />
@@ -209,31 +190,29 @@ export const PersonDetail: React.FC = () => {
                                     />
                                 </div>
                             </div>
-                        </section>
+                        </FormSection>
                     </div>
 
-                    <section className="flex flex-col gap-2">
-                        <h3 className="font-semibold text-primary-900 dark:text-white">Internal Notes</h3>
+                    <FormSection title="Internal Notes">
                         <textarea
                             value={comment}
                             onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'comment', value: e.target.value })}
                             className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[100px] resize-y shadow-sm"
                             placeholder="Internal notes about availability, agents, etc."
                         />
-                    </section>
+                    </FormSection>
                 </div>
 
                 {/* Right Side: Description */}
                 <div className="flex flex-col gap-6">
-                    <section className="flex flex-col gap-2 flex-grow">
-                        <h3 className="font-semibold text-primary-900 dark:text-white">Bio / Description</h3>
+                    <FormSection title="Bio / Description" className="flex-grow">
                         <textarea
                             value={description}
                             onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })}
                             className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[250px] resize-y shadow-sm flex-grow"
                             placeholder="Short biography or description..."
                         />
-                    </section>
+                    </FormSection>
                 </div>
             </div>
             {confirmDialog}

@@ -1,10 +1,13 @@
 import React, { useReducer, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { Button } from '../../components/ui/Button';
-import { MapPin, Trash2, ArrowLeft, ImageIcon, Loader2, X, Upload, Star, Save } from 'lucide-react';
+import { MapPin, Trash2, ImageIcon, Loader2, X, Upload, Star, Save } from 'lucide-react';
+import { SaveStatusBadge } from '../../components/ui/SaveStatusBadge';
+import { FormSection } from '../../components/ui/FormSection';
+import { BackLink } from '../../components/ui/BackLink';
 import { deleteImageFromUrl, uploadFile } from '../../services/storageService';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import toast from 'react-hot-toast';
@@ -152,12 +155,7 @@ export const LocationDetail: React.FC = () => {
     return (
         <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto">
             <div>
-                <Link
-                    to=".."
-                    className="inline-flex items-center gap-2 h-8 px-3 -ml-3 text-sm font-semibold rounded-lg transition-colors text-primary-500 hover:text-primary-900 hover:bg-primary-50 dark:text-primary-400 dark:hover:text-primary-100 dark:hover:bg-primary-900/60"
-                >
-                    <ArrowLeft size={16} /> Back to Locations
-                </Link>
+                <BackLink to=".." label="Back to Locations" />
             </div>
 
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 pb-6 border-b border-primary-200 dark:border-primary-800">
@@ -171,17 +169,7 @@ export const LocationDetail: React.FC = () => {
                     />
                 </div>
                 <div className="flex gap-2 items-center flex-wrap justify-end">
-                    {saveStatus === 'saving' && (
-                        <span className="text-primary-500 text-sm flex items-center gap-1">
-                            <Loader2 className="animate-spin" size={14} /> Saving...
-                        </span>
-                    )}
-                    {saveStatus === 'saved' && (
-                        <span className="text-green-600 dark:text-green-400 text-sm font-semibold">Saved</span>
-                    )}
-                    {saveStatus === 'error' && (
-                        <span className="text-danger-600 text-sm font-semibold">Error saving</span>
-                    )}
+                    <SaveStatusBadge status={saveStatus} />
                     <Button onClick={handleSave} disabled={!isDirty || !name.trim() || saveStatus === 'saving'} size="sm">
                         <Save size={16} /> Save
                     </Button>
@@ -269,8 +257,7 @@ export const LocationDetail: React.FC = () => {
 
                 {/* Right Side: Details */}
                 <div className="flex flex-col gap-6">
-                    <section className="flex flex-col gap-2">
-                        <h3 className="font-semibold text-primary-900 dark:text-white">Location Details</h3>
+                    <FormSection title="Location Details">
                         <div className="flex gap-4 text-primary-500 items-center">
                             <MapPin size={16} className="shrink-0" />
                             <input
@@ -291,32 +278,29 @@ export const LocationDetail: React.FC = () => {
                                 <option value="INT./EXT.">INT./EXT.</option>
                             </select>
                         </div>
-                    </section>
+                    </FormSection>
 
-                    <section className="flex flex-col gap-2 flex-grow">
-                        <h3 className="font-semibold text-primary-900 dark:text-white">Description</h3>
+                    <FormSection title="Description" className="flex-grow">
                         <textarea
                             value={description}
                             onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })}
                             className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[120px] resize-y shadow-sm flex-grow"
                             placeholder="Detailed description of the location..."
                         />
-                    </section>
+                    </FormSection>
 
-                    <section className="flex flex-col gap-2">
-                        <h3 className="font-semibold text-primary-900 dark:text-white">Notes</h3>
+                    <FormSection title="Notes">
                         <textarea
                             value={comment}
                             onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'comment', value: e.target.value })}
                             className="w-full p-3 rounded-lg bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-700 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-primary-300 dark:hover:border-primary-600 transition-all min-h-[120px] resize-y shadow-sm"
                             placeholder="Notes about lighting, access, etc."
                         />
-                    </section>
+                    </FormSection>
                 </div>
             </div>
 
-            <section>
-                <h3 className="font-semibold text-primary-900 dark:text-white mb-4">Scenes ({associatedScenes.length})</h3>
+            <FormSection title={`Scenes (${associatedScenes.length})`} className="gap-4">
                 {associatedScenes.length > 0 ? (
                     <div className="grid gap-3">
                         {associatedScenes.map(scene => (
@@ -329,7 +313,7 @@ export const LocationDetail: React.FC = () => {
                 ) : (
                     <p className="text-primary-500">No scenes linked to this location.</p>
                 )}
-            </section>
+            </FormSection>
             {confirmDialog}
         </div>
     );
