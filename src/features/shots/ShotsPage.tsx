@@ -50,7 +50,7 @@ export const ShotsPage: React.FC = () => {
                                 Go to Scene
                             </Button>
                         )}
-                        <Clapperboard size={16} className="text-primary-400" />
+                        <Film size={16} className="text-primary-400" />
                         <select
                             value={selectedSceneId}
                             onChange={e => handleSceneChange(e.target.value)}
@@ -79,6 +79,7 @@ export const ShotsPage: React.FC = () => {
                     sceneId={selectedSceneId}
                     shots={sceneShots}
                     groups={sceneGroups}
+                    scenePlannedLength={selectedScene.length}
                     onSetupsChange={(groups) => updateSceneGroups(selectedSceneId, groups)}
                     onAddShot={() => navigate(`/project/${projectId}/scenes/${selectedSceneId}/shots/new`)}
                     onEditShot={(id) => navigate(`/project/${projectId}/scenes/${selectedSceneId}/shots/${id}`)}

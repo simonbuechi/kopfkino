@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
-import { MapPin, Users, Clapperboard, Video, ExternalLink, Plus, Eye, FileText, ArrowRight } from 'lucide-react';
+import { MapPin, Users, Film, Clapperboard, ExternalLink, Plus, Eye, FileText, ArrowRight } from 'lucide-react';
 import { useProjects } from '../../hooks/useProjects';
 import { formatTime } from '../../utils/time';
 import { isSafeUrl } from '../../utils/url';
@@ -39,7 +39,7 @@ export const ProjectDashboard: React.FC = () => {
         {
             label: 'Scenes',
             count: scenes.length,
-            icon: Clapperboard,
+            icon: Film,
             color: 'text-primary-500 bg-primary-500/10',
             action: { label: 'Create scene', path: 'scenes/new' }
         },
@@ -54,7 +54,7 @@ export const ProjectDashboard: React.FC = () => {
             label: 'Shots',
             count: totalShots,
             subCount: `totalling to ${formatTime(totalLength)}`,
-            icon: Video,
+            icon: Clapperboard,
             color: 'text-accent-400 bg-accent-400/10'
         }
     ];

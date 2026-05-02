@@ -115,7 +115,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ allItems, selectedIds, onTogg
     );
 
     if (allItems.length === 0) {
-        return <p className="text-sm text-primary-400 italic">{emptyMessage}</p>;
+        return <p className="text-sm text-primary-400">{emptyMessage}</p>;
     }
 
     const showPlaceholder = selected.length === 0 && !query;
@@ -171,7 +171,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ allItems, selectedIds, onTogg
             {open && (
                 <div className="absolute z-20 top-full mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-primary-200 dark:border-primary-700 bg-white dark:bg-primary-900 shadow-lg">
                     {filtered.length === 0 ? (
-                        <p className="px-3 py-2 text-sm text-primary-400 italic">
+                        <p className="px-3 py-2 text-sm text-primary-400">
                             {query ? 'No matches' : 'All items selected'}
                         </p>
                     ) : (

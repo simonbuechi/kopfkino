@@ -46,7 +46,7 @@ const SortablePersonCard = ({
                     </div>
                 )}
             </div>
-            <p className="text-primary-500 dark:text-primary-400 text-sm line-clamp-2 mb-4 pointer-events-none select-none italic">{person.description}</p>
+            <p className="text-primary-500 dark:text-primary-400 text-sm line-clamp-2 mb-4 pointer-events-none select-none">{person.description}</p>
             <div className="mt-auto pt-4 border-t border-primary-100 dark:border-primary-800 flex justify-end">
                 <Button size="sm" className="w-full" variant="secondary" onClick={() => onEdit(person.id)}>
                     <Edit size={14} /> Edit

@@ -5,9 +5,10 @@ import { useAuth } from '../../hooks/useAuth';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { Tooltip } from '../../components/ui/Tooltip';
 import {
     Edit, Trash2, Plus, Image as ImageIcon, Loader2, GripVertical,
-    List, Grid, Download, Timer, Film, Volume2, FolderPlus, ChevronDown, ChevronRight, X
+    List, Grid, LayoutList, Download, Timer, Clapperboard, Video, Volume2, ChevronDown, ChevronRight, X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { uploadFile, uploadVideo, downloadImage, deleteFileByPath } from '../../services/storageService';
@@ -38,6 +39,7 @@ interface ShotsListProps {
     sceneId: string;
     shots: Shot[];
     groups?: ShotSetup[];
+    scenePlannedLength?: number;
     onSetupsChange?: (groups: ShotSetup[]) => void;
     onAddShot?: () => void;
     onEditShot?: (id: string) => void;
@@ -68,7 +70,7 @@ const SetupModal: React.FC<SetupModalProps> = ({ initial, onConfirm, onClose }) 
         return () => window.removeEventListener('keydown', handleKey);
     }, [onClose]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!name.trim()) return;
         onConfirm(name.trim(), description.trim());
@@ -297,7 +299,7 @@ const SortableShotItem = ({
                                 disabled={isUploading}
                                 className={`flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 hover:bg-primary-100 dark:hover:bg-primary-800 disabled:opacity-50 ${shot.videoUrl ? 'text-danger-500 hover:text-danger-600 dark:text-danger-400 dark:hover:text-danger-300' : 'text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100'}`}
                                 title={shot.videoUrl ? "Delete Video" : "Upload Video"}>
-                                {isUploading ? <Loader2 className="animate-spin" size={14} /> : (shot.videoUrl ? <Trash2 size={14} /> : <Film size={14} />)}
+                                {isUploading ? <Loader2 className="animate-spin" size={14} /> : (shot.videoUrl ? <Trash2 size={14} /> : <Video size={14} />)}
                             </button>
                             <button type="button" onClick={() => onEdit(shot.id)}
                                 className="flex items-center justify-center h-8 w-8 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 text-primary-500 hover:text-primary-900 hover:bg-primary-100 dark:text-primary-400 dark:hover:text-primary-100 dark:hover:bg-primary-800"
@@ -321,7 +323,7 @@ const SortableShotItem = ({
                         {shot.notes && (
                             <div>
                                 <h4 className="text-xs font-semibold text-primary-900 dark:text-white mb-1 uppercase tracking-wider">Notes</h4>
-                                <p className="text-sm text-primary-500 dark:text-primary-400 italic">{shot.notes}</p>
+                                <p className="text-sm text-primary-500 dark:text-primary-400">{shot.notes}</p>
                             </div>
                         )}
                     </div>
@@ -377,7 +379,7 @@ const SortableShotItem = ({
                                 disabled={isUploading}
                                 className={`flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 hover:bg-primary-100 dark:hover:bg-primary-800 disabled:opacity-50 ${shot.videoUrl ? 'text-danger-500 hover:text-danger-600 dark:text-danger-400 dark:hover:text-danger-300' : 'text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100'}`}
                                 title={shot.videoUrl ? "Delete Video" : "Upload Video"}>
-                                {isUploading ? <Loader2 className="animate-spin" size={14} /> : (shot.videoUrl ? <Trash2 size={14} /> : <Film size={14} />)}
+                                {isUploading ? <Loader2 className="animate-spin" size={14} /> : (shot.videoUrl ? <Trash2 size={14} /> : <Video size={14} />)}
                             </button>
                             <button type="button" onClick={() => onEdit(shot.id)}
                                 className="flex items-center justify-center h-6 w-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 text-primary-500 hover:text-primary-900 hover:bg-primary-100 dark:text-primary-400 dark:hover:text-primary-100 dark:hover:bg-primary-800"
@@ -392,7 +394,7 @@ const SortableShotItem = ({
                         </div>
                     </div>
                     <p className="text-xs text-primary-500 line-clamp-2">{shot.description}</p>
-                    {shot.notes && <p className="text-xs text-primary-400 mt-1 italic line-clamp-2">{shot.notes}</p>}
+                    {shot.notes && <p className="text-xs text-primary-400 mt-1 line-clamp-2">{shot.notes}</p>}
                 </div>
             </Card>
         </div>
@@ -401,14 +403,21 @@ const SortableShotItem = ({
 
 // ─── SortableSetupHeader ────────────────────────────────────────────────────
 
+const formatDuration = (totalSeconds: number) => {
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return m > 0 ? `${m}m ${s}s` : `${s}s`;
+};
+
 const SortableSetupHeader: React.FC<{
     group: ShotSetup;
     shotCount: number;
+    totalLength: number;
     collapsed: boolean;
     onToggle: () => void;
     onEdit: () => void;
     onDelete: () => void;
-}> = ({ group, shotCount, collapsed, onToggle, onEdit, onDelete }) => {
+}> = ({ group, shotCount, totalLength, collapsed, onToggle, onEdit, onDelete }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `group-${group.id}` });
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -433,9 +442,18 @@ const SortableSetupHeader: React.FC<{
                     <span className="ml-2 text-xs text-primary-400 dark:text-primary-500 truncate">{group.description}</span>
                 )}
             </div>
-            <span className="text-xs px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-700 text-primary-500 dark:text-primary-300 font-semibold shrink-0">
-                {shotCount}
-            </span>
+            <Tooltip label="Number of shots">
+                <span className="text-xs px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-700 text-primary-500 dark:text-primary-300 font-semibold shrink-0 inline-flex items-center gap-1">
+                    <Clapperboard size={10} />{shotCount}
+                </span>
+            </Tooltip>
+            {totalLength > 0 && (
+                <Tooltip label="Total length of shots">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800 font-semibold shrink-0 inline-flex items-center gap-1">
+                        <Timer size={10} />{formatDuration(totalLength)}
+                    </span>
+                </Tooltip>
+            )}
             <button onClick={onEdit}
                 className="flex items-center justify-center h-6 w-6 rounded-md transition-colors text-primary-400 hover:text-primary-700 hover:bg-primary-100 dark:hover:text-primary-200 dark:hover:bg-primary-700"
                 title="Edit Setup">
@@ -458,6 +476,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({
     sceneId,
     shots,
     groups = [],
+    scenePlannedLength,
     onSetupsChange,
     onAddShot,
     onEditShot,
@@ -730,8 +749,6 @@ export const ShotsList: React.FC<ShotsListProps> = ({
 
     const ungroupedShots = getShotsForContainer(UNGROUPED);
     const totalSeconds = localShots.reduce((acc, s) => acc + (s.length || 0), 0);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
 
     // ── Setup IDs for SortableContext ─────────────────────────────────────
     const groupHeaderIds = localSetups.map(g => `group-${g.id}`);
@@ -741,18 +758,28 @@ export const ShotsList: React.FC<ShotsListProps> = ({
             {/* Toolbar */}
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3">
-                        <h3 className="text-xl font-bold text-primary-900 dark:text-white">Shots List</h3>
-                        <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
+                        <Tooltip label="Number of shots">
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-300 border border-amber-100 dark:border-amber-800">
-                                <Film size={12} />
+                                <Clapperboard size={12} />
                                 {localShots.length}
                             </div>
+                        </Tooltip>
+                        <Tooltip label="Total length of shots">
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">
                                 <Timer size={12} />
-                                {minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`}
+                                {formatDuration(totalSeconds)}
                             </div>
-                        </div>
+                        </Tooltip>
+                        {scenePlannedLength != null && (
+                            <Tooltip label="Planned length">
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-300 border border-sky-100 dark:border-sky-800">
+                                    <Timer size={12} />
+                                    {formatDuration(scenePlannedLength)}
+                                    <span className="font-normal opacity-70">planned</span>
+                                </div>
+                            </Tooltip>
+                        )}
                     </div>
                     <div className="bg-primary-100 dark:bg-primary-800 p-1 rounded-lg flex gap-1">
                         <button onClick={() => setViewMode('preview')}
@@ -763,7 +790,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({
                         <button onClick={() => setViewMode('detailed')}
                             className={`p-1.5 rounded-md transition-all ${viewMode === 'detailed' ? 'bg-white dark:bg-primary-700 text-primary-900 dark:text-white shadow-sm' : 'text-primary-500 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-200'}`}
                             title="Detailed View">
-                            <Film size={14} />
+                            <LayoutList size={14} />
                         </button>
                         <button onClick={() => setViewMode('slim')}
                             className={`p-1.5 rounded-md transition-all ${viewMode === 'slim' ? 'bg-white dark:bg-primary-700 text-primary-900 dark:text-white shadow-sm' : 'text-primary-500 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-200'}`}
@@ -803,7 +830,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({
                                 <SortableContext items={ungroupedShots.map(s => s.id)} strategy={verticalListSortingStrategy}>
                                     <div className={`space-y-${viewMode === 'preview' ? '6' : '3'}`}>
                                         {ungroupedShots.length === 0 ? (
-                                            <p className="text-primary-400 italic text-sm py-2 px-1">No shots yet.</p>
+                                            <p className="text-primary-400 text-sm py-2 px-1">No shots yet.</p>
                                         ) : (
                                             ungroupedShots.map(shot => (
                                                 <SortableShotItem
@@ -826,12 +853,14 @@ export const ShotsList: React.FC<ShotsListProps> = ({
                             <div className="space-y-4">
                                 {localSetups.map(group => {
                                     const groupShots = getShotsForContainer(group.id);
+                                    const groupLength = groupShots.reduce((acc, s) => acc + (s.length || 0), 0);
                                     const isCollapsed = collapsedSetups.has(group.id);
                                     return (
                                         <div key={group.id} className="space-y-2">
                                             <SortableSetupHeader
                                                 group={group}
                                                 shotCount={groupShots.length}
+                                                totalLength={groupLength}
                                                 collapsed={isCollapsed}
                                                 onToggle={() => toggleCollapse(group.id)}
                                                 onEdit={() => setEditingSetup(group)}
@@ -842,7 +871,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({
                                                     <SortableContext items={groupShots.map(s => s.id)} strategy={verticalListSortingStrategy}>
                                                         <div className={`space-y-${viewMode === 'preview' ? '6' : '3'} pl-4`}>
                                                             {groupShots.length === 0 ? (
-                                                                <p className="text-primary-400 italic text-sm py-3 px-2">
+                                                                <p className="text-primary-400 text-sm py-3 px-2">
                                                                     Drag shots here to add them to this group.
                                                                 </p>
                                                             ) : (

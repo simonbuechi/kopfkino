@@ -16,7 +16,7 @@ export const Button: React.FC<ButtonProps> = ({
     const base = clsx(
         "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors",
         "focus-visible:outline-2 focus-visible:outline-offset-2",
-        "disabled:opacity-50 disabled:cursor-not-allowed"
+        "disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
     );
 
     const variants = {

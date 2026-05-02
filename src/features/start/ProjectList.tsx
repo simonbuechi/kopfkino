@@ -7,7 +7,7 @@ import { useStore } from '../../hooks/useStore';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { isSafeUrl } from '../../utils/url';
 import { storage } from '../../services/storage';
-import { Plus, Trash2, Edit2, Play, MapPin, Users, Clapperboard, Film, Clock, Video, ExternalLink, Share2, Crown, Eye } from 'lucide-react';
+import { Plus, Trash2, Edit2, Play, MapPin, Users, Clapperboard, Film, Clock, ExternalLink, Share2, Crown, Eye } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { ShareDialog } from './ShareDialog';
 import type { Project } from '../../types/types';
@@ -275,7 +275,7 @@ export const ProjectList: React.FC = () => {
                                         <span>{projectStats.scenes} Scenes</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400">
-                                        <Video size={16} />
+                                        <Clapperboard size={16} />
                                         <span>{projectStats.shots} Shots</span>
                                     </div>
                                     <div className="col-span-2 flex items-center gap-2 text-primary-600 dark:text-primary-400">

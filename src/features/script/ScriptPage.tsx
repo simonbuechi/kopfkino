@@ -5,7 +5,7 @@ import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { useDebounce } from '../../hooks/useDebounce';
 import { Link } from 'react-router-dom';
-import { FileText, Lock, Unlock, User, MapPin, Clapperboard, ChevronDown, ChevronRight, Code, BookOpen, Info, X, CheckCircle, AlertCircle, Download, BarChart2 } from 'lucide-react';
+import { FileText, Lock, Unlock, User, MapPin, Film, ChevronDown, ChevronRight, Code, BookOpen, Info, X, CheckCircle, AlertCircle, Download, BarChart2 } from 'lucide-react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { Button } from '../../components/ui/Button';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -506,7 +506,7 @@ const SidebarSection: React.FC<SidebarSectionProps> = ({ icon, title, items, isO
         </button>
         {isOpen && (
             items.length === 0 ? (
-                <p className="text-xs text-primary-400 dark:text-primary-600 italic px-3 py-1">None found</p>
+                <p className="text-xs text-primary-400 dark:text-primary-600 px-3 py-1">None found</p>
             ) : (
                 <ul className="space-y-0">
                     {items.map((item, i) => {
@@ -562,7 +562,7 @@ const ScenesSidebar: React.FC<ScenesSidebarProps> = ({ scenes, width, onSceneCli
                 onClick={() => setOpen(o => !o)}
                 className="w-full flex items-center gap-2 mb-1 px-3 py-1.5 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900 transition-colors group"
             >
-                <span className="text-primary-500 dark:text-primary-400"><Clapperboard size={13} /></span>
+                <span className="text-primary-500 dark:text-primary-400"><Film size={13} /></span>
                 <h3 className="text-sm font-bold text-primary-800 dark:text-primary-200">Scenes</h3>
                 <span className="ml-auto text-xs text-primary-400 font-semibold">{scenes.length}</span>
                 {open
@@ -571,7 +571,7 @@ const ScenesSidebar: React.FC<ScenesSidebarProps> = ({ scenes, width, onSceneCli
             </button>
             {open && (
                 scenes.length === 0 ? (
-                    <p className="text-xs text-primary-400 dark:text-primary-600 italic px-3 py-1">No scenes found</p>
+                    <p className="text-xs text-primary-400 dark:text-primary-600 px-3 py-1">No scenes found</p>
                 ) : (
                     <ul className="space-y-0">
                         {scenes.map((scene, i) => (
@@ -974,7 +974,7 @@ export const ScriptPage: React.FC = () => {
                         <section>
                             <h3 className="text-xs font-bold uppercase tracking-wide text-primary-500 dark:text-primary-400 mb-3">Dialog per Character</h3>
                             {analysis.dialogByChar.length === 0 ? (
-                                <p className="text-sm text-primary-400 italic">No dialogue found</p>
+                                <p className="text-sm text-primary-400">No dialogue found</p>
                             ) : (
                                 <div className="space-y-2">
                                     {analysis.dialogByChar.map(({ name, percent }) => (

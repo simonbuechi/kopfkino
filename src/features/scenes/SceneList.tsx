@@ -93,7 +93,7 @@ const SortableSceneItem = React.memo(({ scene, viewMode, getLocationName, getCha
                                         {characterNames.join(', ')}
                                     </StatBadge>
                                 )}
-                                <StatBadge color="amber" icon={<Film size={12} />}>
+                                <StatBadge color="amber" icon={<Clapperboard size={12} />}>
                                     {scene.shots?.length || 0} Shots
                                 </StatBadge>
                                 <StatBadge color="emerald" icon={<Timer size={12} />}>
@@ -203,7 +203,7 @@ export const SceneList: React.FC = () => {
 
             {scenes.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-primary-500 border-2 border-dashed border-primary-200 dark:border-primary-800 rounded-xl">
-                    <Clapperboard size={48} className="mb-4 opacity-50" />
+                    <Film size={48} className="mb-4 opacity-50" />
                     <p>No scenes yet. Create your first one!</p>
                 </div>
             ) : (

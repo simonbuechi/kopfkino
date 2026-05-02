@@ -327,7 +327,7 @@ export const LocationDetail: React.FC = () => {
                         ))}
                     </div>
                 ) : (
-                    <p className="text-primary-500 italic">No scenes linked to this location.</p>
+                    <p className="text-primary-500">No scenes linked to this location.</p>
                 )}
             </section>
             {confirmDialog}

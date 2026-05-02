@@ -122,9 +122,9 @@ const ScenesColumn: React.FC<ScenesColumnProps> = ({ scenes, sceneOrder, localBe
             </div>
             <div ref={setNodeRef} className="flex-1 overflow-y-auto min-h-[40px] rounded-lg">
                 {scenes.length === 0 ? (
-                    <p className="text-xs text-primary-400 dark:text-primary-600 italic px-1">No scene headings found in script.</p>
+                    <p className="text-xs text-primary-400 dark:text-primary-600 px-1">No scene headings found in script.</p>
                 ) : unassignedScenes.length === 0 ? (
-                    <p className="text-xs text-primary-400 dark:text-primary-600 italic px-1">All scenes placed.</p>
+                    <p className="text-xs text-primary-400 dark:text-primary-600 px-1">All scenes placed.</p>
                 ) : (
                     <SortableContext items={unassignedOrder} strategy={verticalListSortingStrategy}>
                         <div className="flex flex-col gap-1.5 pb-1">

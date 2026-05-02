@@ -133,7 +133,7 @@ export const SceneForm: React.FC = () => {
                             );
                         })}
                         {characters.length === 0 && (
-                            <div className="col-span-full text-center py-4 text-primary-500 text-sm italic">
+                            <div className="col-span-full text-center py-4 text-primary-500 text-sm">
                                 No characters available. Create some characters first.
                             </div>
                         )}
