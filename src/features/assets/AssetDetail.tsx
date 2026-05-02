@@ -1,12 +1,29 @@
-import React, { useReducer, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
 import { Trash2, ArrowLeft, Loader2, Save } from 'lucide-react';
 import { useProjects } from '../../hooks/useProjects';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDetailState } from '../../hooks/useDetailState';
 import type { Asset, AssetType } from '../../types/types';
 import { User } from 'lucide-react';
+
+interface AssetFields {
+    name: string;
+    description: string;
+    type: AssetType;
+    ownerId: string;
+    comment: string;
+}
+
+const initialAssetFields: AssetFields = {
+    name: '',
+    description: '',
+    type: 'Other' as AssetType,
+    ownerId: '',
+    comment: '',
+};
 
 export const AssetDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -18,66 +35,28 @@ export const AssetDetail: React.FC = () => {
     const existingAsset = assets.find((a) => a.id === id);
     const isNew = !id || id === 'new';
 
-    interface AssetState {
-        name: string;
-        description: string;
-        type: AssetType;
-        ownerId: string;
-        comment: string;
-        isDirty: boolean;
-        saveStatus: 'saved' | 'saving' | 'error' | null;
-    }
-
-    type AssetAction =
-        | { type: 'SET_FIELD'; field: string; value: string | AssetType }
-        | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
-        | { type: 'SAVED' }
-        | { type: 'SYNC'; payload: Omit<AssetState, 'isDirty' | 'saveStatus'> }
-        | { type: 'RESET' };
-
-    const [state, dispatch] = useReducer((state: AssetState, action: AssetAction): AssetState => {
-        switch (action.type) {
-            case 'SET_FIELD':
-                return { ...state, [action.field]: action.value, isDirty: true, saveStatus: null };
-            case 'SET_STATUS':
-                return { ...state, saveStatus: action.status };
-            case 'SAVED':
-                return { ...state, saveStatus: 'saved', isDirty: false };
-            case 'SYNC':
-                return { ...state, ...action.payload, isDirty: false, saveStatus: null };
-            case 'RESET':
-                return {
-                    name: '', description: '', type: 'Other' as AssetType,
-                    ownerId: '', comment: '',
-                    isDirty: false, saveStatus: null
-                };
-            default:
-                return state;
-        }
-    }, {
-        name: '', description: '', type: 'Other' as AssetType,
-        ownerId: '', comment: '',
-        isDirty: false, saveStatus: null
-    });
-
+    const [state, dispatch] = useDetailState(initialAssetFields);
     const { name, description, type, ownerId, comment, isDirty, saveStatus } = state;
 
+    const syncedId = useRef('');
     useEffect(() => {
-        if (existingAsset) {
+        if (id === syncedId.current) return;
+        if (isNew) {
+            syncedId.current = id ?? '';
+            dispatch({ type: 'RESET' });
+        } else if (existingAsset) {
+            syncedId.current = id ?? '';
             dispatch({
                 type: 'SYNC', payload: {
                     name: existingAsset.name,
                     description: existingAsset.description,
                     type: existingAsset.type,
                     ownerId: existingAsset.ownerId ?? '',
-                    comment: existingAsset.comment || ''
-                }
+                    comment: existingAsset.comment || '',
+                },
             });
-        } else if (isNew) {
-            dispatch({ type: 'RESET' });
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
+    }, [id, existingAsset, isNew, dispatch]);
 
     if (!existingAsset && !isNew) {
         return <div className="p-8">Asset not found</div>;
@@ -93,7 +72,7 @@ export const AssetDetail: React.FC = () => {
                 const newAsset: Asset = {
                     id: newId, projectId: activeProjectId,
                     name, description, type, comment,
-                    ...(ownerId ? { ownerId } : {})
+                    ...(ownerId ? { ownerId } : {}),
                 };
                 await addAsset(newAsset);
                 dispatch({ type: 'SAVED' });
@@ -103,7 +82,7 @@ export const AssetDetail: React.FC = () => {
                 const { ownerId: _, ...base } = existingAsset;
                 const updatedAsset: Asset = {
                     ...base, name, description, type, comment,
-                    ...(ownerId ? { ownerId } : {})
+                    ...(ownerId ? { ownerId } : {}),
                 };
                 await updateAsset(updatedAsset);
                 dispatch({ type: 'SAVED' });

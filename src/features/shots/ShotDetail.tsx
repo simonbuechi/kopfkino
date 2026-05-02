@@ -79,9 +79,16 @@ export const ShotDetail: React.FC = () => {
 
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const syncedKey = useRef('');
 
     useEffect(() => {
-        if (existingShot) {
+        const key = `${sceneId}:${shotId}`;
+        if (key === syncedKey.current) return;
+        if (isNew) {
+            syncedKey.current = key;
+            dispatch({ type: 'RESET' });
+        } else if (existingShot) {
+            syncedKey.current = key;
             dispatch({
                 type: 'SYNC',
                 payload: {
@@ -93,11 +100,8 @@ export const ShotDetail: React.FC = () => {
                     audio: existingShot.audio ?? true,
                 },
             });
-        } else if (isNew) {
-            dispatch({ type: 'RESET' });
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [shotId, sceneId]);
+    }, [shotId, sceneId, existingShot, isNew]);
 
     const sceneUrl = `/project/${activeProjectId}/scenes/${sceneId}`;
 

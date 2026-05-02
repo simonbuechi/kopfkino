@@ -215,25 +215,25 @@ export const SceneDetail: React.FC = () => {
     const [open, setOpen] = useState({ description: true, admin: true });
     const toggle = (key: keyof typeof open) => setOpen(prev => ({ ...prev, [key]: !prev[key] }));
 
+    const syncedId = useRef('');
     useEffect(() => {
-        if (scene) {
-            dispatch({
-                type: 'SYNC',
-                payload: {
-                    name: scene.name,
-                    number: scene.number,
-                    description: scene.description,
-                    comment: scene.comment ?? '',
-                    locationId: scene.locationId,
-                    length: scene.length?.toString() ?? '',
-                    characters: scene.characters ?? [],
-                    peopleIds: scene.peopleIds ?? [],
-                    assetIds: scene.assetIds ?? [],
-                },
-            });
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
+        if (id === syncedId.current || !scene) return;
+        syncedId.current = id ?? '';
+        dispatch({
+            type: 'SYNC',
+            payload: {
+                name: scene.name,
+                number: scene.number,
+                description: scene.description,
+                comment: scene.comment ?? '',
+                locationId: scene.locationId,
+                length: scene.length?.toString() ?? '',
+                characters: scene.characters ?? [],
+                peopleIds: scene.peopleIds ?? [],
+                assetIds: scene.assetIds ?? [],
+            },
+        });
+    }, [id, scene]);
 
     if (!scene) {
         return <div className="p-8">Scene not found</div>;

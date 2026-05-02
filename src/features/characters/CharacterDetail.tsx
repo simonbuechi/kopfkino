@@ -85,8 +85,15 @@ export const CharacterDetail: React.FC = () => {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const syncedId = useRef('');
     useEffect(() => {
-        if (existingCharacter) {
+        const key = id ?? '';
+        if (key === syncedId.current) return;
+        if (isNew) {
+            syncedId.current = key;
+            dispatch({ type: 'RESET' });
+        } else if (existingCharacter) {
+            syncedId.current = key;
             dispatch({
                 type: 'SYNC',
                 payload: {
@@ -97,11 +104,8 @@ export const CharacterDetail: React.FC = () => {
                     type: existingCharacter.type,
                 },
             });
-        } else if (isNew) {
-            dispatch({ type: 'RESET' });
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
+    }, [id, existingCharacter, isNew]);
 
     const handleSave = async () => {
         if (!name.trim()) return;

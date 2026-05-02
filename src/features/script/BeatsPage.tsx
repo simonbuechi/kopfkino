@@ -426,24 +426,29 @@ export const BeatsPage: React.FC = () => {
 
     // Local beats state for optimistic DnD updates
     const [localBeats, setLocalBeats] = useState<Beat[]>(beats);
+    const [prevBeats, setPrevBeats] = useState(beats);
+    // isDragging ref: fast synchronous reads inside event handlers (never read during render)
+    // isDraggingState: mirrors the ref for render-time guards
     const isDragging = useRef(false);
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        if (!isDragging.current) setLocalBeats(beats);
-    }, [beats]);
+    const [isDraggingState, setIsDraggingState] = useState(false);
+    if (prevBeats !== beats && !isDraggingState) {
+        setPrevBeats(beats);
+        setLocalBeats(beats);
+    }
 
     // Scenes
     const parsedScenes = useMemo(() => parseScenes(script?.content ?? ''), [script?.content]);
     const [showScenes, setShowScenes] = useState(false);
-    const [localSceneOrder, setLocalSceneOrder] = useState<string[]>([]);
+    const [localSceneOrder, setLocalSceneOrder] = useState<string[]>(() => parsedScenes.map(s => s.key));
+    const [prevParsedScenes, setPrevParsedScenes] = useState(parsedScenes);
     const originalSceneOrderRef = useRef<string[]>([]);
     const activeSceneInColumnRef = useRef(false);
     const localBeatsRef = useRef(localBeats);
     useEffect(() => { localBeatsRef.current = localBeats; }, [localBeats]);
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        if (!isDragging.current) setLocalSceneOrder(parsedScenes.map(s => s.key));
-    }, [parsedScenes]);
+    if (prevParsedScenes !== parsedScenes && !isDraggingState) {
+        setPrevParsedScenes(parsedScenes);
+        setLocalSceneOrder(parsedScenes.map(s => s.key));
+    }
 
     // DnD state
     const [activeId, setActiveId] = useState<string | null>(null);
@@ -586,6 +591,7 @@ export const BeatsPage: React.FC = () => {
 
     const handleDragStart = useCallback((event: DragStartEvent) => {
         isDragging.current = true;
+        setIsDraggingState(true);
         const type = (event.active.data.current?.type as 'beat' | 'scene') ?? 'beat';
         setActiveType(type);
         setActiveId(String(event.active.id));
@@ -663,6 +669,7 @@ export const BeatsPage: React.FC = () => {
 
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         isDragging.current = false;
+        setIsDraggingState(false);
         setActiveId(null);
         setActiveType(null);
         setHoveredBeatId(null);
@@ -697,6 +704,7 @@ export const BeatsPage: React.FC = () => {
 
     const handleDragCancel = useCallback(() => {
         isDragging.current = false;
+        setIsDraggingState(false);
         setActiveId(null);
         setActiveType(null);
         setHoveredBeatId(null);

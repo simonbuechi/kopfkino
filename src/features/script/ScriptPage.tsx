@@ -653,7 +653,12 @@ const ScriptSidebar: React.FC<ScriptSidebarProps> = ({
 export const ScriptPage: React.FC = () => {
     const { script, saveScript, setScriptFrozen, characters: storeCharacters, locations: storeLocations } = useStore();
     const { activeProjectId, activeProject } = useProjects();
-    const [draft, setDraft] = useState('');
+    const [draft, setDraft] = useState(script?.content ?? '');
+    const [prevScriptContent, setPrevScriptContent] = useState(script?.content);
+    if (prevScriptContent !== script?.content) {
+        setPrevScriptContent(script?.content);
+        setDraft(script?.content ?? '');
+    }
     const [saving, setSaving] = useState(false);
     const [confirmFreezeOpen, setConfirmFreezeOpen] = useState(false);
     const [howtoOpen, setHowtoOpen] = useState(false);
@@ -724,9 +729,6 @@ export const ScriptPage: React.FC = () => {
     }, [mode]);
 
     const frozen = script?.frozen ?? false;
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    useEffect(() => { setDraft(script?.content ?? ''); }, [script?.content]);
 
     const persistSave = useCallback(async (content: string) => {
         setSaving(true);

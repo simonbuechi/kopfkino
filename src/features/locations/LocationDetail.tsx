@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect } from 'react';
+import React, { useReducer, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
@@ -73,23 +73,23 @@ export const LocationDetail: React.FC = () => {
 
     const { name, description, geolocation, comment, images, thumbnailUrl, type, isDirty, saveStatus } = state;
 
+    const syncedId = useRef('');
     useEffect(() => {
-        if (location) {
-            dispatch({
-                type: 'SYNC',
-                payload: {
-                    name: location.name,
-                    description: location.description,
-                    geolocation: location.geolocation || '',
-                    comment: location.comment || '',
-                    images: location.images || [],
-                    thumbnailUrl: location.thumbnailUrl || '',
-                    type: location.type,
-                },
-            });
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
+        if (id === syncedId.current || !location) return;
+        syncedId.current = id ?? '';
+        dispatch({
+            type: 'SYNC',
+            payload: {
+                name: location.name,
+                description: location.description,
+                geolocation: location.geolocation || '',
+                comment: location.comment || '',
+                images: location.images || [],
+                thumbnailUrl: location.thumbnailUrl || '',
+                type: location.type,
+            },
+        });
+    }, [id, location]);
 
     const handleSave = async () => {
         if (!name.trim()) return;

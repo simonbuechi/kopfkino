@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -23,8 +23,8 @@ export const ShotsPage: React.FC = () => {
     const selectedSceneId = sceneIdFromUrl ?? '';
     const selectedScene = sortedScenes.find(s => s.id === selectedSceneId);
 
-    const sceneShots = useMemo(() => selectedScene?.shots ?? [], [selectedScene]);
-    const sceneGroups = useMemo(() => selectedScene?.groups ?? [], [selectedScene]);
+    const sceneShots = selectedScene?.shots ?? [];
+    const sceneGroups = selectedScene?.groups ?? [];
 
     const handleSceneChange = (sceneId: string) => {
         if (sceneId) {

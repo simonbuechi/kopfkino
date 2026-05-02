@@ -1,11 +1,32 @@
-import React, { useReducer, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
 import { Trash2, ArrowLeft, Loader2, Phone, Mail, Briefcase, Save } from 'lucide-react';
 import { useProjects } from '../../hooks/useProjects';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDetailState } from '../../hooks/useDetailState';
 import type { Person, PersonType } from '../../types/types';
+
+interface PersonFields {
+    name: string;
+    description: string;
+    type: PersonType;
+    role: string;
+    phone: string;
+    email: string;
+    comment: string;
+}
+
+const initialPersonFields: PersonFields = {
+    name: '',
+    description: '',
+    type: 'Other' as PersonType,
+    role: '',
+    phone: '',
+    email: '',
+    comment: '',
+};
 
 export const PersonDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -17,54 +38,17 @@ export const PersonDetail: React.FC = () => {
     const existingPerson = people.find((p) => p.id === id);
     const isNew = !id || id === 'new';
 
-    interface PersonState {
-        name: string;
-        description: string;
-        type: PersonType;
-        role: string;
-        phone: string;
-        email: string;
-        comment: string;
-        isDirty: boolean;
-        saveStatus: 'saved' | 'saving' | 'error' | null;
-    }
-
-    type PersonAction =
-        | { type: 'SET_FIELD'; field: string; value: string | PersonType }
-        | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
-        | { type: 'SAVED' }
-        | { type: 'SYNC'; payload: Omit<PersonState, 'isDirty' | 'saveStatus'> }
-        | { type: 'RESET' };
-
-    const [state, dispatch] = useReducer((state: PersonState, action: PersonAction): PersonState => {
-        switch (action.type) {
-            case 'SET_FIELD':
-                return { ...state, [action.field]: action.value, isDirty: true, saveStatus: null };
-            case 'SET_STATUS':
-                return { ...state, saveStatus: action.status };
-            case 'SAVED':
-                return { ...state, saveStatus: 'saved', isDirty: false };
-            case 'SYNC':
-                return { ...state, ...action.payload, isDirty: false, saveStatus: null };
-            case 'RESET':
-                return {
-                    name: '', description: '', type: 'Other' as PersonType,
-                    role: '', phone: '', email: '', comment: '',
-                    isDirty: false, saveStatus: null
-                };
-            default:
-                return state;
-        }
-    }, {
-        name: '', description: '', type: 'Other' as PersonType,
-        role: '', phone: '', email: '', comment: '',
-        isDirty: false, saveStatus: null
-    });
-
+    const [state, dispatch] = useDetailState(initialPersonFields);
     const { name, description, type, role, phone, email, comment, isDirty, saveStatus } = state;
 
+    const syncedId = useRef('');
     useEffect(() => {
-        if (existingPerson) {
+        if (id === syncedId.current) return;
+        if (isNew) {
+            syncedId.current = id ?? '';
+            dispatch({ type: 'RESET' });
+        } else if (existingPerson) {
+            syncedId.current = id ?? '';
             dispatch({
                 type: 'SYNC', payload: {
                     name: existingPerson.name,
@@ -73,14 +57,11 @@ export const PersonDetail: React.FC = () => {
                     role: existingPerson.role,
                     phone: existingPerson.phone,
                     email: existingPerson.email,
-                    comment: existingPerson.comment || ''
-                }
+                    comment: existingPerson.comment || '',
+                },
             });
-        } else if (isNew) {
-            dispatch({ type: 'RESET' });
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
+    }, [id, existingPerson, isNew, dispatch]);
 
     if (!existingPerson && !isNew) {
         return <div className="p-8">Person not found</div>;
@@ -95,14 +76,14 @@ export const PersonDetail: React.FC = () => {
                 const newId = crypto.randomUUID();
                 const newPerson: Person = {
                     id: newId, projectId: activeProjectId,
-                    name, description, type, role, phone, email, comment
+                    name, description, type, role, phone, email, comment,
                 };
                 await addPerson(newPerson);
                 dispatch({ type: 'SAVED' });
                 navigate(`../${newId}`, { replace: true });
             } else if (existingPerson) {
                 const updatedPerson: Person = {
-                    ...existingPerson, name, description, type, role, phone, email, comment
+                    ...existingPerson, name, description, type, role, phone, email, comment,
                 };
                 await updatePerson(updatedPerson);
                 dispatch({ type: 'SAVED' });
