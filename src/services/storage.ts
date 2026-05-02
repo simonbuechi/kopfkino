@@ -14,7 +14,7 @@ import {
 import type { Unsubscribe } from 'firebase/firestore';
 import { db } from './firebase';
 import type {
-    Location, Scene, Settings, Character, Project, Schedule, Asset, Person, Script, ScriptRevision,
+    Location, Scene, Shot, ShotSetup as ShotGroup, Settings, Character, Project, Schedule, Asset, Person, Script, ScriptRevision,
     Act, Beat,
     ProjectRole, ProjectMember, ProjectRef, Invitation,
 } from '../types/types';
@@ -297,6 +297,14 @@ export const storage = {
 
     saveScene: async (projectId: string, scene: Scene) => {
         await setDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCENES, scene.id), scene);
+    },
+
+    updateSceneShots: async (projectId: string, sceneId: string, shots: Shot[]) => {
+        await updateDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCENES, sceneId), { shots });
+    },
+
+    updateSceneGroups: async (projectId: string, sceneId: string, groups: ShotGroup[]) => {
+        await updateDoc(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.SCENES, sceneId), { groups });
     },
 
     deleteScene: async (projectId: string, sceneId: string) => {

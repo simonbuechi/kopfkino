@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { ShotsList } from './ShotsList';
-import { Clapperboard } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
+import { Clapperboard, Film } from 'lucide-react';
 import clsx from 'clsx';
 
 const selectClass = clsx(
@@ -15,12 +16,15 @@ const selectClass = clsx(
 
 export const ShotsPage: React.FC = () => {
     const { projectId, id: sceneIdFromUrl } = useParams<{ projectId: string; id?: string }>();
-    const { scenes } = useStore();
+    const { scenes, updateSceneGroups } = useStore();
     const navigate = useNavigate();
 
     const sortedScenes = [...scenes].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     const selectedSceneId = sceneIdFromUrl ?? '';
     const selectedScene = sortedScenes.find(s => s.id === selectedSceneId);
+
+    const sceneShots = useMemo(() => selectedScene?.shots ?? [], [selectedScene]);
+    const sceneGroups = useMemo(() => selectedScene?.groups ?? [], [selectedScene]);
 
     const handleSceneChange = (sceneId: string) => {
         if (sceneId) {
@@ -36,6 +40,16 @@ export const ShotsPage: React.FC = () => {
                 title="Shots"
                 actions={
                     <div className="flex items-center gap-3">
+                        {selectedScene && (
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => navigate(`/project/${projectId}/scenes/${selectedSceneId}`)}
+                            >
+                                <Film size={14} />
+                                Go to Scene
+                            </Button>
+                        )}
                         <Clapperboard size={16} className="text-primary-400" />
                         <select
                             value={selectedSceneId}
@@ -63,7 +77,9 @@ export const ShotsPage: React.FC = () => {
             ) : (
                 <ShotsList
                     sceneId={selectedSceneId}
-                    shots={selectedScene.shots ?? []}
+                    shots={sceneShots}
+                    groups={sceneGroups}
+                    onSetupsChange={(groups) => updateSceneGroups(selectedSceneId, groups)}
                     onAddShot={() => navigate(`/project/${projectId}/scenes/${selectedSceneId}/shots/new`)}
                     onEditShot={(id) => navigate(`/project/${projectId}/scenes/${selectedSceneId}/shots/${id}`)}
                 />

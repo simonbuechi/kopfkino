@@ -1,5 +1,5 @@
 import { useReducer, useEffect, useCallback, useMemo } from 'react';
-import type { Location, Scene, Shot, Person, Schedule, Asset, Character, Settings, Script, ScriptRevision, Act, Beat } from '../types/types';
+import type { Location, Scene, Shot, ShotSetup, Person, Schedule, Asset, Character, Settings, Script, ScriptRevision, Act, Beat } from '../types/types';
 import { storage } from '../services/storage';
 import { useAuth } from '../hooks/useAuth';
 import { useProjects } from '../hooks/useProjects';
@@ -129,12 +129,12 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     }, [guardedWrite, scenes]);
 
     const reorderShotsInScene = useCallback(async (sceneId: string, newShots: Shot[]) => {
-        await guardedWrite(id => {
-            const scene = scenes.find(s => s.id === sceneId);
-            if (!scene) return Promise.resolve();
-            return storage.saveScene(id, { ...scene, shots: newShots });
-        });
-    }, [guardedWrite, scenes]);
+        await guardedWrite(id => storage.updateSceneShots(id, sceneId, newShots));
+    }, [guardedWrite]);
+
+    const updateSceneGroups = useCallback(async (sceneId: string, groups: ShotSetup[]) => {
+        await guardedWrite(id => storage.updateSceneGroups(id, sceneId, groups));
+    }, [guardedWrite]);
 
     // Characters
     const addCharacter = useCallback(async (character: Character) => {
@@ -266,7 +266,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats,
         saveLocation, deleteLocation, replaceLocations, reorderLocations,
         addScene, deleteScene, replaceScenes, reorderScenes,
-        addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene,
+        addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene, updateSceneGroups,
         addCharacter, deleteCharacter, updateCharacter, replaceCharacters, reorderCharacters,
         updateSettings,
         addSchedule, deleteSchedule, updateSchedule,
@@ -278,7 +278,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats,
         saveLocation, deleteLocation, replaceLocations, reorderLocations,
         addScene, deleteScene, replaceScenes, reorderScenes,
-        addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene,
+        addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene, updateSceneGroups,
         addCharacter, deleteCharacter, updateCharacter, replaceCharacters, reorderCharacters,
         updateSettings,
         addSchedule, deleteSchedule, updateSchedule,

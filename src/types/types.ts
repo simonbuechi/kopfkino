@@ -26,7 +26,15 @@ export interface Scene {
     peopleIds?: string[];
     assetIds?: string[];
     shots?: Shot[];
+    groups?: ShotSetup[];
     length?: number;
+    order?: number;
+}
+
+export interface ShotSetup {
+    id: string;
+    name: string;
+    description?: string;
     order?: number;
 }
 
@@ -42,6 +50,7 @@ export interface Shot {
     length?: number;
     audio?: boolean;
     notes?: string;
+    groupId?: string;
 }
 
 export type PollinationsModel = 'zimage' | 'flux' | 'klein' | 'gptimage' | 'gptimage-large' | 'wan-image' | 'qwen-image' | 'kontext';
