@@ -77,7 +77,7 @@ const SortableCharacterListItem = ({
         <Button
             size="sm"
             variant="ghost"
-            onClick={(e) => { e.stopPropagation(); character.imageUrl && onClickImage(character.imageUrl); }}
+            onClick={(e) => { e.stopPropagation(); if (character.imageUrl) onClickImage(character.imageUrl); }}
             disabled={!character.imageUrl}
             className="h-6 w-6 !p-0 shrink-0 text-primary-400 hover:text-primary-900 dark:text-primary-500 dark:hover:text-primary-100 disabled:opacity-20 disabled:hover:bg-transparent"
             title={character.imageUrl ? "View Image" : "No Image Available"}
