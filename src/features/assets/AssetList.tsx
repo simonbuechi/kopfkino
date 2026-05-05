@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
@@ -8,7 +8,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { TypeBadge } from '../../components/ui/TypeBadge';
 import { SortableCard } from '../../components/ui/SortableCard';
-import { SortableListItem } from '../../components/ui/SortableListItem';
+import { SortableTableRow } from '../../components/ui/SortableTableRow';
 import type { Asset, Person } from '../../types/types';
 import {
     DndContext,
@@ -56,23 +56,25 @@ const SortableAssetListItem = ({
     ownerName?: string;
     onEdit: (id: string) => void;
 }) => (
-    <SortableListItem id={asset.id} className="bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800">
-        <Button size="sm" variant="secondary" onClick={() => onEdit(asset.id)} className="shrink-0">
+    <SortableTableRow id={asset.id}>
+        <span className="w-48 shrink-0 font-medium text-sm text-primary-900 dark:text-white truncate select-none">{asset.name}</span>
+        <span className="flex-1 min-w-0 text-sm text-primary-500 dark:text-primary-400 truncate hidden sm:block">{ownerName ?? ''}</span>
+        {asset.type ? <TypeBadge label={asset.type} /> : <span className="w-0" />}
+        <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); onEdit(asset.id); }} className="shrink-0 ml-auto">
             <Edit size={14} /> Edit
         </Button>
-        <div className="flex-1 min-w-0 flex items-center gap-3">
-            <h3 className="font-medium text-primary-900 dark:text-white truncate select-none">{asset.name}</h3>
-            {ownerName && <span className="text-xs text-primary-400 hidden sm:inline-block">— {ownerName}</span>}
-            {asset.type && <TypeBadge label={asset.type} />}
-        </div>
-    </SortableListItem>
+    </SortableTableRow>
 );
 
 export const AssetList: React.FC = () => {
     const { assets, reorderAssets, people } = useStore();
     const peopleById = Object.fromEntries((people as Person[]).map((p) => [p.id, p.name]));
     const navigate = useNavigate();
-    const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
+    const [viewMode, setViewMode] = useState<'expanded' | 'slim'>(
+        () => (localStorage.getItem('kopfkino-view-assets') as 'expanded' | 'slim') || 'expanded'
+    );
+
+    useEffect(() => { localStorage.setItem('kopfkino-view-assets', viewMode); }, [viewMode]);
 
     const { sensors, handleDragEnd } = useSortableList(assets, reorderAssets);
 
@@ -100,29 +102,29 @@ export const AssetList: React.FC = () => {
                         items={assets.map(a => a.id)}
                         strategy={rectSortingStrategy}
                     >
-                        <div className={
-                            viewMode === 'expanded'
-                                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                                : "flex flex-col gap-2"
-                        }>
-                            {assets.map((asset) => (
-                                viewMode === 'expanded' ? (
+                        {viewMode === 'expanded' ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {assets.map((asset) => (
                                     <SortableAssetCard
                                         key={asset.id}
                                         asset={asset}
                                         ownerName={asset.ownerId ? peopleById[asset.ownerId] : undefined}
                                         onEdit={navigate}
                                     />
-                                ) : (
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="border border-primary-200 dark:border-primary-700 rounded-lg overflow-hidden">
+                                {assets.map((asset) => (
                                     <SortableAssetListItem
                                         key={asset.id}
                                         asset={asset}
                                         ownerName={asset.ownerId ? peopleById[asset.ownerId] : undefined}
                                         onEdit={navigate}
                                     />
-                                )
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </SortableContext>
                 )}
             </DndContext>

@@ -53,59 +53,62 @@ const SortableSceneItem = React.memo(({ scene, viewMode, getLocationName, getCha
 
     const characterNames = getCharacterNames(scene.characters);
 
+    const dragHandle = (
+        <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1 text-primary-400 hover:text-primary-600 dark:hover:text-primary-200 shrink-0"
+            onClick={(e) => e.stopPropagation()}
+        >
+            <GripVertical size={16} />
+        </div>
+    );
+
+    if (viewMode === 'slim') {
+        return (
+            <div ref={setNodeRef} style={style}>
+                <div
+                    className="flex gap-3 items-center px-3 py-2 bg-white dark:bg-primary-900 border-b border-primary-100 dark:border-primary-800 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-800/50 transition-colors"
+                    onClick={onClick}
+                >
+                    {dragHandle}
+                    <span className="font-mono text-sm font-bold w-10 text-center shrink-0 text-primary-500">{scene.number}</span>
+                    <span className="flex-1 min-w-0 text-sm font-medium text-primary-900 dark:text-white truncate">{scene.name}</span>
+                    <span className="text-sm text-primary-400 truncate hidden md:block">{getLocationName(scene.locationId)}</span>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div ref={setNodeRef} style={style}>
-            <Card
-                className={`flex gap-4 items-center cursor-pointer transition-all ${viewMode === 'slim' ? 'p-3' : 'p-6 flex-col sm:flex-row items-start sm:items-center'}`}
-                onClick={onClick}
-                hoverable
-            >
-                {/* Drag Handle */}
-                <div
-                    {...attributes}
-                    {...listeners}
-                    className="cursor-grab active:cursor-grabbing p-1 text-primary-400 hover:text-primary-600 dark:hover:text-primary-200"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <GripVertical size={20} />
+            <Card className="flex gap-4 items-center cursor-pointer p-6 flex-col sm:flex-row items-start sm:items-center" onClick={onClick} hoverable>
+                {dragHandle}
+                <div className="text-2xl font-bold text-primary-900 dark:text-white min-w-[60px] text-center font-mono">
+                    {scene.number}
                 </div>
-
-                {viewMode === 'slim' ? (
-                    // Slim Mode
-                    <div className="flex-1 flex items-center gap-4">
-                        <div className="font-mono font-bold text-xl min-w-[40px] text-center text-primary-500">{scene.number}</div>
-                        <div className="font-semibold text-lg text-primary-900 dark:text-white truncate">{scene.name}</div>
+                <div className="flex-1 space-y-2 w-full">
+                    <h3 className="text-lg font-bold text-primary-900 dark:text-white">{scene.name}</h3>
+                    <div className="flex flex-wrap gap-2">
+                        <StatBadge color="primary" icon={<MapPin size={12} />}>
+                            {getLocationName(scene.locationId)}
+                        </StatBadge>
+                        {characterNames.length > 0 && (
+                            <StatBadge color="blue" icon={<Users size={12} />}>
+                                {characterNames.join(', ')}
+                            </StatBadge>
+                        )}
+                        <StatBadge color="amber" icon={<Clapperboard size={12} />}>
+                            {scene.shots?.length || 0} Shots
+                        </StatBadge>
+                        <StatBadge color="emerald" icon={<Timer size={12} />}>
+                            {formatTime(scene.shots?.reduce((acc, shot) => acc + (shot.length || 0), 0) || 0)}
+                        </StatBadge>
                     </div>
-                ) : (
-                    // Expanded Mode
-                    <>
-                        <div className="text-2xl font-bold text-primary-900 dark:text-white min-w-[60px] text-center font-mono">
-                            {scene.number}
-                        </div>
-                        <div className="flex-1 space-y-2 w-full">
-                            <h3 className="text-lg font-bold text-primary-900 dark:text-white">{scene.name}</h3>
-                            <div className="flex flex-wrap gap-2">
-                                <StatBadge color="primary" icon={<MapPin size={12} />}>
-                                    {getLocationName(scene.locationId)}
-                                </StatBadge>
-                                {characterNames.length > 0 && (
-                                    <StatBadge color="blue" icon={<Users size={12} />}>
-                                        {characterNames.join(', ')}
-                                    </StatBadge>
-                                )}
-                                <StatBadge color="amber" icon={<Clapperboard size={12} />}>
-                                    {scene.shots?.length || 0} Shots
-                                </StatBadge>
-                                <StatBadge color="emerald" icon={<Timer size={12} />}>
-                                    {formatTime(scene.shots?.reduce((acc, shot) => acc + (shot.length || 0), 0) || 0)}
-                                </StatBadge>
-                            </div>
-                            <p className="text-primary-500 dark:text-primary-400 text-sm line-clamp-2">
-                                {scene.description}
-                            </p>
-                        </div>
-                    </>
-                )}
+                    <p className="text-primary-500 dark:text-primary-400 text-sm line-clamp-2">
+                        {scene.description}
+                    </p>
+                </div>
             </Card>
         </div>
     );
@@ -116,7 +119,9 @@ export const SceneList: React.FC = () => {
     const { activeProjectId } = useProjects();
     const navigate = useNavigate();
     const { confirm, confirmDialog } = useConfirmDialog();
-    const [viewMode, setViewMode] = useState<'slim' | 'expanded'>('expanded');
+    const [viewMode, setViewMode] = useState<'slim' | 'expanded'>(
+        () => (localStorage.getItem('kopfkino-view-scenes') as 'slim' | 'expanded') || 'expanded'
+    );
 
     const { sensors, handleDragEnd } = useSortableList(scenes, reorderScenes);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -130,6 +135,7 @@ export const SceneList: React.FC = () => {
     });
 
     useEffect(() => {
+        localStorage.setItem('kopfkino-view-scenes', viewMode);
         scrollRef.current?.scrollTo(0, 0);
     }, [viewMode]);
 
@@ -216,27 +222,28 @@ export const SceneList: React.FC = () => {
                         items={scenes.map(s => s.id)}
                         strategy={verticalListSortingStrategy}
                     >
-                        <div
-                            ref={scrollRef}
-                            className="overflow-y-auto"
-                            style={{ height: 'calc(100vh - 18rem)', minHeight: '300px' }}
-                        >
-                            <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-                                {virtualizer.getVirtualItems().map(virtualRow => {
-                                    const scene = scenes[virtualRow.index];
-                                    return (
-                                        <div
-                                            key={virtualRow.key}
-                                            data-index={virtualRow.index}
-                                            ref={virtualizer.measureElement}
-                                            style={{
-                                                position: 'absolute',
-                                                top: 0,
-                                                transform: `translateY(${virtualRow.start}px)`,
-                                                width: '100%',
-                                                paddingBottom: '16px',
-                                            }}
-                                        >
+                        <div className={viewMode === 'slim' ? 'border border-primary-200 dark:border-primary-700 rounded-lg overflow-hidden' : ''}>
+                            <div
+                                ref={scrollRef}
+                                className="overflow-y-auto"
+                                style={{ height: 'calc(100vh - 18rem)', minHeight: '300px' }}
+                            >
+                                <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+                                    {virtualizer.getVirtualItems().map(virtualRow => {
+                                        const scene = scenes[virtualRow.index];
+                                        return (
+                                            <div
+                                                key={virtualRow.key}
+                                                data-index={virtualRow.index}
+                                                ref={virtualizer.measureElement}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    transform: `translateY(${virtualRow.start}px)`,
+                                                    width: '100%',
+                                                    paddingBottom: viewMode === 'slim' ? 0 : '16px',
+                                                }}
+                                            >
                                             <SortableSceneItem
                                                 scene={scene}
                                                 viewMode={viewMode}
@@ -248,6 +255,7 @@ export const SceneList: React.FC = () => {
                                     );
                                 })}
                             </div>
+                        </div>
                         </div>
                     </SortableContext>
                 </DndContext>

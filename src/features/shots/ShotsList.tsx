@@ -76,7 +76,9 @@ export const ShotsList: React.FC<ShotsListProps> = ({
     const navigate = useNavigate();
 
     const [uploadingId, setUploadingId] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<'preview' | 'slim' | 'detailed'>('detailed');
+    const [viewMode, setViewMode] = useState<'preview' | 'slim' | 'detailed'>(
+        () => (localStorage.getItem('kopfkino-view-shots') as 'preview' | 'slim' | 'detailed') || 'detailed'
+    );
     const [imageModal, setImageModal] = useState<{ url: string; alt: string } | null>(null);
     const [showSetupModal, setShowSetupModal] = useState(false);
     const [editingSetup, setEditingSetup] = useState<ShotSetup | null>(null);
@@ -88,6 +90,7 @@ export const ShotsList: React.FC<ShotsListProps> = ({
     );
     const [activeId, setActiveId] = useState<string | null>(null);
 
+    useEffect(() => { localStorage.setItem('kopfkino-view-shots', viewMode); }, [viewMode]);
     useEffect(() => { setLocalShots(shots); }, [shots]);
     useEffect(() => {
         setLocalSetups([...groups].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));

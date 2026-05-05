@@ -29,12 +29,12 @@ const PageBreakIndicator: React.FC<{ lineNum: number; pageNum: number }> = ({ li
         className="absolute left-0 right-0 pointer-events-none select-none z-10"
         style={{ top: `${PAPER_PAD_T + lineNum * PAPER_LINE_H}px` }}
     >
-        <div className="border-t border-dashed border-primary-200 dark:border-primary-700" />
+        <div className="border-t border-stone-200 dark:border-stone-700" />
         <span
-            className="absolute top-0 -translate-y-1/2 text-[10px] font-sans text-primary-400 dark:text-primary-500 leading-none whitespace-nowrap"
+            className="absolute top-1 text-[10px] font-sans text-stone-400 dark:text-stone-500 leading-none tabular-nums"
             style={{ left: 'calc(100% + 0.75rem)' }}
         >
-            p.{pageNum}
+            {pageNum}.
         </span>
     </div>
 );
@@ -266,11 +266,16 @@ const PlainEditor: React.FC<EditorProps> = ({ value, onChange, disabled, paperRe
     const breaks = pageBreakLines(value.split('\n').length);
 
     return (
-        <div className="w-full font-mono text-sm leading-6 bg-primary-50 dark:bg-primary-950 py-8">
+        <div className="w-full font-mono text-sm leading-6 bg-stone-300 dark:bg-stone-900 py-12">
             <div
                 ref={paperRef}
-                className="relative mx-auto bg-white dark:bg-primary-900 shadow-lg border border-primary-100 dark:border-primary-800"
-                style={{ width: '72ch', paddingLeft: '6ch', paddingRight: '6ch', paddingTop: PAPER_PAD_T, paddingBottom: PAPER_PAD_T }}
+                className="relative mx-auto bg-stone-50 dark:bg-primary-900 text-stone-900 dark:text-stone-100"
+                style={{
+                    width: '72ch',
+                    paddingLeft: '6ch', paddingRight: '6ch',
+                    paddingTop: PAPER_PAD_T, paddingBottom: PAPER_PAD_T,
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.09), 0 16px 48px rgba(0,0,0,0.06)',
+                }}
             >
                 {breaks.map((n, i) => <PageBreakIndicator key={n} lineNum={n} pageNum={i + 2} />)}
                 <textarea
@@ -282,7 +287,7 @@ const PlainEditor: React.FC<EditorProps> = ({ value, onChange, disabled, paperRe
                     spellCheck={false}
                     autoComplete="off"
                     autoCorrect="off"
-                    className="w-full min-h-[80vh] bg-transparent text-primary-900 dark:text-primary-100 caret-primary-900 dark:caret-primary-100 resize-none outline-none border-0 focus:ring-0 whitespace-pre-wrap overflow-hidden"
+                    className="w-full min-h-[80vh] bg-transparent text-inherit caret-stone-900 dark:caret-stone-100 resize-none outline-none border-0 focus:ring-0 whitespace-pre-wrap overflow-hidden"
                     placeholder=""
                 />
             </div>
@@ -335,10 +340,15 @@ const FormattedEditor: React.FC<EditorProps> = ({ value, onChange, disabled }) =
     const breaks = pageBreakLines(value.split('\n').length);
 
     return (
-        <div className="w-full font-mono text-sm leading-6 bg-primary-50 dark:bg-primary-950 py-8">
+        <div className="w-full font-mono text-sm leading-6 bg-stone-300 dark:bg-stone-900 py-12">
             <div
-                className="relative mx-auto bg-white dark:bg-primary-900 shadow-lg border border-primary-100 dark:border-primary-800"
-                style={{ width: '72ch', paddingLeft: '6ch', paddingRight: '6ch', paddingTop: PAPER_PAD_T, paddingBottom: PAPER_PAD_T }}
+                className="relative mx-auto bg-stone-50 dark:bg-primary-900 text-stone-900 dark:text-stone-100"
+                style={{
+                    width: '72ch',
+                    paddingLeft: '6ch', paddingRight: '6ch',
+                    paddingTop: PAPER_PAD_T, paddingBottom: PAPER_PAD_T,
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.09), 0 16px 48px rgba(0,0,0,0.06)',
+                }}
             >
                 {breaks.map((n, i) => <PageBreakIndicator key={n} lineNum={n} pageNum={i + 2} />)}
                 <div
@@ -348,7 +358,7 @@ const FormattedEditor: React.FC<EditorProps> = ({ value, onChange, disabled }) =
                     onInput={handleInput}
                     onPaste={handlePaste}
                     onKeyDown={handleKeyDown}
-                    className="outline-none min-h-[80vh]"
+                    className="outline-none min-h-[80vh] text-inherit"
                     spellCheck={false}
                 />
             </div>
@@ -663,7 +673,10 @@ export const ScriptPage: React.FC = () => {
     const [confirmFreezeOpen, setConfirmFreezeOpen] = useState(false);
     const [howtoOpen, setHowtoOpen] = useState(false);
     const [analysisOpen, setAnalysisOpen] = useState(false);
-    const [mode, setMode] = useState<'plain' | 'formatted'>('formatted');
+    const [mode, setMode] = useState<'plain' | 'formatted'>(
+        () => (localStorage.getItem('kopfkino-view-script') as 'plain' | 'formatted') || 'formatted'
+    );
+    useEffect(() => { localStorage.setItem('kopfkino-view-script', mode); }, [mode]);
     const [sidebarWidth, setSidebarWidth] = useState(280);
     const [leftSidebarWidth, setLeftSidebarWidth] = useState(220);
     const isResizing = useRef(false);

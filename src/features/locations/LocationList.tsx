@@ -12,7 +12,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { TypeBadge } from '../../components/ui/TypeBadge';
 import { SortableCard } from '../../components/ui/SortableCard';
-import { SortableListItem } from '../../components/ui/SortableListItem';
+import { SortableTableRow } from '../../components/ui/SortableTableRow';
 import type { Location } from '../../types/types';
 import { useCSVImportExport } from '../../hooks/useCSVImportExport';
 import {
@@ -78,12 +78,11 @@ const SortableLocationListItem = ({
     location: Location;
     onNavigate: (id: string) => void;
 }) => (
-    <SortableListItem id={location.id} hoverable onClick={() => onNavigate(location.id)}>
-        <div className="flex-1 min-w-0 flex items-center gap-3">
-            <h3 className="font-medium text-primary-900 dark:text-white truncate select-none">{location.name}</h3>
-            {location.type && <TypeBadge label={location.type} />}
-        </div>
-    </SortableListItem>
+    <SortableTableRow id={location.id} onClick={() => onNavigate(location.id)}>
+        <span className="flex-1 min-w-0 font-medium text-sm text-primary-900 dark:text-white truncate select-none">{location.name}</span>
+        {location.geolocation && <span className="text-sm text-primary-400 truncate hidden md:block">{location.geolocation}</span>}
+        {location.type && <TypeBadge label={location.type} />}
+    </SortableTableRow>
 );
 
 export const LocationList: React.FC = () => {
@@ -92,7 +91,9 @@ export const LocationList: React.FC = () => {
     const navigate = useNavigate();
     const { confirm, confirmDialog } = useConfirmDialog();
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
+    const [viewMode, setViewMode] = useState<'expanded' | 'slim'>(
+        () => (localStorage.getItem('kopfkino-view-locations') as 'expanded' | 'slim') || 'expanded'
+    );
 
     const { sensors, handleDragEnd } = useSortableList(locations, reorderLocations);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -106,6 +107,7 @@ export const LocationList: React.FC = () => {
     });
 
     useEffect(() => {
+        localStorage.setItem('kopfkino-view-locations', viewMode);
         if (viewMode === 'slim') scrollRef.current?.scrollTo(0, 0);
     }, [viewMode]);
 
@@ -178,34 +180,35 @@ export const LocationList: React.FC = () => {
                                 ))}
                             </div>
                         ) : (
-                            <div
-                                ref={scrollRef}
-                                className="overflow-y-auto"
-                                style={{ height: 'calc(100vh - 18rem)', minHeight: '300px' }}
-                            >
-                                <div style={{ height: slimVirtualizer.getTotalSize(), position: 'relative' }}>
-                                    {slimVirtualizer.getVirtualItems().map(virtualRow => {
-                                        const location = locations[virtualRow.index];
-                                        return (
-                                            <div
-                                                key={virtualRow.key}
-                                                data-index={virtualRow.index}
-                                                ref={slimVirtualizer.measureElement}
-                                                style={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    transform: `translateY(${virtualRow.start}px)`,
-                                                    width: '100%',
-                                                    paddingBottom: '8px',
-                                                }}
-                                            >
-                                                <SortableLocationListItem
-                                                    location={location}
-                                                    onNavigate={navigate}
-                                                />
-                                            </div>
-                                        );
-                                    })}
+                            <div className="border border-primary-200 dark:border-primary-700 rounded-lg overflow-hidden">
+                                <div
+                                    ref={scrollRef}
+                                    className="overflow-y-auto"
+                                    style={{ height: 'calc(100vh - 18rem)', minHeight: '300px' }}
+                                >
+                                    <div style={{ height: slimVirtualizer.getTotalSize(), position: 'relative' }}>
+                                        {slimVirtualizer.getVirtualItems().map(virtualRow => {
+                                            const location = locations[virtualRow.index];
+                                            return (
+                                                <div
+                                                    key={virtualRow.key}
+                                                    data-index={virtualRow.index}
+                                                    ref={slimVirtualizer.measureElement}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        transform: `translateY(${virtualRow.start}px)`,
+                                                        width: '100%',
+                                                    }}
+                                                >
+                                                    <SortableLocationListItem
+                                                        location={location}
+                                                        onNavigate={navigate}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         )}

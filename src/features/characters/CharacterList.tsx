@@ -13,7 +13,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { TypeBadge } from '../../components/ui/TypeBadge';
 import { SortableCard } from '../../components/ui/SortableCard';
-import { SortableListItem } from '../../components/ui/SortableListItem';
+import { SortableTableRow } from '../../components/ui/SortableTableRow';
 
 import type { Character } from '../../types/types';
 import {
@@ -73,32 +73,28 @@ const SortableCharacterListItem = ({
     onDelete: (id: string) => void;
     onClickImage: (url: string) => void;
 }) => (
-    <SortableListItem id={character.id} className="bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800">
-        <div className="flex-1 min-w-0 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-                <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => character.imageUrl && onClickImage(character.imageUrl)}
-                    disabled={!character.imageUrl}
-                    className="h-8 w-8 !p-0 shrink-0 text-primary-500 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-100 disabled:opacity-30 disabled:hover:bg-transparent"
-                    title={character.imageUrl ? "View Image" : "No Image Available"}
-                >
-                    <User size={16} />
-                </Button>
-                <h3 className="font-medium text-primary-900 dark:text-white truncate select-none">{character.name}</h3>
-                {character.type && <TypeBadge label={character.type} />}
-            </div>
-            <div className="flex items-center gap-1">
-                <Button size="icon" variant="secondary" onClick={() => onEdit(character.id)} title="Edit Character">
-                    <Edit size={16} />
-                </Button>
-                <Button size="sm" variant="danger" onClick={() => onDelete(character.id)} className="h-8 w-8 !p-0 transition-colors" title="Delete Character">
-                    <Trash2 size={16} />
-                </Button>
-            </div>
+    <SortableTableRow id={character.id}>
+        <Button
+            size="sm"
+            variant="ghost"
+            onClick={(e) => { e.stopPropagation(); character.imageUrl && onClickImage(character.imageUrl); }}
+            disabled={!character.imageUrl}
+            className="h-6 w-6 !p-0 shrink-0 text-primary-400 hover:text-primary-900 dark:text-primary-500 dark:hover:text-primary-100 disabled:opacity-20 disabled:hover:bg-transparent"
+            title={character.imageUrl ? "View Image" : "No Image Available"}
+        >
+            <User size={14} />
+        </Button>
+        <span className="w-48 shrink-0 font-medium text-sm text-primary-900 dark:text-white truncate select-none">{character.name}</span>
+        {character.type ? <TypeBadge label={character.type} /> : <span className="flex-1" />}
+        <div className="flex items-center gap-1 ml-auto shrink-0">
+            <Button size="icon" variant="secondary" onClick={(e) => { e.stopPropagation(); onEdit(character.id); }} title="Edit Character">
+                <Edit size={14} />
+            </Button>
+            <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); onDelete(character.id); }} className="h-7 w-7 !p-0" title="Delete Character">
+                <Trash2 size={14} />
+            </Button>
         </div>
-    </SortableListItem>
+    </SortableTableRow>
 );
 
 export const CharacterList: React.FC = () => {
@@ -107,7 +103,9 @@ export const CharacterList: React.FC = () => {
     const navigate = useNavigate();
     const { confirm, confirmDialog } = useConfirmDialog();
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
+    const [viewMode, setViewMode] = useState<'expanded' | 'slim'>(
+        () => (localStorage.getItem('kopfkino-view-characters') as 'expanded' | 'slim') || 'expanded'
+    );
 
     const { sensors, handleDragEnd } = useSortableList(characters, reorderCharacters);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -121,6 +119,7 @@ export const CharacterList: React.FC = () => {
     });
 
     useEffect(() => {
+        localStorage.setItem('kopfkino-view-characters', viewMode);
         if (viewMode === 'slim') scrollRef.current?.scrollTo(0, 0);
     }, [viewMode]);
 
@@ -199,36 +198,37 @@ export const CharacterList: React.FC = () => {
                                 ))}
                             </div>
                         ) : (
-                            <div
-                                ref={scrollRef}
-                                className="overflow-y-auto"
-                                style={{ height: 'calc(100vh - 18rem)', minHeight: '300px' }}
-                            >
-                                <div style={{ height: slimVirtualizer.getTotalSize(), position: 'relative' }}>
-                                    {slimVirtualizer.getVirtualItems().map(virtualRow => {
-                                        const character = characters[virtualRow.index];
-                                        return (
-                                            <div
-                                                key={virtualRow.key}
-                                                data-index={virtualRow.index}
-                                                ref={slimVirtualizer.measureElement}
-                                                style={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    transform: `translateY(${virtualRow.start}px)`,
-                                                    width: '100%',
-                                                    paddingBottom: '8px',
-                                                }}
-                                            >
-                                                <SortableCharacterListItem
-                                                    character={character}
-                                                    onEdit={navigate}
-                                                    onDelete={handleDelete}
-                                                    onClickImage={setFullscreenImage}
-                                                />
-                                            </div>
-                                        );
-                                    })}
+                            <div className="border border-primary-200 dark:border-primary-700 rounded-lg overflow-hidden">
+                                <div
+                                    ref={scrollRef}
+                                    className="overflow-y-auto"
+                                    style={{ height: 'calc(100vh - 18rem)', minHeight: '300px' }}
+                                >
+                                    <div style={{ height: slimVirtualizer.getTotalSize(), position: 'relative' }}>
+                                        {slimVirtualizer.getVirtualItems().map(virtualRow => {
+                                            const character = characters[virtualRow.index];
+                                            return (
+                                                <div
+                                                    key={virtualRow.key}
+                                                    data-index={virtualRow.index}
+                                                    ref={slimVirtualizer.measureElement}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        transform: `translateY(${virtualRow.start}px)`,
+                                                        width: '100%',
+                                                    }}
+                                                >
+                                                    <SortableCharacterListItem
+                                                        character={character}
+                                                        onEdit={navigate}
+                                                        onDelete={handleDelete}
+                                                        onClickImage={setFullscreenImage}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         )}

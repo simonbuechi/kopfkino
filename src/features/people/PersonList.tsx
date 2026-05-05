@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { Button } from '../../components/ui/Button';
@@ -8,7 +8,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { TypeBadge } from '../../components/ui/TypeBadge';
 import { SortableCard } from '../../components/ui/SortableCard';
-import { SortableListItem } from '../../components/ui/SortableListItem';
+import { SortableTableRow } from '../../components/ui/SortableTableRow';
 import type { Person } from '../../types/types';
 import {
     DndContext,
@@ -64,28 +64,28 @@ const SortablePersonListItem = ({
     person: Person;
     onEdit: (id: string) => void;
 }) => (
-    <SortableListItem id={person.id} className="bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-800">
-        <Button size="sm" variant="secondary" onClick={() => onEdit(person.id)} className="shrink-0">
+    <SortableTableRow id={person.id}>
+        <span className="w-40 shrink-0 font-medium text-sm text-primary-900 dark:text-white truncate select-none">{person.name}</span>
+        <span className="w-32 shrink-0 text-sm text-primary-500 dark:text-primary-400 truncate hidden sm:block">{person.role}</span>
+        <div className="flex-1 min-w-0 hidden md:flex items-center gap-6 text-sm text-primary-400">
+            {person.email && <span className="flex items-center gap-1 truncate"><Mail size={12} className="shrink-0" />{person.email}</span>}
+            {person.phone && <span className="flex items-center gap-1 truncate"><Phone size={12} className="shrink-0" />{person.phone}</span>}
+        </div>
+        {person.type ? <TypeBadge label={person.type} /> : <span className="w-0" />}
+        <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); onEdit(person.id); }} className="shrink-0 ml-auto">
             <Edit size={14} /> Edit
         </Button>
-        <div className="flex-1 min-w-0 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-                <h3 className="font-medium text-primary-900 dark:text-white truncate select-none">{person.name}</h3>
-                <span className="text-xs text-primary-400 hidden sm:inline-block">— {person.role}</span>
-                {person.type && <TypeBadge label={person.type} />}
-            </div>
-            <div className="hidden md:flex items-center gap-4 text-xs text-primary-400">
-                {person.email && <span>{person.email}</span>}
-                {person.phone && <span>{person.phone}</span>}
-            </div>
-        </div>
-    </SortableListItem>
+    </SortableTableRow>
 );
 
 export const PersonList: React.FC = () => {
     const { people, reorderPeople } = useStore();
     const navigate = useNavigate();
-    const [viewMode, setViewMode] = useState<'expanded' | 'slim'>('expanded');
+    const [viewMode, setViewMode] = useState<'expanded' | 'slim'>(
+        () => (localStorage.getItem('kopfkino-view-people') as 'expanded' | 'slim') || 'expanded'
+    );
+
+    useEffect(() => { localStorage.setItem('kopfkino-view-people', viewMode); }, [viewMode]);
 
     const { sensors, handleDragEnd } = useSortableList(people, reorderPeople);
 
@@ -113,27 +113,19 @@ export const PersonList: React.FC = () => {
                         items={people.map(p => p.id)}
                         strategy={rectSortingStrategy}
                     >
-                        <div className={
-                            viewMode === 'expanded'
-                                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                                : "flex flex-col gap-2"
-                        }>
-                            {people.map((person) => (
-                                viewMode === 'expanded' ? (
-                                    <SortablePersonCard
-                                        key={person.id}
-                                        person={person}
-                                        onEdit={navigate}
-                                    />
-                                ) : (
-                                    <SortablePersonListItem
-                                        key={person.id}
-                                        person={person}
-                                        onEdit={navigate}
-                                    />
-                                )
-                            ))}
-                        </div>
+                        {viewMode === 'expanded' ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {people.map((person) => (
+                                    <SortablePersonCard key={person.id} person={person} onEdit={navigate} />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="border border-primary-200 dark:border-primary-700 rounded-lg overflow-hidden">
+                                {people.map((person) => (
+                                    <SortablePersonListItem key={person.id} person={person} onEdit={navigate} />
+                                ))}
+                            </div>
+                        )}
                     </SortableContext>
                 )}
             </DndContext>

@@ -42,18 +42,18 @@ export const CENTERED_RE = /^>(.+)<$/;
 // ---------------------------------------------------------------------------
 
 export const LINE_CLASS: Record<LineType, string> = {
-    'title': 'text-primary-500 dark:text-primary-400',
-    'title-page': 'text-primary-600 dark:text-primary-300 font-semibold',
-    'scene-heading': 'text-violet-600 dark:text-violet-400 font-bold',
-    'character': 'text-rose-600 dark:text-rose-400 font-bold',
-    'dialogue': 'text-primary-900 dark:text-primary-100',
-    'parenthetical': 'text-primary-500 dark:text-primary-400 italic',
-    'transition': 'text-violet-600 dark:text-violet-400 font-bold',
-    'centered': 'text-primary-700 dark:text-primary-300',
-    'section': 'text-fuchsia-600 dark:text-fuchsia-400 font-bold',
-    'synopsis': 'text-primary-400 dark:text-primary-500 italic',
-    'note': 'text-primary-400 dark:text-primary-600 italic',
-    'action': 'text-primary-800 dark:text-primary-200',
+    'title': 'opacity-40 text-xs',
+    'title-page': 'opacity-50 font-medium',
+    'scene-heading': 'font-bold uppercase',
+    'character': 'font-bold uppercase',
+    'dialogue': '',
+    'parenthetical': 'italic opacity-60',
+    'transition': 'font-bold uppercase',
+    'centered': '',
+    'section': 'font-bold opacity-35 text-xs uppercase tracking-widest',
+    'synopsis': 'italic opacity-35 text-xs',
+    'note': 'italic opacity-25 text-xs',
+    'action': '',
     'blank': '',
 };
 
