@@ -28,6 +28,7 @@ export const LocationForm: React.FC = () => {
     useEffect(() => {
         if (id) {
             const existing = locations.find((l) => l.id === id);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             if (existing) setFormData(existing);
         }
     }, [id, locations]);

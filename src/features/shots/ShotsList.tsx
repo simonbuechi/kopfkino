@@ -91,8 +91,10 @@ export const ShotsList: React.FC<ShotsListProps> = ({
     const [activeId, setActiveId] = useState<string | null>(null);
 
     useEffect(() => { localStorage.setItem('kopfkino-view-shots', viewMode); }, [viewMode]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { setLocalShots(shots); }, [shots]);
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalSetups([...groups].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
     }, [groups]);
 

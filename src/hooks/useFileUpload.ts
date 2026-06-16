@@ -1,11 +1,13 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 export function useFileUpload(onUpload: (file: File) => Promise<void>) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
     const onUploadRef = useRef(onUpload);
-    onUploadRef.current = onUpload;
+    useEffect(() => {
+        onUploadRef.current = onUpload;
+    }, [onUpload]);
 
     const handleClick = useCallback(() => fileInputRef.current?.click(), []);
 

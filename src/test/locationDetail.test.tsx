@@ -67,28 +67,17 @@ function renderDetail(locationId = 'loc-1') {
     );
 }
 
-/** Advance fake timers and flush all pending microtasks/promises. */
-async function advanceAndFlush(ms: number) {
-    await act(async () => {
-        vi.advanceTimersByTime(ms);
-        await Promise.resolve();
-    });
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 describe('LocationDetail', () => {
     beforeEach(() => {
-        vi.useFakeTimers();
         mockSaveLocation.mockResolvedValue(undefined);
         mockDeleteLocation.mockResolvedValue(undefined);
     });
 
     afterEach(() => {
-        vi.runAllTimers();
-        vi.useRealTimers();
         vi.clearAllMocks();
     });
 
@@ -109,24 +98,19 @@ describe('LocationDetail', () => {
         expect(screen.getByText(/location not found/i)).toBeInTheDocument();
     });
 
-    // --- Auto-save debounce ---
+    // --- Save actions ---
 
-    it('does not call saveLocation before the 1 second debounce', async () => {
+    it('calls saveLocation when name is modified and Save button is clicked', async () => {
         renderDetail();
         const nameInput = screen.getByDisplayValue('Rooftop');
         fireEvent.change(nameInput, { target: { value: 'Warehouse' } });
 
-        await advanceAndFlush(900);
-
-        expect(mockSaveLocation).not.toHaveBeenCalled();
-    });
-
-    it('calls saveLocation after the 1 second debounce when name changes', async () => {
-        renderDetail();
-        const nameInput = screen.getByDisplayValue('Rooftop');
-        fireEvent.change(nameInput, { target: { value: 'Warehouse' } });
-
-        await advanceAndFlush(1100);
+        const saveButton = screen.getByRole('button', { name: /save/i });
+        expect(saveButton).not.toBeDisabled();
+        
+        await act(async () => {
+            fireEvent.click(saveButton);
+        });
 
         expect(mockSaveLocation).toHaveBeenCalledOnce();
         expect(mockSaveLocation).toHaveBeenCalledWith(
@@ -139,7 +123,10 @@ describe('LocationDetail', () => {
         const nameInput = screen.getByDisplayValue('Rooftop');
         fireEvent.change(nameInput, { target: { value: 'Warehouse' } });
 
-        await advanceAndFlush(1100);
+        const saveButton = screen.getByRole('button', { name: /save/i });
+        await act(async () => {
+            fireEvent.click(saveButton);
+        });
 
         expect(screen.getByText(/^saved$/i)).toBeInTheDocument();
     });
@@ -150,48 +137,32 @@ describe('LocationDetail', () => {
         const nameInput = screen.getByDisplayValue('Rooftop');
         fireEvent.change(nameInput, { target: { value: 'Warehouse' } });
 
-        await advanceAndFlush(1100);
+        const saveButton = screen.getByRole('button', { name: /save/i });
+        await act(async () => {
+            fireEvent.click(saveButton);
+        });
 
         expect(screen.getByText(/error saving/i)).toBeInTheDocument();
     });
 
-    it('does not call saveLocation when name is empty', async () => {
+    it('disables save button when name is empty', async () => {
         renderDetail();
         const nameInput = screen.getByDisplayValue('Rooftop');
         fireEvent.change(nameInput, { target: { value: '' } });
 
-        await advanceAndFlush(1100);
-
-        expect(mockSaveLocation).not.toHaveBeenCalled();
+        const saveButton = screen.getByRole('button', { name: /save/i });
+        expect(saveButton).toBeDisabled();
     });
 
-    it('debounce resets on each change — only one save for rapid changes', async () => {
-        renderDetail();
-        const nameInput = screen.getByDisplayValue('Rooftop');
-
-        fireEvent.change(nameInput, { target: { value: 'Name A' } });
-        await advanceAndFlush(500);
-
-        fireEvent.change(nameInput, { target: { value: 'Name B' } });
-        await advanceAndFlush(500);
-
-        // Only 500ms since last change — no save yet
-        expect(mockSaveLocation).not.toHaveBeenCalled();
-
-        await advanceAndFlush(600);
-
-        expect(mockSaveLocation).toHaveBeenCalledOnce();
-        expect(mockSaveLocation).toHaveBeenCalledWith(
-            expect.objectContaining({ name: 'Name B' })
-        );
-    });
-
-    it('passes the full location object to saveLocation', async () => {
+    it('passes the full location object to saveLocation on manual save', async () => {
         renderDetail();
         const descInput = screen.getByDisplayValue('A city rooftop');
         fireEvent.change(descInput, { target: { value: 'New description' } });
 
-        await advanceAndFlush(1100);
+        const saveButton = screen.getByRole('button', { name: /save/i });
+        await act(async () => {
+            fireEvent.click(saveButton);
+        });
 
         expect(mockSaveLocation).toHaveBeenCalledWith(
             expect.objectContaining({

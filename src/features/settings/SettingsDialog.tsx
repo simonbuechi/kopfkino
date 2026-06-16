@@ -28,6 +28,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
     const [local, setLocal] = useState<Settings>(settings);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocal(settings);
     }, [settings]);
 

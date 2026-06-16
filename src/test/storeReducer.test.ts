@@ -89,7 +89,7 @@ describe('storeReducer', () => {
     });
 
     it('SET_SETTINGS replaces settings', () => {
-        const settings: Settings = { aspectRatio: '1:1', useRandomSeed: false, customSeed: 42 };
+        const settings: Settings = { pollinationsModel: 'flux', pollinationsSizeIndex: 2, pollinationsEnhance: true, pollinationsSeed: 42 };
         const result = storeReducer(storeInitialState, { type: 'SET_SETTINGS', payload: settings });
         expect(result.settings).toEqual(settings);
     });
@@ -103,7 +103,8 @@ describe('storeReducer', () => {
     });
 
     it('DEFAULT_SETTINGS has expected shape', () => {
-        expect(DEFAULT_SETTINGS.aspectRatio).toBe('16:9');
-        expect(DEFAULT_SETTINGS.useRandomSeed).toBe(true);
+        expect(DEFAULT_SETTINGS.pollinationsModel).toBe('zimage');
+        expect(DEFAULT_SETTINGS.pollinationsSizeIndex).toBe(0);
+        expect(DEFAULT_SETTINGS.pollinationsEnhance).toBe(false);
     });
 });
