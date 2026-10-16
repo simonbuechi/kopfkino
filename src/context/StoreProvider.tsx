@@ -1,5 +1,5 @@
-import { useReducer, useEffect, useCallback, useMemo } from 'react';
-import type { Location, Scene, Shot, ShotSetup, Person, Schedule, Asset, Character, Settings, Script, ScriptRevision, Act, Beat } from '../types/types';
+import { useReducer, useEffect, useCallback, useMemo, useState } from 'react';
+import type { Location, Scene, Shot, ShotSetup, Person, Schedule, Asset, Character, Settings, Script, ScriptRevision, Act, Beat, KnowledgeItem } from '../types/types';
 import { storage } from '../services/storage';
 import { useAuth } from '../hooks/useAuth';
 import { useProjects } from '../hooks/useProjects';
@@ -12,8 +12,9 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth();
     const { activeProjectId, activeProjectRole } = useProjects();
     const [state, dispatch] = useReducer(storeReducer, storeInitialState);
+    const [knowledgeLoading, setKnowledgeLoading] = useState(false);
 
-    const { locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats } = state;
+    const { locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats, knowledgeItems } = state;
 
     const canUserWrite = canWrite(activeProjectId, activeProjectRole);
 
@@ -262,8 +263,40 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         await guardedWrite(id => storage.saveBeats(id, newBeats));
     }, [guardedWrite]);
 
+    const fetchKnowledgeItems = useCallback(async () => {
+        if (!user) return;
+        setKnowledgeLoading(true);
+        try {
+            const items = await storage.getKnowledgeItems();
+            dispatch({ type: 'SET_KNOWLEDGE_ITEMS', payload: items });
+        } catch (error) {
+            console.error('Failed to fetch knowledge items:', error);
+        } finally {
+            setKnowledgeLoading(false);
+        }
+    }, [user]);
+
+    const saveKnowledgeItem = useCallback(async (item: KnowledgeItem) => {
+        if (!user) return;
+        await storage.saveKnowledgeItem(item);
+        dispatch({
+            type: 'SET_KNOWLEDGE_ITEMS',
+            payload: [item, ...knowledgeItems.filter(k => k.id !== item.id)]
+        });
+    }, [user, knowledgeItems]);
+
+    const deleteKnowledgeItem = useCallback(async (itemId: string) => {
+        if (!user) return;
+        await storage.deleteKnowledgeItem(itemId);
+        dispatch({
+            type: 'SET_KNOWLEDGE_ITEMS',
+            payload: knowledgeItems.filter(k => k.id !== itemId)
+        });
+    }, [user, knowledgeItems]);
+
     const contextValue = useMemo(() => ({
         locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats,
+        knowledgeItems, knowledgeLoading, fetchKnowledgeItems,
         saveLocation, deleteLocation, replaceLocations, reorderLocations,
         addScene, deleteScene, replaceScenes, reorderScenes,
         addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene, updateSceneGroups,
@@ -274,8 +307,10 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         addPerson, deletePerson, updatePerson, reorderPeople,
         saveScript, setScriptFrozen, saveScriptRevision, deleteScriptRevision,
         saveAct, deleteAct, saveBeat, deleteBeat, saveBeats,
+        saveKnowledgeItem, deleteKnowledgeItem,
     }), [
         locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats,
+        knowledgeItems, knowledgeLoading, fetchKnowledgeItems,
         saveLocation, deleteLocation, replaceLocations, reorderLocations,
         addScene, deleteScene, replaceScenes, reorderScenes,
         addShotToScene, deleteShotFromScene, updateShotInScene, reorderShotsInScene, updateSceneGroups,
@@ -286,6 +321,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         addPerson, deletePerson, updatePerson, reorderPeople,
         saveScript, setScriptFrozen, saveScriptRevision, deleteScriptRevision,
         saveAct, deleteAct, saveBeat, deleteBeat, saveBeats,
+        saveKnowledgeItem, deleteKnowledgeItem,
     ]);
 
     return (

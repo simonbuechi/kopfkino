@@ -16,7 +16,7 @@ import { db } from './firebase';
 import type {
     Location, Scene, Shot, ShotSetup as ShotGroup, Settings, Character, Project, Schedule, Asset, Person, Script, ScriptRevision,
     Act, Beat,
-    ProjectRole, ProjectMember, ProjectRef, Invitation,
+    ProjectRole, ProjectMember, ProjectRef, Invitation, KnowledgeItem,
 } from '../types/types';
 import type { User } from 'firebase/auth';
 import { byOrder, byCreatedAtDesc, byUpdatedAtDesc } from '../utils/sort';
@@ -40,6 +40,7 @@ const COLLECTIONS = {
     PROJECT_REFS: 'projectRefs',
     INVITATIONS: 'invitations',
     USERS: 'users',
+    KNOWLEDGE: 'knowledge',
 };
 
 // ---------------------------------------------------------------------------
@@ -572,6 +573,36 @@ export const storage = {
             batch.set(doc(db, COLLECTIONS.PROJECTS, projectId, COLLECTIONS.BEATS, beat.id), beat);
         });
         await batch.commit();
+    },
+
+    // -------------------------------------------------------------------------
+    // Knowledge Base (Techniques, Reference Shots, Guides)
+    // -------------------------------------------------------------------------
+
+    getKnowledgeItems: async (): Promise<KnowledgeItem[]> => {
+        const snapshot = await getDocs(query(collection(db, COLLECTIONS.KNOWLEDGE)));
+        const items = snapshot.docs.map(d => d.data() as KnowledgeItem);
+        items.sort((a, b) => b.createdAt - a.createdAt);
+        return items;
+    },
+
+    subscribeToKnowledgeItems: (callback: (items: KnowledgeItem[]) => void): Unsubscribe => {
+        return onSnapshot(query(collection(db, COLLECTIONS.KNOWLEDGE)), (snapshot) => {
+            const items = snapshot.docs.map(d => d.data() as KnowledgeItem);
+            items.sort((a, b) => b.createdAt - a.createdAt);
+            callback(items);
+        });
+    },
+
+    saveKnowledgeItem: async (item: KnowledgeItem) => {
+        const data = Object.fromEntries(
+            Object.entries(item).filter(([, v]) => v !== undefined)
+        ) as KnowledgeItem;
+        await setDoc(doc(db, COLLECTIONS.KNOWLEDGE, data.id), data);
+    },
+
+    deleteKnowledgeItem: async (itemId: string) => {
+        await deleteDoc(doc(db, COLLECTIONS.KNOWLEDGE, itemId));
     },
 
 };

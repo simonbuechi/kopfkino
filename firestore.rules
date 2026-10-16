@@ -65,6 +65,11 @@ service cloud.firestore {
       }
     }
 
+    // Global knowledge base (accessible to all signed-in users)
+    match /knowledge/{itemId} {
+      allow read, write: if isSignedIn();
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

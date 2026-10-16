@@ -102,6 +102,15 @@ describe('storeReducer', () => {
         expect(once).toEqual(twice);
     });
 
+    it('SET_KNOWLEDGE_ITEMS replaces knowledge items', () => {
+        const items = [{
+            id: 'k1', title: 'Slow Zoom In', category: 'Camera Movement', description: 'Desc',
+            createdAt: 0, updatedAt: 0, creatorId: 'user-1'
+        }];
+        const result = storeReducer(storeInitialState, { type: 'SET_KNOWLEDGE_ITEMS', payload: items });
+        expect(result.knowledgeItems).toEqual(items);
+    });
+
     it('DEFAULT_SETTINGS has expected shape', () => {
         expect(DEFAULT_SETTINGS.pollinationsModel).toBe('zimage');
         expect(DEFAULT_SETTINGS.pollinationsSizeIndex).toBe(0);

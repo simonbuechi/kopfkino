@@ -254,3 +254,41 @@ describe('User-scoped data', () => {
         );
     });
 });
+
+// ---------------------------------------------------------------------------
+// Global knowledge base
+// ---------------------------------------------------------------------------
+
+describe('Global knowledge base', () => {
+    const makeKnowledgeItem = () => ({
+        id: 'item-1',
+        title: 'Wide angle',
+        category: 'Camera Movement',
+        description: 'Wide framing',
+        movieName: 'Example',
+        images: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        creatorId: OWNER_UID,
+    });
+
+    it('authenticated user can read knowledge items', async () => {
+        const db = testEnv.authenticatedContext(STRANGER_UID).firestore();
+        await assertSucceeds(getDoc(doc(db, 'knowledge', 'item-1')));
+    });
+
+    it('unauthenticated user cannot read knowledge items', async () => {
+        const db = testEnv.unauthenticatedContext().firestore();
+        await assertFails(getDoc(doc(db, 'knowledge', 'item-1')));
+    });
+
+    it('authenticated user can write a knowledge item', async () => {
+        const db = testEnv.authenticatedContext(STRANGER_UID).firestore();
+        await assertSucceeds(setDoc(doc(db, 'knowledge', 'item-new'), makeKnowledgeItem()));
+    });
+
+    it('unauthenticated user cannot write a knowledge item', async () => {
+        const db = testEnv.unauthenticatedContext().firestore();
+        await assertFails(setDoc(doc(db, 'knowledge', 'item-new'), makeKnowledgeItem()));
+    });
+});

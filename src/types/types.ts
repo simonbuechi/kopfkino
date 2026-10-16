@@ -197,3 +197,43 @@ export interface ScriptRevision {
     createdAt: number;
 }
 
+export interface KnowledgeFilmExample {
+    film: string;
+    year?: string;
+    description?: string;
+    stillUrl?: string;
+}
+
+export interface KnowledgeFAQ {
+    question: string;
+    answer: string;
+}
+
+export interface KnowledgeItem {
+    id: string;
+    title: string;
+    name?: string; // Backwards compatibility alias
+    category: string;
+    categorySlug?: string;
+    description: string;
+    movieName?: string;
+    link?: string;
+    videoUrl?: string;
+    thumbnailUrl?: string;
+    stripUrl?: string;
+    images?: string[];
+    narrativeFunction?: string[];
+    howItWorks?: string[];
+    whenToUse?: string[];
+    alsoKnownAs?: string[];
+    filmExamples?: KnowledgeFilmExample[];
+    prompt?: string;
+    promptInstructions?: string[];
+    mistakes?: string[];
+    faq?: KnowledgeFAQ[];
+    createdAt: number;
+    updatedAt: number;
+    creatorId?: string;
+    creatorEmail?: string;
+}
+

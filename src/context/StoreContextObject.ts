@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { Location, Scene, Shot, ShotSetup, Settings, Character, Schedule, Asset, Person, Script, ScriptRevision, Act, Beat } from '../types/types';
+import type { Location, Scene, Shot, ShotSetup, Settings, Character, Schedule, Asset, Person, Script, ScriptRevision, Act, Beat, KnowledgeItem } from '../types/types';
 
 export interface StoreContextType {
     locations: Location[];
@@ -52,6 +52,11 @@ export interface StoreContextType {
     saveBeat: (beat: Beat) => Promise<void>;
     deleteBeat: (beatId: string) => Promise<void>;
     saveBeats: (beats: Beat[]) => Promise<void>;
+    knowledgeItems: KnowledgeItem[];
+    knowledgeLoading: boolean;
+    fetchKnowledgeItems: () => Promise<void>;
+    saveKnowledgeItem: (item: KnowledgeItem) => Promise<void>;
+    deleteKnowledgeItem: (id: string) => Promise<void>;
 }
 
 export const StoreContext = createContext<StoreContextType | undefined>(undefined);

@@ -30,6 +30,13 @@ service firebase.storage {
       allow read: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Global knowledge base media (images, videos, breakdown strips)
+    match /knowledge/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+                   && request.resource.size < 100 * 1024 * 1024;
+    }
+
     // Default deny
     match /{allPaths=**} {
       allow read, write: if false;

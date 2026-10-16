@@ -206,5 +206,21 @@ export const downloadFile = async (url: string, filename: string) => {
     }
 };
 
+export const uploadKnowledgeImage = async (file: Blob | File, itemId: string): Promise<string> => {
+    try {
+        const compressedBlob = await compressImage(file);
+        const timestamp = Date.now();
+        const path = `knowledge/${itemId}/images/${timestamp}.webp`;
+        const storageRef = ref(storage, path);
+        const metadata = { contentType: 'image/webp' };
+        await uploadBytes(storageRef, compressedBlob, metadata);
+        return await getDownloadURL(storageRef);
+    } catch (error) {
+        console.error("Error uploading knowledge image:", error);
+        throw error;
+    }
+};
+
 // Alias for backward compatibility
+export const uploadMasterShotImage = uploadKnowledgeImage;
 export const downloadImage = downloadFile;
