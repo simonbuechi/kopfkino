@@ -23,6 +23,7 @@ const ScriptLayout = lazy(() => import('./features/script').then(m => ({ default
 const ScriptPage = lazy(() => import('./features/script').then(m => ({ default: m.ScriptPage })));
 const BeatsPage = lazy(() => import('./features/script').then(m => ({ default: m.BeatsPage })));
 const RevisionsPage = lazy(() => import('./features/script').then(m => ({ default: m.RevisionsPage })));
+const KnowledgePage = lazy(() => import('./features/knowledge/KnowledgePage').then(m => ({ default: m.KnowledgePage })));
 
 // Loading Component
 const LoadingFallback = () => (
@@ -85,6 +86,7 @@ function App() {
                       <Route path="revisions" element={<RevisionsPage />} />
                     </Route>
                   </Route>
+                  <Route path="knowledge/*" element={<KnowledgePage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>
               </Routes>

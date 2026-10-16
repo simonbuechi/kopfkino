@@ -4,7 +4,7 @@ import { Sidebar } from './Sidebar';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../hooks/useAuth';
 import { useProjects } from '../hooks/useProjects';
-import { Sun, Moon, Settings as SettingsIcon, LogOut, ArrowRightLeft } from 'lucide-react';
+import { Sun, Moon, Settings as SettingsIcon, LogOut, ArrowRightLeft, BookOpen } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Tooltip } from './ui/Tooltip';
 import { SettingsDialog } from '../features/settings/SettingsDialog';
@@ -61,6 +61,11 @@ export const Layout: React.FC = () => {
                         <Tooltip label="Sign out">
                             <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign Out">
                                 <LogOut size={18} />
+                            </Button>
+                        </Tooltip>
+                        <Tooltip label="Knowledge Base">
+                            <Button variant="ghost" size="icon" onClick={() => navigate('/knowledge')} aria-label="Knowledge Base">
+                                <BookOpen size={18} />
                             </Button>
                         </Tooltip>
                         <div className="w-px h-6 bg-primary-200 dark:bg-primary-800 mx-1" />
