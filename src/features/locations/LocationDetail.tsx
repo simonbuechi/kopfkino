@@ -1,8 +1,9 @@
-import React, { useReducer, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDetailState } from '../../hooks/useDetailState';
 import { Button } from '../../components/ui/Button';
 import { MapPin, Trash2, ImageIcon, Loader2, X, Upload, Star, Save } from 'lucide-react';
 import { SaveStatusBadge } from '../../components/ui/SaveStatusBadge';
@@ -13,7 +14,7 @@ import { useFileUpload } from '../../hooks/useFileUpload';
 import toast from 'react-hot-toast';
 import type { Location, LocationType } from '../../types/types';
 
-interface LocationState {
+interface LocationFields {
     name: string;
     description: string;
     geolocation: string;
@@ -21,18 +22,9 @@ interface LocationState {
     images: string[];
     thumbnailUrl: string;
     type?: LocationType;
-    isDirty: boolean;
-    saveStatus: 'saved' | 'saving' | 'error' | null;
 }
 
-type LocationAction =
-    | { type: 'SET_FIELD'; field: string; value: string | number | boolean | string[] | undefined }
-    | { type: 'SET_MULTIPLE'; payload: Partial<LocationState> }
-    | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
-    | { type: 'SAVED' }
-    | { type: 'SYNC'; payload: Partial<LocationState> };
-
-const initialLocationState: LocationState = {
+const initialLocationFields: LocationFields = {
     name: '',
     description: '',
     geolocation: '',
@@ -40,26 +32,7 @@ const initialLocationState: LocationState = {
     images: [],
     thumbnailUrl: '',
     type: undefined,
-    isDirty: false,
-    saveStatus: null,
 };
-
-function locationReducer(state: LocationState, action: LocationAction): LocationState {
-    switch (action.type) {
-        case 'SET_FIELD':
-            return { ...state, [action.field]: action.value, isDirty: true, saveStatus: null };
-        case 'SET_MULTIPLE':
-            return { ...state, ...action.payload, isDirty: true, saveStatus: null };
-        case 'SET_STATUS':
-            return { ...state, saveStatus: action.status };
-        case 'SAVED':
-            return { ...state, saveStatus: 'saved', isDirty: false };
-        case 'SYNC':
-            return { ...state, ...action.payload, isDirty: false };
-        default:
-            return state;
-    }
-}
 
 export const LocationDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -72,7 +45,7 @@ export const LocationDetail: React.FC = () => {
     const location = locations.find((l) => l.id === id);
     const associatedScenes = scenes.filter(s => s.locationId === id);
 
-    const [state, dispatch] = useReducer(locationReducer, initialLocationState);
+    const [state, dispatch] = useDetailState(initialLocationFields);
 
     const { name, description, geolocation, comment, images, thumbnailUrl, type, isDirty, saveStatus } = state;
 
@@ -92,7 +65,7 @@ export const LocationDetail: React.FC = () => {
                 type: location.type,
             },
         });
-    }, [id, location]);
+    }, [id, location, dispatch]);
 
     const handleSave = async () => {
         if (!name.trim()) return;
@@ -140,14 +113,12 @@ export const LocationDetail: React.FC = () => {
 
     const handleDeleteImage = async (imageUrl: string) => {
         if (await confirm('Delete this image?', { title: 'Delete Image', confirmLabel: 'Delete' })) {
-            // 1. Update Local State (Effect will trigger save)
             const updatedImages = images.filter((img: string) => img !== imageUrl);
             dispatch({ type: 'SET_MULTIPLE', payload: {
                 images: updatedImages,
                 thumbnailUrl: thumbnailUrl === imageUrl ? (updatedImages[0] || '') : thumbnailUrl
             }});
 
-            // 2. Delete from Storage (fire and forget)
             await deleteImageFromUrl(imageUrl);
         }
     };

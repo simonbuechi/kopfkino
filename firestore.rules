@@ -10,6 +10,10 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/projects/$(projectId)).data;
     }
 
+    function projectExists(projectId) {
+      return exists(/databases/$(database)/documents/projects/$(projectId));
+    }
+
     function isMember(projectId) {
       return request.auth.uid in getProject(projectId).members;
     }
@@ -19,27 +23,40 @@ service cloud.firestore {
     }
 
     function canWrite(projectId) {
-      return memberRole(projectId) in ['owner', 'editor'];
+      return projectExists(projectId)
+        && isMember(projectId)
+        && memberRole(projectId) in ['owner', 'editor'];
+    }
+
+    function isSelfJoiningMember() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+        && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid])
+        && request.resource.data.members[request.auth.uid].role in ['editor', 'viewer'];
     }
 
     // Top-level project documents
     match /projects/{projectId} {
       allow read: if isSignedIn() && isMember(projectId);
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isSignedIn() && canWrite(projectId);
+      allow update: if isSignedIn() && (canWrite(projectId) || isSelfJoiningMember());
       allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
 
-      // Project subcollections (locations, scenes, characters, etc.)
+      // Project subcollections (locations, scenes, characters, plans, tasks, etc.)
       match /{collectionName}/{document=**} {
         allow read: if isSignedIn() && isMember(projectId);
         allow write: if isSignedIn() && canWrite(projectId);
       }
     }
 
-    // Invitations — anyone signed in can create; only the invitee can read/update
+    // Invitations — project writers can create/manage; invitee can read/accept
     match /invitations/{invitationId} {
-      allow create: if isSignedIn();
-      allow read, update: if isSignedIn() && request.auth.token.email == resource.data.email;
+      allow create: if isSignedIn() && canWrite(request.resource.data.projectId);
+      allow read, update: if isSignedIn() && (
+        request.auth.token.email == resource.data.email || canWrite(resource.data.projectId)
+      );
+      allow delete: if isSignedIn() && (
+        request.auth.token.email == resource.data.email || canWrite(resource.data.projectId)
+      );
     }
 
     // User-scoped data: settings, projectRefs index, migration marker
@@ -51,7 +68,8 @@ service cloud.firestore {
       }
 
       match /projectRefs/{projectId} {
-        allow read, write: if isSignedIn() && request.auth.uid == userId;
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow write: if isSignedIn() && (request.auth.uid == userId || canWrite(projectId));
       }
 
       match /meta/{doc} {

@@ -47,7 +47,12 @@ export function handlePollinationsCallback() {
 
     localStorage.setItem(STORAGE_KEY, key);
 
-    const returnUrl = sessionStorage.getItem(RETURN_KEY) || (window.location.origin + '/#/');
+    const storedReturnUrl = sessionStorage.getItem(RETURN_KEY);
+    const defaultUrl = window.location.origin + '/#/';
+    const returnUrl =
+        storedReturnUrl && storedReturnUrl.startsWith(window.location.origin)
+            ? storedReturnUrl
+            : defaultUrl;
     sessionStorage.removeItem(RETURN_KEY);
 
     // Replace the URL so the router never sees #api_key=...

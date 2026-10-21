@@ -1,7 +1,8 @@
-import React, { useReducer, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
+import { useDetailState } from '../../hooks/useDetailState';
 import { Button } from '../../components/ui/Button';
 import { Save, Trash2, User, Loader2, Upload, X, Sparkles } from 'lucide-react';
 import { SaveStatusBadge } from '../../components/ui/SaveStatusBadge';
@@ -16,52 +17,21 @@ import { GenerateImageModal } from './GenerateImageModal';
 import { generateImageBlob, type GenerateImageParams } from '../../services/pollinationsService';
 import { usePollinationsAuth } from '../../hooks/usePollinationsAuth';
 
-interface CharacterState {
+interface CharacterFields {
     name: string;
     description: string;
     comment: string;
     imageUrl?: string;
     type?: CharacterType;
-    isDirty: boolean;
-    saveStatus: 'saved' | 'saving' | 'error' | null;
 }
 
-type CharacterAction =
-    | { type: 'SET_FIELD'; field: string; value: string | number | boolean | string[] | undefined | CharacterType }
-    | { type: 'SET_MULTIPLE'; payload: Partial<CharacterState> }
-    | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
-    | { type: 'SAVED' }
-    | { type: 'SYNC'; payload: Partial<CharacterState> }
-    | { type: 'RESET' };
-
-const initialCharacterState: CharacterState = {
+const initialCharacterFields: CharacterFields = {
     name: '',
     description: '',
     comment: '',
     imageUrl: undefined,
     type: undefined,
-    isDirty: false,
-    saveStatus: null,
 };
-
-function characterReducer(state: CharacterState, action: CharacterAction): CharacterState {
-    switch (action.type) {
-        case 'SET_FIELD':
-            return { ...state, [action.field]: action.value, isDirty: true, saveStatus: null };
-        case 'SET_MULTIPLE':
-            return { ...state, ...action.payload, isDirty: true, saveStatus: null };
-        case 'SET_STATUS':
-            return { ...state, saveStatus: action.status };
-        case 'SAVED':
-            return { ...state, saveStatus: 'saved', isDirty: false };
-        case 'SYNC':
-            return { ...state, ...action.payload, isDirty: false };
-        case 'RESET':
-            return initialCharacterState;
-        default:
-            return state;
-    }
-}
 
 export const CharacterDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -74,7 +44,7 @@ export const CharacterDetail: React.FC = () => {
     const isNew = id === 'new';
     const existingCharacter = characters.find(c => c.id === id);
 
-    const [state, dispatch] = useReducer(characterReducer, initialCharacterState);
+    const [state, dispatch] = useDetailState(initialCharacterFields);
 
     const { name, description, comment, imageUrl, type, isDirty, saveStatus } = state;
 
@@ -107,7 +77,7 @@ export const CharacterDetail: React.FC = () => {
                 },
             });
         }
-    }, [id, existingCharacter, isNew]);
+    }, [id, existingCharacter, isNew, dispatch]);
 
     const handleSave = async () => {
         if (!name.trim()) return;

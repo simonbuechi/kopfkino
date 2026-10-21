@@ -1,7 +1,8 @@
-﻿import React, { useReducer, useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../../hooks/useStore';
 import { useProjects } from '../../hooks/useProjects';
+import { useDetailState } from '../../hooks/useDetailState';
 import { Button } from '../../components/ui/Button';
 import { Trash2, Save, MapPin, ChevronDown, ChevronRight, X, Search, Clapperboard, Info } from 'lucide-react';
 import { SaveStatusBadge } from '../../components/ui/SaveStatusBadge';
@@ -11,11 +12,7 @@ import { Tooltip } from '../../components/ui/Tooltip';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import type { Scene } from '../../types/types';
 
-// ---------------------------------------------------------------------------
-// Reducer
-// ---------------------------------------------------------------------------
-
-interface SceneState {
+interface SceneFields {
     name: string;
     number: string;
     description: string;
@@ -25,43 +22,11 @@ interface SceneState {
     characters: string[];
     peopleIds: string[];
     assetIds: string[];
-    isDirty: boolean;
-    saveStatus: 'saved' | 'saving' | 'error' | null;
 }
 
-type SceneAction =
-    | { type: 'SET_FIELD'; field: string; value: string }
-    | { type: 'TOGGLE_ID'; field: 'characters' | 'peopleIds' | 'assetIds'; id: string }
-    | { type: 'SET_STATUS'; status: 'saved' | 'saving' | 'error' | null }
-    | { type: 'SAVED' }
-    | { type: 'SYNC'; payload: Omit<SceneState, 'isDirty' | 'saveStatus'> };
-
-function sceneReducer(state: SceneState, action: SceneAction): SceneState {
-    switch (action.type) {
-        case 'SET_FIELD':
-            return { ...state, [action.field]: action.value, isDirty: true, saveStatus: null };
-        case 'TOGGLE_ID': {
-            const arr = state[action.field];
-            const next = arr.includes(action.id)
-                ? arr.filter(id => id !== action.id)
-                : [...arr, action.id];
-            return { ...state, [action.field]: next, isDirty: true, saveStatus: null };
-        }
-        case 'SET_STATUS':
-            return { ...state, saveStatus: action.status };
-        case 'SAVED':
-            return { ...state, saveStatus: 'saved', isDirty: false };
-        case 'SYNC':
-            return { ...state, ...action.payload, isDirty: false, saveStatus: null };
-        default:
-            return state;
-    }
-}
-
-const initialState: SceneState = {
+const initialSceneFields: SceneFields = {
     name: '', number: '', description: '', comment: '',
     locationId: '', length: '', characters: [], peopleIds: [], assetIds: [],
-    isDirty: false, saveStatus: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -212,7 +177,7 @@ export const SceneDetail: React.FC = () => {
 
     const scene = scenes.find((s) => s.id === id);
 
-    const [state, dispatch] = useReducer(sceneReducer, initialState);
+    const [state, dispatch] = useDetailState(initialSceneFields);
     const { name, number, description, comment, locationId, length, characters: selectedChars, peopleIds, assetIds, isDirty, saveStatus } = state;
 
     const [open, setOpen] = useState({ description: true, admin: true });
@@ -236,7 +201,7 @@ export const SceneDetail: React.FC = () => {
                 assetIds: scene.assetIds ?? [],
             },
         });
-    }, [id, scene]);
+    }, [id, scene, dispatch]);
 
     if (!scene) {
         return <div className="p-8">Scene not found</div>;

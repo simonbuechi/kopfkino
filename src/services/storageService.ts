@@ -4,6 +4,8 @@ import { storage } from "./firebase";
 const IMAGE_COUNT_TTL = 5 * 60 * 1000; // 5 minutes
 const imageCountCache = new Map<string, { count: number; expiresAt: number }>();
 
+const generateUniqueFileId = () => `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+
 export const getImageCount = async (projectId: string): Promise<number> => {
     const cached = imageCountCache.get(projectId);
     if (cached && Date.now() < cached.expiresAt) {
@@ -115,10 +117,10 @@ export const uploadImage = async (file: Blob | File, projectId: string): Promise
         const compressedBlob = await compressImage(file);
 
         // 2. Generate a unique path with .webp extension
-        const timestamp = Date.now();
+        const uniqueId = generateUniqueFileId();
         // Force .webp extension for consistency as we converted it
         const extension = 'webp';
-        const path = `projects/${projectId}/images/${timestamp}.${extension}`;
+        const path = `projects/${projectId}/images/${uniqueId}.${extension}`;
         const storageRef = ref(storage, path);
 
         // 3. Upload with metadata
@@ -126,6 +128,7 @@ export const uploadImage = async (file: Blob | File, projectId: string): Promise
             contentType: 'image/webp',
         };
         await uploadBytes(storageRef, compressedBlob, metadata);
+        imageCountCache.delete(projectId);
 
         // 4. Get Download URL
         const downloadUrl = await getDownloadURL(storageRef);
@@ -138,9 +141,9 @@ export const uploadImage = async (file: Blob | File, projectId: string): Promise
 
 export const uploadVideo = async (file: File, projectId: string): Promise<string> => {
     try {
-        const timestamp = Date.now();
+        const uniqueId = generateUniqueFileId();
         const extension = file.name.split('.').pop() || 'mp4';
-        const path = `projects/${projectId}/videos/${timestamp}.${extension}`;
+        const path = `projects/${projectId}/videos/${uniqueId}.${extension}`;
         const storageRef = ref(storage, path);
 
         const metadata = {
@@ -164,6 +167,7 @@ export const deleteFileByPath = async (storagePath: string): Promise<boolean> =>
     try {
         const storageRef = ref(storage, storagePath);
         await deleteObject(storageRef);
+        imageCountCache.clear();
         return true;
     } catch (error) {
         console.error("Error deleting file:", error);
@@ -209,8 +213,8 @@ export const downloadFile = async (url: string, filename: string) => {
 export const uploadKnowledgeImage = async (file: Blob | File, itemId: string): Promise<string> => {
     try {
         const compressedBlob = await compressImage(file);
-        const timestamp = Date.now();
-        const path = `knowledge/${itemId}/images/${timestamp}.webp`;
+        const uniqueId = generateUniqueFileId();
+        const path = `knowledge/${itemId}/images/${uniqueId}.webp`;
         const storageRef = ref(storage, path);
         const metadata = { contentType: 'image/webp' };
         await uploadBytes(storageRef, compressedBlob, metadata);
