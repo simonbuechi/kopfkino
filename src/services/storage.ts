@@ -10,6 +10,8 @@ import {
     getDocs,
     getDoc,
     getCountFromServer,
+    getDocsFromCache,
+    getDocsFromServer,
     updateDoc,
     deleteField,
 } from 'firebase/firestore';
@@ -63,6 +65,23 @@ const PROJECT_SUBCOLLECTIONS = [
 ] as const;
 
 const MAX_BATCH_SIZE = 450;
+
+// Project stats cache constants
+const STATS_CACHE_KEY_PREFIX = 'kopfkino_stats_';
+const STATS_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
+export interface ProjectStatsSummary {
+    locations: number;
+    characters: number;
+    scenes: number;
+    shots: number;
+    length: number;
+}
+
+interface CachedStatsPayload {
+    timestamp: number;
+    data: Record<string, ProjectStatsSummary>;
+}
 
 // ---------------------------------------------------------------------------
 // Sanitization & Batch Helpers
@@ -254,6 +273,7 @@ export const storage = {
         await setDoc(projectDocRef, cleanProject);
         const role = cleanProject.members[userId]?.role ?? 'owner';
         await setDoc(getProjectRefDoc(userId, cleanProject.id), { projectId: cleanProject.id, role } as ProjectRef);
+        storage.invalidateProjectStatsCache(userId);
     },
 
     deleteProject: async (userId: string, projectId: string) => {
@@ -295,6 +315,7 @@ export const storage = {
         });
 
         await commitChunkedOperations(operations);
+        storage.invalidateProjectStatsCache(userId);
     },
 
     // -------------------------------------------------------------------------
@@ -550,7 +571,40 @@ export const storage = {
     // Stats (for project dashboard)
     // -------------------------------------------------------------------------
 
-    getAllProjectStats: async (userId: string) => {
+    invalidateProjectStatsCache: (userId?: string) => {
+        try {
+            if (typeof window === 'undefined' || !window.sessionStorage) return;
+            if (userId) {
+                sessionStorage.removeItem(`${STATS_CACHE_KEY_PREFIX}${userId}`);
+            } else {
+                for (let i = sessionStorage.length - 1; i >= 0; i--) {
+                    const key = sessionStorage.key(i);
+                    if (key?.startsWith(STATS_CACHE_KEY_PREFIX)) {
+                        sessionStorage.removeItem(key);
+                    }
+                }
+            }
+        } catch {
+            // Ignore sessionStorage errors
+        }
+    },
+
+    getAllProjectStats: async (userId: string): Promise<Record<string, ProjectStatsSummary>> => {
+        // 1. Try reading from sessionStorage cache with 15-min TTL
+        try {
+            if (typeof window !== 'undefined' && window.sessionStorage) {
+                const raw = sessionStorage.getItem(`${STATS_CACHE_KEY_PREFIX}${userId}`);
+                if (raw) {
+                    const parsed: CachedStatsPayload = JSON.parse(raw);
+                    if (Date.now() - parsed.timestamp < STATS_CACHE_TTL_MS) {
+                        return parsed.data;
+                    }
+                }
+            }
+        } catch {
+            // Ignore cache errors and proceed to server fetch
+        }
+
         const refsSnap = await getDocs(getUserCollection(userId, COLLECTIONS.PROJECT_REFS));
         const projectIds = refsSnap.docs.map(d => d.id);
 
@@ -576,7 +630,19 @@ export const storage = {
             }] as const;
         }));
 
-        return Object.fromEntries(results);
+        const resultStats = Object.fromEntries(results);
+
+        // 2. Cache in sessionStorage
+        try {
+            if (typeof window !== 'undefined' && window.sessionStorage) {
+                const payload: CachedStatsPayload = { timestamp: Date.now(), data: resultStats };
+                sessionStorage.setItem(`${STATS_CACHE_KEY_PREFIX}${userId}`, JSON.stringify(payload));
+            }
+        } catch {
+            // Ignore quota errors
+        }
+
+        return resultStats;
     },
 
     // -------------------------------------------------------------------------
@@ -647,8 +713,23 @@ export const storage = {
     // -------------------------------------------------------------------------
 
     getKnowledgeItems: async (): Promise<KnowledgeItem[]> => {
-        const snapshot = await getDocs(query(collection(db, COLLECTIONS.KNOWLEDGE)));
-        const items = snapshot.docs.map(d => d.data() as KnowledgeItem);
+        const q = query(collection(db, COLLECTIONS.KNOWLEDGE));
+
+        // 1. Try reading from persistent local cache (IndexedDB) first (0 billable reads)
+        try {
+            const cachedSnap = await getDocsFromCache(q);
+            if (!cachedSnap.empty) {
+                const items = cachedSnap.docs.map(d => d.data() as KnowledgeItem);
+                items.sort(byCreatedAtDesc);
+                return items;
+            }
+        } catch {
+            // Local cache miss or not populated yet; fallback to server query
+        }
+
+        // 2. Fetch from server (bills reads once and populates IndexedDB cache)
+        const serverSnap = await getDocsFromServer(q);
+        const items = serverSnap.docs.map(d => d.data() as KnowledgeItem);
         items.sort(byCreatedAtDesc);
         return items;
     },
