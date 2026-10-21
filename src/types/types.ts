@@ -237,3 +237,85 @@ export interface KnowledgeItem {
     creatorEmail?: string;
 }
 
+
+
+export type PlanItemCategory = 'person' | 'asset' | 'location' | 'scene' | 'shot' | 'other';
+
+export interface PlanDateEntry {
+    id: string;
+    startDate: string; // YYYY-MM-DD
+    endDate: string;   // YYYY-MM-DD
+    label?: string;
+}
+
+export interface PlanItem {
+    id: string;
+    sectionId: string;
+    name: string;
+    category: PlanItemCategory;
+    entityId?: string;
+    entityName?: string;
+    dates: PlanDateEntry[];
+    comment?: string;
+    order?: number;
+    color?: string;
+}
+
+export interface PlanSection {
+    id: string;
+    name: string;
+    tag?: string;
+    tagColor?: string;
+    order?: number;
+}
+
+export interface Plan {
+    id: string;
+    projectId: string;
+    name: string;
+    description?: string;
+    timelineMode: 'auto' | 'manual';
+    manualStartDate?: string; // YYYY-MM-DD
+    manualEndDate?: string;   // YYYY-MM-DD
+    sections: PlanSection[];
+    items: PlanItem[];
+    createdAt: number;
+    updatedAt: number;
+}
+
+
+export type TaskStatus = 'backlog' | 'todo' | 'in_progress' | 'done';
+export type TaskPriority = 'high' | 'medium' | 'low';
+
+export interface TaskComment {
+    id: string;
+    authorId: string;
+    authorName: string;
+    text: string;
+    createdAt: number;
+}
+
+export interface Task {
+    id: string;
+    projectId: string;
+    name: string;
+    description?: string;
+    category: string;
+    status: TaskStatus;
+    priority: TaskPriority;
+    responsiblePersonId?: string;
+    responsiblePersonName?: string;
+    dueDate?: string; // YYYY-MM-DD
+    relatedAssetId?: string;
+    relatedAssetName?: string;
+    relatedLocationId?: string;
+    relatedLocationName?: string;
+    relatedSceneId?: string;
+    relatedSceneName?: string;
+    relatedShotId?: string;
+    relatedShotName?: string;
+    comments: TaskComment[];
+    order?: number;
+    createdAt: number;
+    updatedAt: number;
+}

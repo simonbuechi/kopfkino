@@ -17,6 +17,8 @@ const ProjectDashboard = lazy(() => import('./features/dashboard').then(m => ({ 
 const StartPage = lazy(() => import('./features/start').then(m => ({ default: m.StartPage })));
 const AuthPage = lazy(() => import('./features/auth/AuthPage').then(m => ({ default: m.AuthPage })));
 const SchedulingPage = lazy(() => import('./features/scheduling').then(m => ({ default: m.SchedulingPage })));
+const PlanningPage = lazy(() => import('./features/planning').then(m => ({ default: m.PlanningPage })));
+const TasksPage = lazy(() => import('./features/tasks').then(m => ({ default: m.TasksPage })));
 const AssetsPage = lazy(() => import('./features/assets').then(m => ({ default: m.AssetsPage })));
 const PeoplePage = lazy(() => import('./features/people').then(m => ({ default: m.PeoplePage })));
 const ScriptLayout = lazy(() => import('./features/script').then(m => ({ default: m.ScriptLayout })));
@@ -78,6 +80,8 @@ function App() {
                     <Route path="scenes/*" element={<ScenesPage />} />
                     <Route path="characters/*" element={<CharactersPage />} />
                     <Route path="scheduling/*" element={<SchedulingPage />} />
+                    <Route path="planning/*" element={<PlanningPage />} />
+                    <Route path="tasks/*" element={<TasksPage />} />
                     <Route path="assets/*" element={<AssetsPage />} />
                     <Route path="people/*" element={<PeoplePage />} />
                     <Route path="script" element={<ScriptLayout />}>

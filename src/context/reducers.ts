@@ -1,4 +1,4 @@
-import type { Location, Scene, Character, Schedule, Asset, Person, Settings, Project, Script, ScriptRevision, Act, Beat, KnowledgeItem } from '../types/types';
+import type { Location, Scene, Character, Schedule, Asset, Person, Settings, Project, Script, ScriptRevision, Act, Beat, KnowledgeItem, Plan, Task } from '../types/types';
 
 // ---------------------------------------------------------------------------
 // Store reducer
@@ -16,6 +16,8 @@ export type StoreState = {
     scriptRevisions: ScriptRevision[];
     acts: Act[];
     beats: Beat[];
+    plans: Plan[];
+    tasks: Task[];
     knowledgeItems: KnowledgeItem[];
 };
 
@@ -31,6 +33,8 @@ export type StoreAction =
     | { type: 'SET_SCRIPT_REVISIONS'; payload: ScriptRevision[] }
     | { type: 'SET_ACTS'; payload: Act[] }
     | { type: 'SET_BEATS'; payload: Beat[] }
+    | { type: 'SET_PLANS'; payload: Plan[] }
+    | { type: 'SET_TASKS'; payload: Task[] }
     | { type: 'SET_KNOWLEDGE_ITEMS'; payload: KnowledgeItem[] }
     | { type: 'RESET' };
 
@@ -52,6 +56,8 @@ export const storeInitialState: StoreState = {
     scriptRevisions: [],
     acts: [],
     beats: [],
+    plans: [],
+    tasks: [],
     knowledgeItems: [],
 };
 
@@ -68,6 +74,8 @@ export function storeReducer(state: StoreState, action: StoreAction): StoreState
         case 'SET_SCRIPT_REVISIONS': return { ...state, scriptRevisions: action.payload };
         case 'SET_ACTS': return { ...state, acts: action.payload };
         case 'SET_BEATS': return { ...state, beats: action.payload };
+        case 'SET_PLANS': return { ...state, plans: action.payload };
+        case 'SET_TASKS': return { ...state, tasks: action.payload };
         case 'SET_KNOWLEDGE_ITEMS': return { ...state, knowledgeItems: action.payload };
         case 'RESET': return storeInitialState;
         default: return state;

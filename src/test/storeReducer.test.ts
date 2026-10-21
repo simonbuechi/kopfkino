@@ -111,6 +111,37 @@ describe('storeReducer', () => {
         expect(result.knowledgeItems).toEqual(items);
     });
 
+    it('SET_PLANS replaces plans', () => {
+        const plans = [{
+            id: 'plan-1',
+            projectId: 'p1',
+            name: 'Principal Photography',
+            timelineMode: 'auto' as const,
+            sections: [],
+            items: [],
+            createdAt: 1000,
+            updatedAt: 1000,
+        }];
+        const result = storeReducer(storeInitialState, { type: 'SET_PLANS', payload: plans });
+        expect(result.plans).toEqual(plans);
+    });
+
+    it('SET_TASKS replaces tasks', () => {
+        const tasks = [{
+            id: 'task-1',
+            projectId: 'p1',
+            name: 'Rehearse Scene 1',
+            category: 'Production',
+            status: 'todo' as const,
+            priority: 'high' as const,
+            comments: [],
+            createdAt: 1000,
+            updatedAt: 1000,
+        }];
+        const result = storeReducer(storeInitialState, { type: 'SET_TASKS', payload: tasks });
+        expect(result.tasks).toEqual(tasks);
+    });
+
     it('DEFAULT_SETTINGS has expected shape', () => {
         expect(DEFAULT_SETTINGS.pollinationsModel).toBe('zimage');
         expect(DEFAULT_SETTINGS.pollinationsSizeIndex).toBe(0);

@@ -1,5 +1,5 @@
 import { useReducer, useEffect, useCallback, useMemo, useState } from 'react';
-import type { Location, Scene, Shot, ShotSetup, Person, Schedule, Asset, Character, Settings, Script, ScriptRevision, Act, Beat, KnowledgeItem } from '../types/types';
+import type { Location, Scene, Shot, ShotSetup, Person, Schedule, Asset, Character, Settings, Script, ScriptRevision, Act, Beat, KnowledgeItem, Plan, Task } from '../types/types';
 import { storage } from '../services/storage';
 import { useAuth } from '../hooks/useAuth';
 import { useProjects } from '../hooks/useProjects';
@@ -14,7 +14,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     const [state, dispatch] = useReducer(storeReducer, storeInitialState);
     const [knowledgeLoading, setKnowledgeLoading] = useState(false);
 
-    const { locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats, knowledgeItems } = state;
+    const { locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats, plans, tasks, knowledgeItems } = state;
 
     const canUserWrite = canWrite(activeProjectId, activeProjectRole);
 
@@ -46,6 +46,8 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         const unsubScriptRevisions = storage.subscribeToScriptRevisions(activeProjectId, (payload) => dispatch({ type: 'SET_SCRIPT_REVISIONS', payload }));
         const unsubActs = storage.subscribeToActs(activeProjectId, (payload) => dispatch({ type: 'SET_ACTS', payload }));
         const unsubBeats = storage.subscribeToBeats(activeProjectId, (payload) => dispatch({ type: 'SET_BEATS', payload }));
+        const unsubPlans = storage.subscribeToPlans(activeProjectId, (payload) => dispatch({ type: 'SET_PLANS', payload }));
+        const unsubTasks = storage.subscribeToTasks(activeProjectId, (payload) => dispatch({ type: 'SET_TASKS', payload }));
 
         return () => {
             unsubLocations();
@@ -59,6 +61,8 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
             unsubScriptRevisions();
             unsubActs();
             unsubBeats();
+            unsubPlans();
+            unsubTasks();
         };
     }, [user, activeProjectId]);
 
@@ -259,6 +263,28 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         await guardedWrite(id => storage.deleteBeat(id, beatId));
     }, [guardedWrite]);
 
+    // Plans
+    const savePlan = useCallback(async (plan: Plan) => {
+        await guardedWrite(id => storage.savePlan(id, plan));
+    }, [guardedWrite]);
+
+    const deletePlan = useCallback(async (planId: string) => {
+        await guardedWrite(id => storage.deletePlan(id, planId));
+    }, [guardedWrite]);
+
+    // Tasks
+    const saveTask = useCallback(async (task: Task) => {
+        await guardedWrite(id => storage.saveTask(id, task));
+    }, [guardedWrite]);
+
+    const saveTasks = useCallback(async (newTasks: Task[]) => {
+        await guardedWrite(id => storage.saveTasks(id, newTasks));
+    }, [guardedWrite]);
+
+    const deleteTask = useCallback(async (taskId: string) => {
+        await guardedWrite(id => storage.deleteTask(id, taskId));
+    }, [guardedWrite]);
+
     const saveBeats = useCallback(async (newBeats: Beat[]) => {
         await guardedWrite(id => storage.saveBeats(id, newBeats));
     }, [guardedWrite]);
@@ -295,7 +321,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     }, [user, knowledgeItems]);
 
     const contextValue = useMemo(() => ({
-        locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats,
+        locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats, plans,
         knowledgeItems, knowledgeLoading, fetchKnowledgeItems,
         saveLocation, deleteLocation, replaceLocations, reorderLocations,
         addScene, deleteScene, replaceScenes, reorderScenes,
@@ -307,9 +333,11 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         addPerson, deletePerson, updatePerson, reorderPeople,
         saveScript, setScriptFrozen, saveScriptRevision, deleteScriptRevision,
         saveAct, deleteAct, saveBeat, deleteBeat, saveBeats,
+        savePlan, deletePlan,
+        tasks, saveTask, saveTasks, deleteTask,
         saveKnowledgeItem, deleteKnowledgeItem,
     }), [
-        locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats,
+        locations, scenes, characters, schedules, assets, people, settings, script, scriptRevisions, acts, beats, plans,
         knowledgeItems, knowledgeLoading, fetchKnowledgeItems,
         saveLocation, deleteLocation, replaceLocations, reorderLocations,
         addScene, deleteScene, replaceScenes, reorderScenes,
@@ -321,6 +349,8 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         addPerson, deletePerson, updatePerson, reorderPeople,
         saveScript, setScriptFrozen, saveScriptRevision, deleteScriptRevision,
         saveAct, deleteAct, saveBeat, deleteBeat, saveBeats,
+        savePlan, deletePlan,
+        tasks, saveTask, saveTasks, deleteTask,
         saveKnowledgeItem, deleteKnowledgeItem,
     ]);
 

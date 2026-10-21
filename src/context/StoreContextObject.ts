@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { Location, Scene, Shot, ShotSetup, Settings, Character, Schedule, Asset, Person, Script, ScriptRevision, Act, Beat, KnowledgeItem } from '../types/types';
+import type { Location, Scene, Shot, ShotSetup, Settings, Character, Schedule, Asset, Person, Script, ScriptRevision, Act, Beat, KnowledgeItem, Plan, Task } from '../types/types';
 
 export interface StoreContextType {
     locations: Location[];
@@ -52,6 +52,13 @@ export interface StoreContextType {
     saveBeat: (beat: Beat) => Promise<void>;
     deleteBeat: (beatId: string) => Promise<void>;
     saveBeats: (beats: Beat[]) => Promise<void>;
+    plans: Plan[];
+    savePlan: (plan: Plan) => Promise<void>;
+    deletePlan: (id: string) => Promise<void>;
+    tasks: Task[];
+    saveTask: (task: Task) => Promise<void>;
+    saveTasks: (tasks: Task[]) => Promise<void>;
+    deleteTask: (id: string) => Promise<void>;
     knowledgeItems: KnowledgeItem[];
     knowledgeLoading: boolean;
     fetchKnowledgeItems: () => Promise<void>;
